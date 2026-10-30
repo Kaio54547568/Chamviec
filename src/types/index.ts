@@ -242,3 +242,63 @@ export interface ActionPlanItem {
   status: 'pending' | 'in_progress' | 'completed';
   category: 'explore' | 'skill' | 'admission' | 'consult';
 }
+
+// Enterprise Tour / Experience Batch Types
+export type BatchStatus = 'SAP_MO' | 'DANG_MO' | 'HET_CHO' | 'DA_HOAN_THANH';
+export type RegistrationStatus = 'DA_TIEP_NHAN' | 'CHO_THANH_TOAN' | 'DA_THANH_TOAN' | 'DA_XAC_NHAN' | 'DA_HUY';
+
+export interface EnterpriseBatch {
+  id: string;
+  code: string; // e.g. "CV-BATCH-TECH-01"
+  programName: string;
+  enterpriseName: string;
+  careerCategory: string; // Công nghệ thông tin, Kỹ thuật - Chế tạo, Nông nghiệp CNC, Y tế, Khách sạn - Dịch vụ
+  location: string;
+  address: string;
+  scheduleDate: string; // YYYY-MM-DD
+  timeRange: string; // e.g. "08:30 - 16:30"
+  deadlineDate: string;
+  targetGrade: string; // e.g. "Lớp 10 - 12"
+  totalSlots: number;
+  registeredSlots: number;
+  ticketPriceVND: number;
+  inclusions: string[];
+  exclusions: string[];
+  scheduleTimeline: { time: string; activity: string }[];
+  cancellationPolicy: string;
+  status: BatchStatus;
+  contactPerson: string;
+  contactPhone: string;
+  contactEmail: string;
+}
+
+export interface EnterpriseRegistration {
+  registrationCode: string; // e.g. "CV-EXP-829143"
+  batchId: string;
+  batchName: string;
+  enterpriseName: string;
+  studentName: string;
+  schoolName: string;
+  grade: string;
+  studentEmail: string;
+  studentPhone?: string;
+  isInternationalStudent: boolean;
+  guardianName?: string;
+  guardianPhone?: string;
+  specialRequests?: string;
+  registeredAt: string;
+  status: RegistrationStatus;
+  ticketPriceVND: number;
+}
+
+export interface TestQuotaInfo {
+  email: string;
+  verified: boolean;
+  totalAttempts: number;
+  freeAttemptUsed: boolean;
+  retakeCredits: number;
+  feePerRetakeVND: number;
+  paymentGatewayStatus: 'NOT_CONFIGURED' | 'READY';
+  noticeMessage?: string;
+}
+

@@ -15,6 +15,7 @@ import {
   ChevronDown
 } from 'lucide-react';
 import { StudentProfile } from '../types';
+import { useLanguage } from '../i18n/LanguageContext';
 
 interface ChamAiChatbotProps {
   isOpen: boolean;
@@ -47,7 +48,10 @@ export const ChamAiChatbot: React.FC<ChamAiChatbotProps> = ({
   initialPrompt,
   onClearInitialPrompt,
 }) => {
-  const initialWelcomeText = `Xin chào bạn! Mình là **CHẠM AI – Người bạn đồng hành hướng nghiệp** của ứng dụng **CHẠM VIỆC**.
+  const { t, language } = useLanguage();
+
+  const initialWelcomeText = language === 'vi'
+    ? `Xin chào bạn! Mình là **CHẠM AI – Người bạn đồng hành hướng nghiệp** của ứng dụng **CHẠM VIỆC**.
 
 Mình ở đây để lắng nghe, giúp bạn:
 - 🧭 Khám phá sở thích, thế mạnh bản thân và phân tích trắc nghiệm RIASEC.
@@ -55,7 +59,16 @@ Mình ở đây để lắng nghe, giúp bạn:
 - 🎓 Tra cứu điểm chuẩn, đề án tuyển sinh và tổ hợp môn có căn cứ chính thức từ các trường đại học (bao gồm cả đề án mới năm 2025).
 - 🏔️ Chia sẻ thông tin chính sách ưu tiên, cử tuyển, học bổng và ký túc xá cho học sinh miền núi, vùng xa và đồng bào DTTS.
 
-*Hôm nay bạn đang có băn khoăn hay câu hỏi nào về chọn ngành, chọn nghề cần được hỗ trợ?*`;
+*Hôm nay bạn đang có băn khoăn hay câu hỏi nào về chọn ngành, chọn nghề cần được hỗ trợ?*`
+    : `Hello! I am **CHẠM AI – Your Vocational Guidance Companion** on **CHẠM VIỆC**.
+
+I am here to assist you with:
+- 🧭 Exploring personal strengths and interpreting RIASEC interest profiles.
+- 💼 Understanding day-in-the-life realities, essential skills, and career development roadmaps.
+- 🎓 Accessing officially verified college admissions cutoffs, subject combinations, and 2025 scheme reforms.
+- 🏔️ Policies and scholarships supporting students from ethnic minority and remote mountainous regions.
+
+*What questions or concerns regarding careers and college majors can I assist you with today?*`;
 
   const [messages, setMessages] = useState<ChatMessage[]>([
     {
@@ -74,7 +87,7 @@ Mình ở đây để lắng nghe, giúp bạn:
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const textareaRef = useRef<HTMLTextAreaElement>(null);
 
-  const quickPrompts = [
+  const quickPrompts = language === 'vi' ? [
     {
       label: '📚 Giỏi Văn, Sử, Anh nên học gì?',
       text: 'Em học giỏi môn Văn, Lịch sử và tiếng Anh nhưng không thích môn Toán thì nên học ngành gì và có những cơ hội việc làm nào?',
@@ -103,6 +116,27 @@ Mình ở đây để lắng nghe, giúp bạn:
       label: '🧭 Đang mất phương hướng',
       text: 'Em đang cảm thấy hoang mang và chưa biết mình thích gì hay hợp nghề nào, bạn có thể gợi ý các bước khám phá bản thân cho em được không?',
     },
+  ] : [
+    {
+      label: '📚 Good at Humanities & Languages?',
+      text: 'I excel in Literature, History, and English but dislike advanced Math. What college majors and career pathways best suit my strengths?',
+    },
+    {
+      label: '🚀 2025 Admission Reforms Summary',
+      text: 'Provide a breakdown of the new 2025 admission schemes and CS K01 combination under the new Vietnamese curriculum.',
+    },
+    {
+      label: '🎯 Career Recommendations for My Profile',
+      text: 'Based on my RIASEC profile and strengths, which career fields suit me best? Outline: Suggested Careers, Why Suitable, Academic Majors, Universities, and Trade-offs.',
+    },
+    {
+      label: '⚖️ Compare Marketing vs CS',
+      text: 'Compare Marketing and Computer Science in a Markdown table: Curricula, Core Skills, Work Environment, and Career Opportunities.',
+    },
+    {
+      label: '📊 University Cutoff Query',
+      text: `With an estimated high school graduation score of around ${profile.estimatedScore || 24} points, which verified universities and majors should I consider?`,
+    },
   ];
 
   // Auto scroll to bottom
@@ -113,6 +147,7 @@ Mình ở đây để lắng nghe, giúp bạn:
   useEffect(() => {
     scrollToBottom();
   }, [messages, isLoading]);
+
 
   // Adjust textarea height dynamically
   useEffect(() => {
@@ -436,8 +471,8 @@ Mình ở đây để lắng nghe, giúp bạn:
           aria-label="Mở CHẠM AI Trợ lý hướng nghiệp"
           className="fixed bottom-5 right-5 z-50 flex items-center gap-2.5 px-4 py-3 rounded-full bg-gradient-to-r from-teal-700 via-teal-800 to-emerald-800 text-white shadow-xl hover:shadow-2xl hover:scale-105 active:scale-95 transition-all duration-200 group border border-teal-400/40 cursor-pointer"
         >
-          <div className="relative w-8 h-8 rounded-full bg-white/20 flex items-center justify-center">
-            <Bot className="w-5 h-5 text-amber-300" />
+          <div className="relative w-8 h-8 rounded-full bg-white p-0.5 flex items-center justify-center shadow-xs">
+            <img src="/logo.png" alt="CHẠM AI" className="w-full h-full object-contain" />
             <span className="absolute -top-1 -right-1 w-3 h-3 bg-amber-400 rounded-full animate-ping"></span>
             <span className="absolute -top-1 -right-1 w-3 h-3 bg-amber-400 rounded-full border-2 border-teal-900"></span>
           </div>
@@ -465,8 +500,8 @@ Mình ở đây để lắng nghe, giúp bạn:
             {/* Header */}
             <div className="bg-gradient-to-r from-teal-900 via-teal-800 to-emerald-950 text-white p-3.5 sm:p-4 flex items-center justify-between shrink-0 shadow-xs">
               <div className="flex items-center gap-2.5">
-                <div className="w-9 h-9 rounded-2xl bg-gradient-to-br from-amber-400 to-orange-500 text-slate-950 flex items-center justify-center font-black shadow-xs shrink-0">
-                  <Bot className="w-5 h-5 text-slate-950" />
+                <div className="w-9 h-9 rounded-2xl bg-white p-1 flex items-center justify-center font-black shadow-xs shrink-0 border border-teal-100">
+                  <img src="/logo.png" alt="CHẠM AI" className="w-full h-full object-contain" />
                 </div>
                 <div>
                   <div className="flex items-center gap-1.5 flex-wrap">

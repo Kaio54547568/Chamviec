@@ -23,13 +23,23 @@ interface SimulationTasksViewProps {
   setProfile: React.Dispatch<React.SetStateAction<StudentProfile>>;
 }
 
+import { CircuitSimulation3D } from './simulations/CircuitSimulation3D';
+import { ArchitectureSimulation3D } from './simulations/ArchitectureSimulation3D';
+import { AgricultureSimulation3D } from './simulations/AgricultureSimulation3D';
+import { useLanguage } from '../i18n/LanguageContext';
+
 export const SimulationTasksView: React.FC<SimulationTasksViewProps> = ({
   selectedTaskId,
   setSelectedTaskId,
   profile,
   setProfile
 }) => {
+  const { t, language } = useLanguage();
   const currentTask = SIMULATION_TASKS.find((t) => t.id === selectedTaskId) || null;
+
+  // Active 3D simulation modal state
+  const [active3DModal, setActive3DModal] = useState<'circuit' | 'architecture' | 'agriculture' | null>(null);
+  const [activeTab, setActiveTab] = useState<'3D' | '2D'>('3D');
 
   // Task active states
   const [currentStageIdx, setCurrentStageIdx] = useState(0);
@@ -102,20 +112,163 @@ export const SimulationTasksView: React.FC<SimulationTasksViewProps> = ({
 
   return (
     <div className="space-y-8 pb-16">
+      {/* 3D Modals */}
+      {active3DModal === 'circuit' && (
+        <CircuitSimulation3D onClose={() => setActive3DModal(null)} />
+      )}
+      {active3DModal === 'architecture' && (
+        <ArchitectureSimulation3D onClose={() => setActive3DModal(null)} />
+      )}
+      {active3DModal === 'agriculture' && (
+        <AgricultureSimulation3D onClose={() => setActive3DModal(null)} />
+      )}
+
       {/* Header */}
-      <div className="bg-white rounded-3xl p-6 sm:p-8 border border-slate-200/80 shadow-xs space-y-3">
-        <div className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-amber-50 text-amber-900 text-xs font-bold">
-          <PlayCircle className="w-3.5 h-3.5 text-amber-600" />
-          <span>Chạm Nghề: Trải nghiệm mô phỏng tình huống thực tế</span>
+      <div className="bg-white rounded-3xl p-6 sm:p-8 border border-slate-200/80 shadow-xs space-y-4">
+        <div className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-cyan-50 text-cyan-900 text-xs font-bold border border-cyan-200">
+          <PlayCircle className="w-3.5 h-3.5 text-cyan-600" />
+          <span>{t.simulation.title}</span>
         </div>
         <h1 className="text-2xl sm:text-3xl font-extrabold text-slate-900 tracking-tight">
-          Học qua trải nghiệm và phản tư (Chu trình Kolb)
+          {language === 'vi' ? 'Chạm Thử Nghề: Phòng Thí Nghiệm 3D & Thử Vai Tình Huống' : 'Career Lab: 3D Simulations & Scenario Roleplay'}
         </h1>
         <p className="text-xs sm:text-sm text-slate-600 max-w-3xl leading-relaxed">
-          Mỗi nhiệm vụ kéo dài khoảng 10–15 phút mô phỏng các tình huống nghề nghiệp có thật tại Việt Nam. 
-          <em> Đây là hoạt động khám phá cảm nhận bản thân, không phải chứng chỉ nghề nghiệp hay bài kiểm tra tuyển dụng.</em>
+          {t.simulation.subtitle}
         </p>
+
+        {/* Tab Switcher */}
+        <div className="flex items-center gap-2 pt-2 border-t border-slate-100">
+          <button
+            onClick={() => setActiveTab('3D')}
+            className={`px-4 py-2 rounded-xl text-xs font-bold transition-all flex items-center gap-2 ${
+              activeTab === '3D'
+                ? 'bg-slate-900 text-white shadow-xs'
+                : 'bg-slate-100 text-slate-600 hover:bg-slate-200'
+            }`}
+          >
+            <Sparkles className="w-3.5 h-3.5 text-cyan-400" />
+            <span>{t.simulation.tab3D}</span>
+            <span className="text-[10px] px-1.5 py-0.2 rounded-full bg-cyan-500/30 text-cyan-300 font-mono">3 Labs</span>
+          </button>
+
+          <button
+            onClick={() => setActiveTab('2D')}
+            className={`px-4 py-2 rounded-xl text-xs font-bold transition-all flex items-center gap-2 ${
+              activeTab === '2D'
+                ? 'bg-slate-900 text-white shadow-xs'
+                : 'bg-slate-100 text-slate-600 hover:bg-slate-200'
+            }`}
+          >
+            <Award className="w-3.5 h-3.5 text-amber-500" />
+            <span>{t.simulation.tab2D}</span>
+            <span className="text-[10px] px-1.5 py-0.2 rounded-full bg-amber-500/30 text-amber-800 font-mono">6 Cases</span>
+          </button>
+        </div>
       </div>
+
+      {/* 3D LABS SHOWCASE SECTION */}
+      {activeTab === '3D' && !currentTask && (
+        <div className="space-y-4">
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+            {/* Lab 1: Circuit */}
+            <div className="bg-slate-900 text-white rounded-3xl p-6 border border-slate-800 hover:border-amber-400 transition-all flex flex-col justify-between space-y-4 group">
+              <div className="space-y-3">
+                <div className="w-12 h-12 rounded-2xl bg-amber-500/20 text-amber-400 flex items-center justify-center border border-amber-500/40">
+                  <PlayCircle className="w-6 h-6" />
+                </div>
+                <div>
+                  <span className="text-[10px] font-mono font-bold text-amber-400 uppercase tracking-wider block">
+                    Three.js WebGL Lab 01
+                  </span>
+                  <h3 className="font-bold text-white text-lg group-hover:text-amber-300 transition-colors">
+                    {t.simulation.circuitTitle}
+                  </h3>
+                </div>
+                <p className="text-xs text-slate-400 leading-relaxed">
+                  {t.simulation.circuitDesc}
+                </p>
+                <div className="text-[11px] text-slate-400 space-y-1 pt-2 border-t border-slate-800">
+                  <div>• Tương tác: Cầu dao, pin DC 12V, bóng đèn dây tóc</div>
+                  <div>• Năng lực rèn luyện: Tư duy logic kỹ thuật (R - Realistic)</div>
+                </div>
+              </div>
+
+              <button
+                onClick={() => setActive3DModal('circuit')}
+                className="w-full py-2.5 rounded-xl bg-amber-500 hover:bg-amber-400 text-slate-950 font-bold text-xs transition-colors shadow-md flex items-center justify-center gap-2"
+              >
+                <span>Vào phòng Lab 3D Điện tử</span>
+                <ArrowRight className="w-4 h-4" />
+              </button>
+            </div>
+
+            {/* Lab 2: Architecture */}
+            <div className="bg-slate-900 text-white rounded-3xl p-6 border border-slate-800 hover:border-cyan-400 transition-all flex flex-col justify-between space-y-4 group">
+              <div className="space-y-3">
+                <div className="w-12 h-12 rounded-2xl bg-cyan-500/20 text-cyan-400 flex items-center justify-center border border-cyan-500/40">
+                  <PlayCircle className="w-6 h-6" />
+                </div>
+                <div>
+                  <span className="text-[10px] font-mono font-bold text-cyan-400 uppercase tracking-wider block">
+                    Three.js WebGL Lab 02
+                  </span>
+                  <h3 className="font-bold text-white text-lg group-hover:text-cyan-300 transition-colors">
+                    {t.simulation.archTitle}
+                  </h3>
+                </div>
+                <p className="text-xs text-slate-400 leading-relaxed">
+                  {t.simulation.archDesc}
+                </p>
+                <div className="text-[11px] text-slate-400 space-y-1 pt-2 border-t border-slate-800">
+                  <div>• Tương tác: Lắp ghép modular tường, mái dốc, bóng đổ mặt trời</div>
+                  <div>• Năng lực rèn luyện: Cảm quan không gian & thẩm mỹ (A & R)</div>
+                </div>
+              </div>
+
+              <button
+                onClick={() => setActive3DModal('architecture')}
+                className="w-full py-2.5 rounded-xl bg-cyan-500 hover:bg-cyan-400 text-slate-950 font-bold text-xs transition-colors shadow-md flex items-center justify-center gap-2"
+              >
+                <span>Vào phòng Studio Kiến trúc</span>
+                <ArrowRight className="w-4 h-4" />
+              </button>
+            </div>
+
+            {/* Lab 3: Agriculture */}
+            <div className="bg-slate-900 text-white rounded-3xl p-6 border border-slate-800 hover:border-emerald-400 transition-all flex flex-col justify-between space-y-4 group">
+              <div className="space-y-3">
+                <div className="w-12 h-12 rounded-2xl bg-emerald-500/20 text-emerald-400 flex items-center justify-center border border-emerald-500/40">
+                  <PlayCircle className="w-6 h-6" />
+                </div>
+                <div>
+                  <span className="text-[10px] font-mono font-bold text-emerald-400 uppercase tracking-wider block">
+                    Three.js WebGL Lab 03
+                  </span>
+                  <h3 className="font-bold text-white text-lg group-hover:text-emerald-300 transition-colors">
+                    {t.simulation.agriTitle}
+                  </h3>
+                </div>
+                <p className="text-xs text-slate-400 leading-relaxed">
+                  {t.simulation.agriDesc}
+                </p>
+                <div className="text-[11px] text-slate-400 space-y-1 pt-2 border-t border-slate-800">
+                  <div>• Tương tác: Cảm biến ánh sáng Lux, độ ẩm tưới nhỏ giọt, EC</div>
+                  <div>• Năng lực rèn luyện: Nghiên cứu khoa học cây trồng (I & R)</div>
+                </div>
+              </div>
+
+              <button
+                onClick={() => setActive3DModal('agriculture')}
+                className="w-full py-2.5 rounded-xl bg-emerald-500 hover:bg-emerald-400 text-slate-950 font-bold text-xs transition-colors shadow-md flex items-center justify-center gap-2"
+              >
+                <span>Vào Nhà kính Nông nghiệp 4.0</span>
+                <ArrowRight className="w-4 h-4" />
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
 
       {/* Main Task List or Active Task Player */}
       {!currentTask ? (

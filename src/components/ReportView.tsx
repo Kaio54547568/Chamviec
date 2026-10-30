@@ -101,16 +101,23 @@ Kế hoạch 30 ngày: Khám phá 2 nghề và phỏng vấn người làm ngh�
       <div className="bg-white rounded-3xl p-6 sm:p-10 border border-slate-200/80 shadow-xs space-y-10">
         {/* Dossier Header */}
         <div className="border-b border-slate-200 pb-6 flex flex-col sm:flex-row sm:items-center justify-between gap-4">
-          <div>
-            <span className="text-xs font-bold text-teal-700 uppercase tracking-widest">
-              CHẠM VIỆC • HƯỚNG NGHIỆP DỰA TRÊN TRẢI NGHIỆM
-            </span>
-            <h2 className="text-2xl font-bold text-slate-900 mt-1">
-              Bản Tổng hợp Hồ sơ Khám phá & Lựa chọn Tuyển sinh
-            </h2>
-            <p className="text-xs text-slate-500 mt-0.5">
-              Cập nhật lần cuối: {new Date(profile.updatedAt).toLocaleDateString('vi-VN')} • Mã hồ sơ: {profile.id}
-            </p>
+          <div className="flex items-center gap-4">
+            <img 
+              src="/logo.png" 
+              alt="CHẠM VIỆC" 
+              className="w-14 h-14 object-contain rounded-2xl bg-white p-1 border border-teal-100 shadow-xs shrink-0" 
+            />
+            <div>
+              <span className="text-xs font-bold text-teal-700 uppercase tracking-widest">
+                CHẠM VIỆC • HƯỚNG NGHIỆP DỰA TRÊN TRẢI NGHIỆM
+              </span>
+              <h2 className="text-2xl font-bold text-slate-900 mt-0.5">
+                Bản Tổng hợp Hồ sơ Khám phá & Lựa chọn Tuyển sinh
+              </h2>
+              <p className="text-xs text-slate-500 mt-0.5">
+                Cập nhật lần cuối: {new Date(profile.updatedAt).toLocaleDateString('vi-VN')} • Mã hồ sơ: {profile.id}
+              </p>
+            </div>
           </div>
           <div className="px-3 py-1.5 rounded-xl bg-slate-100 border border-slate-200 text-xs font-semibold text-slate-700">
             Khối: {profile.grade === 'lop_10' ? 'Lớp 10' : profile.grade === 'lop_11' ? 'Lớp 11' : profile.grade === 'lop_12' ? 'Lớp 12' : 'Tự do'}

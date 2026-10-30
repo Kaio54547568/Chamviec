@@ -241,22 +241,49 @@ Hãy trả lời học sinh với vai trò "CHẠM AI – Người bạn đồng
   });
 
   try {
-    // Enforce 15-second timeout protection
-    const callPromise = ai.models.generateContent({
-      model: 'gemini-3.8-flash',
-      contents: contents,
-      config: {
-        systemInstruction,
-        temperature: 0.5,
-      },
-    });
+    // Enforce modern Gemini SDK model selection per gemini-api guidelines
+    const modelsToTry = [
+      process.env.GEMINI_MODEL || 'gemini-3.8-flash',
+      'gemini-flash-latest',
+    ].filter((v, idx, arr) => arr.indexOf(v) === idx);
 
-    const timeoutPromise = new Promise<never>((_, reject) =>
-      setTimeout(() => reject(new Error('TIMEOUT_15S')), 15000)
-    );
+    let response: any = null;
+    let lastError: any = null;
 
-    const response = await Promise.race([callPromise, timeoutPromise]);
-    const replyText = response.text?.trim();
+    for (const modelName of modelsToTry) {
+      try {
+        const callPromise = ai.models.generateContent({
+          model: modelName,
+          contents: contents,
+          config: {
+            systemInstruction,
+          },
+        });
+
+        const timeoutPromise = new Promise<never>((_, reject) =>
+          setTimeout(() => reject(new Error('TIMEOUT_15S')), 15000)
+        );
+
+        response = await Promise.race([callPromise, timeoutPromise]);
+        if (response && response.text) {
+          break;
+        }
+      } catch (callErr: any) {
+        lastError = callErr;
+        const msg = String(callErr?.message || callErr);
+        if (msg.includes('404') || msg.includes('NOT_FOUND') || msg.includes('not supported') || msg.includes('not found')) {
+          console.warn(`[CHAM AI] Model ${modelName} not available, attempting fallback...`);
+          continue;
+        }
+        throw callErr;
+      }
+    }
+
+    if (!response && lastError) {
+      throw lastError;
+    }
+
+    const replyText = response?.text?.trim();
 
     if (!replyText) {
       return {

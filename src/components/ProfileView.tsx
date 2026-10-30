@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { 
   Sparkles, 
   User, 
@@ -10,11 +10,15 @@ import {
   AlertCircle,
   BarChart3,
   Bookmark,
-  ArrowRight
+  ArrowRight,
+  ShieldCheck,
+  CreditCard,
+  Lock
 } from 'lucide-react';
-import { GradeLevel, RiasecCode, StudentProfile } from '../types';
+import { GradeLevel, RiasecCode, StudentProfile, TestQuotaInfo } from '../types';
 import { RIASEC_INFO, RIASEC_QUESTIONS, CAREER_VALUES_LIST } from '../data/riasecQuestions';
 import { exportProfileToJson, resetProfile, saveStudentProfile } from '../utils/storage';
+import { useLanguage } from '../i18n/LanguageContext';
 
 interface ProfileViewProps {
   profile: StudentProfile;
@@ -27,28 +31,66 @@ export const ProfileView: React.FC<ProfileViewProps> = ({
   setProfile,
   onGoToRecommendations
 }) => {
-  const [activeTab, setActiveTab] = useState<'profile' | 'riasec'>('riasec');
-  const [questionAnswers, setQuestionAnswers] = useState<Record<string, { rating: number; hasTried: boolean }>>({});
+  const { t, language } = useLanguage();
+  const [activeTab, setActiveTab] = useState<'riasec' | 'profile'>('riasec');
+  const [questionAnswers, setQuestionAnswers] = useState<Record<string, { rating: number; hasTried: boolean }>>(() => {
+    // Restore past answers if saved
+    try {
+      const saved = localStorage.getItem('cham_viec_riasec_answers');
+      if (saved) return JSON.parse(saved);
+    } catch (e) {
+      // ignore
+    }
+    return {};
+  });
   const [saveToast, setSaveToast] = useState(false);
 
-  // Subject options in Vietnamese High School curriculum
-  const SUBJECT_OPTIONS = [
+  // Quota & Retake Policy State
+  const [quotaInfo, setQuotaInfo] = useState<TestQuotaInfo | null>(null);
+  const [isSubmittingAttempt, setIsSubmittingAttempt] = useState(false);
+  const [quotaNotice, setQuotaNotice] = useState<string | null>(null);
+  const [idempotencyKey] = useState<string>(() => {
+    let key = sessionStorage.getItem('cham_viec_test_idem_key');
+    if (!key) {
+      key = `CV-TEST-${Date.now()}-${Math.random().toString(36).slice(2, 8)}`;
+      sessionStorage.setItem('cham_viec_test_idem_key', key);
+    }
+    return key;
+  });
+
+  // Fetch quota from server on mount
+  useEffect(() => {
+    fetchQuota();
+  }, []);
+
+  const fetchQuota = async () => {
+    try {
+      const res = await fetch('/api/test-quota?email=student@chamviec.vn');
+      const data = await res.json();
+      if (data.success && data.data) {
+        setQuotaInfo(data.data);
+      }
+    } catch (e) {
+      console.warn('Could not fetch test quota:', e);
+    }
+  };
+
+  // 5-point Likert Scale options
+  const SCALE_OPTIONS = [
+    { val: 1, label: t.riasec.scale1, shortLabel: '1' },
+    { val: 2, label: t.riasec.scale2, shortLabel: '2' },
+    { val: 3, label: t.riasec.scale3, shortLabel: '3' },
+    { val: 4, label: t.riasec.scale4, shortLabel: '4' },
+    { val: 5, label: t.riasec.scale5, shortLabel: '5' },
+  ];
+
+  // Subject options
+  const SUBJECT_OPTIONS = language === 'vi' ? [
     'Toán học', 'Ngữ văn', 'Tiếng Anh', 'Vật lý', 'Hóa học', 'Sinh học', 
     'Lịch sử', 'Địa lý', 'Tin học', 'Giáo dục kinh tế & Pháp luật', 'Công nghệ', 'Mỹ thuật / Âm nhạc'
-  ];
-
-  const REGION_OPTIONS = [
-    { id: 'MienBac', label: 'Miền Bắc (Hà Nội, Thái Nguyên, Hải Phòng...)' },
-    { id: 'MienTrung', label: 'Miền Trung (Đà Nẵng, Huế, Quy Nhơn...)' },
-    { id: 'MienNam', label: 'Miền Nam (TP. Hồ Chí Minh, Cần Thơ, Bình Dương...)' },
-    { id: 'GanNha', label: 'Ưu tiên gần nhà / Trong tỉnh nhà' }
-  ];
-
-  const BUDGET_OPTIONS = [
-    'Tiết kiệm (Dưới 15 triệu/năm - ưu tiên trường sư phạm, công lập hỗ trợ)',
-    'Trung bình (15 - 35 triệu/năm - đại học công lập tự chủ)',
-    'Cao (Trên 35 triệu/năm - chương trình tiên tiến, chất lượng cao, quốc tế)',
-    'Chưa biết / Cần tìm hiểu thêm các gói học bổng'
+  ] : [
+    'Mathematics', 'Literature', 'English', 'Physics', 'Chemistry', 'Biology',
+    'History', 'Geography', 'Informatics / CS', 'Economics & Law', 'Technology / Engineering', 'Arts / Music'
   ];
 
   const handleUpdateField = (key: keyof StudentProfile, value: any) => {
@@ -80,6 +122,11 @@ export const ProfileView: React.FC<ProfileViewProps> = ({
       [qId]: { rating, hasTried }
     };
     setQuestionAnswers(nextAnswers);
+    try {
+      localStorage.setItem('cham_viec_riasec_answers', JSON.stringify(nextAnswers));
+    } catch (e) {
+      // ignore
+    }
 
     // Recalculate scores for RIASEC
     const newScores: Record<RiasecCode, number> = { R: 0, I: 0, A: 0, S: 0, E: 0, C: 0 };
@@ -99,13 +146,51 @@ export const ProfileView: React.FC<ProfileViewProps> = ({
     showSavedIndicator();
   };
 
+  const handleSubmitCompleteTest = async () => {
+    setIsSubmittingAttempt(true);
+    setQuotaNotice(null);
+
+    try {
+      const res = await fetch('/api/test-attempts', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          email: 'student@chamviec.vn',
+          idempotencyKey,
+          riasecScores: profile.riasecScores,
+        })
+      });
+
+      const resData = await res.json();
+
+      if (res.status === 402) {
+        // Payment required
+        setQuotaNotice(resData.message || t.riasec.retakePrompt);
+      } else if (resData.success) {
+        fetchQuota();
+        onGoToRecommendations();
+      }
+    } catch (e) {
+      // If offline/network issue, still allow navigating to recommendations locally
+      onGoToRecommendations();
+    } finally {
+      setIsSubmittingAttempt(false);
+    }
+  };
+
   const handleResetData = () => {
-    if (window.confirm('Em có chắc chắn muốn làm mới toàn bộ hồ sơ và kết quả khám phá trên thiết bị này không?')) {
+    if (window.confirm(language === 'vi' ? 'Em có chắc chắn muốn làm mới toàn bộ kết quả khảo sát trên thiết bị này không?' : 'Are you sure you want to reset all test results?')) {
       const clean = resetProfile();
       setProfile(clean);
       setQuestionAnswers({});
+      localStorage.removeItem('cham_viec_riasec_answers');
+      sessionStorage.removeItem('cham_viec_test_idem_key');
     }
   };
+
+  // Count answered questions
+  const answeredCount = Object.keys(questionAnswers).length;
+  const progressPercent = Math.round((answeredCount / RIASEC_QUESTIONS.length) * 100);
 
   // Find top RIASEC dimensions
   const sortedRiasec = (Object.keys(profile.riasecScores) as RiasecCode[]).sort(
@@ -118,199 +203,189 @@ export const ProfileView: React.FC<ProfileViewProps> = ({
       <div className="bg-white rounded-3xl p-6 sm:p-8 border border-slate-200/80 shadow-xs space-y-4">
         <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
           <div>
-            <div className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-teal-50 text-teal-800 text-xs font-bold mb-2">
+            <div className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-teal-50 text-teal-900 text-xs font-bold border border-teal-200">
               <Sparkles className="w-3.5 h-3.5 text-teal-600" />
-              <span>Hồ sơ tự nguyện & Khám phá sở thích</span>
+              <span>Cơ sở khoa học: RIASEC (John Holland) & SCCT</span>
             </div>
-            <h1 className="text-2xl sm:text-3xl font-extrabold text-slate-900 tracking-tight">
-              Hiểu bản thân trước khi chọn hướng đi
+            <h1 className="text-2xl sm:text-3xl font-extrabold text-slate-900 tracking-tight mt-1">
+              {t.riasec.title}
             </h1>
-            <p className="text-xs sm:text-sm text-slate-500 max-w-2xl mt-1">
-              Hồ sơ này giúp thuật toán gợi ý chính xác hơn theo nhu cầu của em. Dữ liệu lưu cục bộ trên trình duyệt, không chia sẻ cho bên thứ ba.
+            <p className="text-xs sm:text-sm text-slate-600 max-w-3xl leading-relaxed mt-1">
+              {t.riasec.subtitle}
             </p>
           </div>
 
           <div className="flex items-center gap-2">
             <button
-              onClick={() => exportProfileToJson(profile)}
-              className="px-3 py-2 rounded-xl bg-slate-100 hover:bg-slate-200 text-slate-700 text-xs font-semibold flex items-center gap-1.5 transition-colors"
-              title="Tải tệp JSON hồ sơ về máy tính"
+              onClick={() => setActiveTab('riasec')}
+              className={`px-4 py-2 rounded-xl text-xs font-bold transition-all ${
+                activeTab === 'riasec'
+                  ? 'bg-teal-600 text-white shadow-xs'
+                  : 'bg-slate-100 text-slate-700 hover:bg-slate-200'
+              }`}
             >
-              <Download className="w-3.5 h-3.5" />
-              <span>Xuất JSON</span>
+              1. Khảo sát 60 câu (RIASEC)
             </button>
             <button
-              onClick={handleResetData}
-              className="px-3 py-2 rounded-xl bg-rose-50 hover:bg-rose-100 text-rose-700 text-xs font-semibold flex items-center gap-1.5 transition-colors"
-              title="Làm mới lại từ đầu"
+              onClick={() => setActiveTab('profile')}
+              className={`px-4 py-2 rounded-xl text-xs font-bold transition-all ${
+                activeTab === 'profile'
+                  ? 'bg-teal-600 text-white shadow-xs'
+                  : 'bg-slate-100 text-slate-700 hover:bg-slate-200'
+              }`}
             >
-              <RefreshCw className="w-3.5 h-3.5" />
-              <span>Làm mới</span>
+              2. Hồ sơ học tập & Nguyện vọng
             </button>
           </div>
         </div>
 
-        {/* Local Storage Disclaimer */}
-        <div className="flex items-start gap-2.5 p-3 rounded-xl bg-amber-50/80 border border-amber-200 text-amber-900 text-xs">
-          <Info className="w-4 h-4 text-amber-700 shrink-0 mt-0.5" />
-          <div>
-            <strong>Lưu ý bảo mật:</strong> Hồ sơ nháp đang được lưu an toàn trực tiếp trên bộ nhớ trình duyệt máy tính/điện thoại của em. Nếu em xóa lịch sử duyệt web hoặc đổi thiết bị khác, dữ liệu có thể trở về mặc định. Em có thể bấm "Xuất JSON" để lưu giữ bản sao.
+        {/* Retake Policy & Attempt Quota Banner */}
+        <div className="p-4 rounded-2xl bg-amber-50/70 border border-amber-200 text-xs text-amber-950 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3">
+          <div className="flex items-start gap-2.5">
+            <ShieldCheck className="w-4 h-4 text-amber-700 shrink-0 mt-0.5" />
+            <div className="space-y-0.5">
+              <div className="font-bold flex items-center gap-2">
+                <span>{t.riasec.freeFirstAttempt}</span>
+                <span className="text-[11px] font-normal text-amber-800">
+                  ({t.riasec.attemptUsed} <strong>{quotaInfo?.totalAttempts ?? 1}</strong> lần)
+                </span>
+              </div>
+              <p className="text-amber-800 leading-relaxed">
+                {t.riasec.retakePrompt}
+              </p>
+            </div>
+          </div>
+
+          <div className="flex items-center gap-2 shrink-0">
+            <span className="text-[11px] font-mono font-bold bg-white px-2.5 py-1 rounded-lg border border-amber-200 text-amber-900">
+              {t.riasec.retakeCreditStatus} {quotaInfo?.retakeCredits ?? 0}
+            </span>
           </div>
         </div>
 
-        {/* Tab switcher */}
-        <div className="flex items-center gap-2 pt-2 border-t border-slate-100">
-          <button
-            onClick={() => setActiveTab('riasec')}
-            className={`flex items-center gap-2 px-4 py-2.5 rounded-xl text-xs font-bold transition-all ${
-              activeTab === 'riasec'
-                ? 'bg-teal-600 text-white shadow-xs'
-                : 'text-slate-600 hover:bg-slate-100'
-            }`}
-          >
-            <BarChart3 className="w-4 h-4" />
-            <span>1. Bảng khám phá RIASEC (Sở thích & SCCT)</span>
-          </button>
+        {quotaNotice && (
+          <div className="p-3 rounded-xl bg-rose-50 border border-rose-200 text-rose-800 text-xs flex items-center gap-2">
+            <AlertCircle className="w-4 h-4 shrink-0" />
+            <span>{quotaNotice}</span>
+          </div>
+        )}
 
-          <button
-            onClick={() => setActiveTab('profile')}
-            className={`flex items-center gap-2 px-4 py-2.5 rounded-xl text-xs font-bold transition-all ${
-              activeTab === 'profile'
-                ? 'bg-teal-600 text-white shadow-xs'
-                : 'text-slate-600 hover:bg-slate-100'
-            }`}
-          >
-            <User className="w-4 h-4" />
-            <span>2. Thông tin học tập & Hoàn cảnh tự nguyện</span>
-          </button>
+        {/* Progress Bar */}
+        <div className="space-y-1.5 pt-2 border-t border-slate-100">
+          <div className="flex items-center justify-between text-xs font-bold text-slate-700">
+            <span>{t.riasec.progress}: {answeredCount} / {RIASEC_QUESTIONS.length} câu</span>
+            <span className="font-mono text-teal-700">{progressPercent}%</span>
+          </div>
+          <div className="w-full h-2 rounded-full bg-slate-100 overflow-hidden">
+            <div
+              className="h-full bg-teal-600 transition-all duration-300 rounded-full"
+              style={{ width: `${progressPercent}%` }}
+            />
+          </div>
         </div>
       </div>
 
-      {/* Save indicator toast */}
-      {saveToast && (
-        <div className="fixed bottom-6 right-6 z-50 flex items-center gap-2 px-4 py-2 rounded-xl bg-slate-900 text-white text-xs font-semibold shadow-lg animate-bounce">
-          <CheckCircle2 className="w-4 h-4 text-emerald-400" />
-          <span>Đã tự động lưu thay đổi vào máy của em!</span>
-        </div>
-      )}
-
-      {/* TAB 1: RIASEC ASSESSMENT */}
+      {/* TAB 1: RIASEC QUESTIONNAIRE */}
       {activeTab === 'riasec' && (
-        <div className="space-y-8">
-          {/* Scientific Context Disclaimer */}
-          <div className="bg-white rounded-3xl p-6 border border-slate-200/80 shadow-xs space-y-3">
-            <div className="flex items-center gap-2 text-teal-800 font-bold text-sm">
-              <HelpCircle className="w-4 h-4 text-teal-600" />
-              <span>Cơ sở khoa học: Khung sở thích nghề nghiệp Holland (RIASEC)</span>
-            </div>
-            <p className="text-xs text-slate-600 leading-relaxed">
-              Bảng câu hỏi dưới đây được biên soạn dựa trên cảm hứng từ <strong>O*NET Interest Profiler</strong> và lý thuyết <strong>Nhận thức xã hội về nghề nghiệp (SCCT - Lent, Brown & Hackett)</strong>, được bản địa hóa phù hợp với học sinh Việt Nam. 
-              <br />
-              <em>*Tuyên bố minh bạch: Đây là bảng khám phá sở thích tham khảo (phiên bản 1.2), không phải trắc nghiệm tâm lý chuẩn hóa lâm sàng. Sở thích không đồng nghĩa với năng lực cố định và có thể thay đổi sau khi em trải nghiệm thực tế.</em>
-            </p>
+        <div className="space-y-6">
+          {/* Top 3 RIASEC Summary Card (if answered > 0) */}
+          {answeredCount > 0 && (
+            <div className="bg-white rounded-3xl p-6 border border-slate-200/80 shadow-xs space-y-4">
+              <h3 className="font-extrabold text-slate-900 text-sm flex items-center gap-2">
+                <BarChart3 className="w-4 h-4 text-teal-600" />
+                <span>{t.riasec.resultsTitle}</span>
+              </h3>
 
-            {/* Current Top RIASEC Highlights */}
-            <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-3 pt-3">
-              {(Object.keys(RIASEC_INFO) as RiasecCode[]).map((code) => {
-                const info = RIASEC_INFO[code];
-                const score = profile.riasecScores[code] || 0;
-                const isTop = sortedRiasec[0] === code || sortedRiasec[1] === code;
-                return (
-                  <div
-                    key={code}
-                    className={`p-3 rounded-2xl border text-center transition-all ${
-                      isTop
-                        ? 'bg-teal-50 border-teal-400 ring-2 ring-teal-200'
-                        : 'bg-slate-50 border-slate-200'
-                    }`}
-                  >
-                    <div className="text-xs font-extrabold text-slate-400 mb-0.5">Nhóm {code}</div>
-                    <div className="text-xs font-bold text-slate-800 line-clamp-1">{info.titleVi}</div>
-                    <div className="text-lg font-black text-teal-700 mt-1">{score} <span className="text-[10px] font-normal text-slate-400">điểm</span></div>
-                  </div>
-                );
-              })}
-            </div>
-          </div>
-
-          {/* Question List */}
-          <div className="bg-white rounded-3xl p-6 sm:p-8 border border-slate-200/80 shadow-xs space-y-6">
-            <div className="flex items-center justify-between">
-              <div>
-                <h2 className="text-lg font-bold text-slate-900">
-                  Hãy đánh giá cảm nhận của em với các hoạt động sau:
-                </h2>
-                <p className="text-xs text-slate-500">
-                  Em không cần đắn đo quá lâu, hãy chọn theo cảm giác tự nhiên nhất của mình.
-                </p>
+              <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-3">
+                {sortedRiasec.map((code) => {
+                  const info = RIASEC_INFO[code];
+                  const score = profile.riasecScores[code] || 0;
+                  return (
+                    <div
+                      key={code}
+                      className={`p-3 rounded-2xl border text-center space-y-1 ${info.bgLight}`}
+                    >
+                      <div className="font-extrabold text-lg font-mono text-slate-900">
+                        {code}
+                      </div>
+                      <div className={`font-bold text-xs ${info.color}`}>
+                        {info.titleVi}
+                      </div>
+                      <div className="font-extrabold text-sm text-slate-800">
+                        {score} đ
+                      </div>
+                    </div>
+                  );
+                })}
               </div>
-              <span className="text-xs font-semibold text-slate-400">
-                {Object.keys(questionAnswers).length} / {RIASEC_QUESTIONS.length} câu đã trả lời
+            </div>
+          )}
+
+          {/* 60 Standard Questions List */}
+          <div className="bg-white rounded-3xl p-6 sm:p-8 border border-slate-200/80 shadow-xs space-y-6">
+            <div className="flex items-center justify-between pb-3 border-b border-slate-200">
+              <span className="text-xs font-bold text-slate-800">
+                Thang đo 5 mức độ: 1 ({t.riasec.scale1}) đến 5 ({t.riasec.scale5})
               </span>
+              <button
+                onClick={handleResetData}
+                className="text-xs text-rose-600 hover:underline flex items-center gap-1 font-semibold"
+              >
+                <RefreshCw className="w-3.5 h-3.5" />
+                <span>Làm mới kết quả</span>
+              </button>
             </div>
 
             <div className="space-y-4">
               {RIASEC_QUESTIONS.map((q, idx) => {
                 const ans = questionAnswers[q.id] || { rating: 0, hasTried: false };
-                const groupInfo = RIASEC_INFO[q.code];
+                const info = RIASEC_INFO[q.code];
+
                 return (
                   <div
                     key={q.id}
-                    className="p-4 rounded-2xl bg-slate-50 border border-slate-200/80 hover:border-slate-300 transition-all space-y-3"
+                    className={`p-4 rounded-2xl border transition-all ${
+                      ans.rating > 0
+                        ? 'bg-slate-50/70 border-slate-200'
+                        : 'bg-white border-slate-200 hover:border-teal-300'
+                    }`}
                   >
-                    <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2">
-                      <div className="flex items-start gap-2.5">
-                        <span className="w-6 h-6 rounded-full bg-slate-200 text-slate-700 font-bold text-xs flex items-center justify-center shrink-0 mt-0.5">
-                          {idx + 1}
-                        </span>
-                        <div>
-                          <p className="text-sm font-semibold text-slate-800 leading-snug">
-                            {q.activityText}
-                          </p>
-                          <p className="text-xs text-slate-500 mt-0.5">
-                            {q.vietnameseContextTip}
-                          </p>
+                    <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+                      <div className="space-y-1 max-w-2xl">
+                        <div className="flex items-center gap-2">
+                          <span className="font-mono text-xs font-bold text-slate-400">
+                            #{idx + 1}
+                          </span>
+                          <span className={`text-[10px] font-bold px-2 py-0.5 rounded-full border ${info.bgLight} ${info.color}`}>
+                            Nhóm {q.code} - {info.titleVi}
+                          </span>
                         </div>
+                        <p className="text-xs sm:text-sm font-bold text-slate-900 leading-snug">
+                          {q.activityText}
+                        </p>
+                        <p className="text-[11px] text-slate-500 italic">
+                          💡 Gợi ý thực tế: {q.vietnameseContextTip}
+                        </p>
                       </div>
-                      <span className="self-start sm:self-center text-[10px] font-bold px-2 py-0.5 rounded-full bg-slate-200 text-slate-700 shrink-0">
-                        Nhóm {q.code} ({groupInfo.name})
-                      </span>
-                    </div>
 
-                    <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 pt-2 border-t border-slate-200/60">
-                      {/* SCCT Experience Flag */}
-                      <label className="flex items-center gap-2 cursor-pointer text-xs text-slate-600">
-                        <input
-                          type="checkbox"
-                          checked={ans.hasTried}
-                          onChange={(e) =>
-                            handleAnswerQuestion(q.id, q.code, ans.rating, e.target.checked)
-                          }
-                          className="w-4 h-4 rounded text-teal-600 focus:ring-teal-500"
-                        />
-                        <span>Em đã từng có cơ hội thử làm việc này rồi</span>
-                      </label>
-
-                      {/* 4-level rating buttons */}
-                      <div className="flex items-center gap-1.5 overflow-x-auto">
-                        {[
-                          { val: 0, label: 'Không thích' },
-                          { val: 1, label: 'Bình thường' },
-                          { val: 2, label: 'Thích' },
-                          { val: 3, label: 'Rất thích' }
-                        ].map((btn) => (
+                      {/* 5-point Likert Scale Buttons */}
+                      <div className="flex items-center gap-1.5 shrink-0">
+                        {SCALE_OPTIONS.map((btn) => (
                           <button
                             key={btn.val}
+                            type="button"
                             onClick={() =>
                               handleAnswerQuestion(q.id, q.code, btn.val, ans.hasTried)
                             }
-                            className={`px-3 py-1.5 rounded-xl text-xs font-semibold transition-all ${
+                            className={`px-2.5 sm:px-3 py-1.5 rounded-xl text-xs font-bold transition-all ${
                               ans.rating === btn.val
                                 ? 'bg-teal-600 text-white shadow-xs scale-105'
-                                : 'bg-white text-slate-600 hover:bg-slate-100 border border-slate-200'
+                                : 'bg-slate-100 text-slate-600 hover:bg-slate-200 border border-slate-200'
                             }`}
+                            title={btn.label}
                           >
-                            {btn.label}
+                            <span className="sm:hidden">{btn.shortLabel}</span>
+                            <span className="hidden sm:inline">{btn.label}</span>
                           </button>
                         ))}
                       </div>
@@ -320,16 +395,18 @@ export const ProfileView: React.FC<ProfileViewProps> = ({
               })}
             </div>
 
-            {/* Next Step Trigger */}
-            <div className="pt-4 flex items-center justify-between">
+            {/* Bottom Next Step Trigger */}
+            <div className="pt-6 border-t border-slate-200 flex flex-col sm:flex-row items-center justify-between gap-4">
               <span className="text-xs text-slate-500">
-                Sau khi trả lời, hệ thống sẽ tự động cập nhật gợi ý nghề tương ứng.
+                Lần làm bài đầu tiên miễn phí 100%. Đổi ngôn ngữ giữa chừng không làm mất câu trả lời.
               </span>
+
               <button
-                onClick={onGoToRecommendations}
-                className="px-5 py-2.5 rounded-xl bg-teal-600 hover:bg-teal-700 text-white font-bold text-xs shadow-md transition-all flex items-center gap-2"
+                disabled={isSubmittingAttempt}
+                onClick={handleSubmitCompleteTest}
+                className="px-6 py-3 rounded-xl bg-teal-600 hover:bg-teal-700 text-white font-bold text-xs shadow-md transition-all flex items-center gap-2"
               >
-                <span>Xem gợi ý nghề có giải thích</span>
+                <span>{isSubmittingAttempt ? 'Đang xác nhận kết quả...' : 'Xem gợi ý nghề có giải thích'}</span>
                 <ArrowRight className="w-4 h-4" />
               </button>
             </div>
@@ -371,7 +448,7 @@ export const ProfileView: React.FC<ProfileViewProps> = ({
           <div className="space-y-3">
             <div className="flex items-center justify-between">
               <label className="block text-sm font-bold text-slate-900">
-                2. Các môn học em cảm thấy yêu thích hoặc có hứng thú nhất (Chọn tối đa 4)
+                2. Các môn học em cảm thấy yêu thích hoặc có hứng thú nhất (Chọn tối đa 4 môn)
               </label>
               <span className="text-xs text-slate-400">
                 {profile.favoriteSubjects.length} môn đã chọn
@@ -397,109 +474,49 @@ export const ProfileView: React.FC<ProfileViewProps> = ({
             </div>
           </div>
 
-          {/* Career Values */}
-          <div className="space-y-3">
-            <label className="block text-sm font-bold text-slate-900">
-              3. Những giá trị nghề nghiệp em ưu tiên nhất khi đi làm
-            </label>
-            <p className="text-xs text-slate-500">
-              Mỗi nghề đều có những đánh đổi. Việc hiểu rõ ưu tiên giúp em không bị vỡ mộng sau này.
-            </p>
-            <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-3">
-              {CAREER_VALUES_LIST.map((val) => {
-                const isSelected = profile.priorityValues.includes(val.id);
-                return (
-                  <div
-                    key={val.id}
-                    onClick={() => toggleArrayItem('priorityValues', val.id)}
-                    className={`p-4 rounded-2xl border cursor-pointer transition-all ${
-                      isSelected
-                        ? 'bg-amber-50/80 border-amber-500 ring-2 ring-amber-200'
-                        : 'bg-slate-50 border-slate-200 hover:bg-slate-100'
-                    }`}
-                  >
-                    <div className="flex items-center justify-between mb-1">
-                      <span className="font-bold text-xs text-slate-900">{val.name}</span>
-                      {isSelected && <span className="text-amber-700 font-bold text-xs">✓ Chọn</span>}
-                    </div>
-                    <p className="text-[11px] text-slate-600 leading-normal">{val.description}</p>
-                  </div>
-                );
-              })}
+          {/* Estimated Score & Target Combination */}
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+            <div className="space-y-2">
+              <label className="block text-sm font-bold text-slate-900">
+                3. Điểm thi tốt nghiệp THPT dự kiến (Thang 30):
+              </label>
+              <input
+                type="number"
+                min={10}
+                max={30}
+                step={0.25}
+                value={profile.estimatedScore || 24}
+                onChange={(e) => handleUpdateField('estimatedScore', parseFloat(e.target.value) || 24)}
+                className="w-full p-2.5 rounded-xl border border-slate-300 font-mono font-bold text-slate-900 text-sm focus:ring-2 focus:ring-teal-500 focus:outline-none"
+              />
+              <span className="text-[11px] text-slate-500">Dùng để gợi ý danh sách trường vừa sức năm 2024–2025.</span>
+            </div>
+
+            <div className="space-y-2">
+              <label className="block text-sm font-bold text-slate-900">
+                4. Tổ hợp môn xét tuyển mục tiêu:
+              </label>
+              <input
+                type="text"
+                value={(profile.targetCombinations || ['A00', 'D01']).join(', ')}
+                onChange={(e) => handleUpdateField('targetCombinations', e.target.value.split(',').map(s => s.trim()))}
+                placeholder="Ví dụ: A00, A01, D01, K01..."
+                className="w-full p-2.5 rounded-xl border border-slate-300 font-mono text-slate-900 text-sm focus:ring-2 focus:ring-teal-500 focus:outline-none"
+              />
+              <span className="text-[11px] text-slate-500">Bao gồm cả các tổ hợp mới 2025 (K01 Toán-Lý-Tin).</span>
             </div>
           </div>
 
-          {/* Region & Budget */}
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-6 pt-4 border-t border-slate-100">
-            <div className="space-y-3">
-              <label className="block text-sm font-bold text-slate-900">
-                4. Khu vực địa lý em muốn học đại học
-              </label>
-              <div className="space-y-2">
-                {REGION_OPTIONS.map((reg) => {
-                  const isChecked = profile.preferredRegions.includes(reg.id);
-                  return (
-                    <label
-                      key={reg.id}
-                      className="flex items-center gap-2 p-2.5 rounded-xl bg-slate-50 border border-slate-200 cursor-pointer text-xs text-slate-700 hover:bg-slate-100"
-                    >
-                      <input
-                        type="checkbox"
-                        checked={isChecked}
-                        onChange={() => toggleArrayItem('preferredRegions', reg.id)}
-                        className="w-4 h-4 rounded text-teal-600 focus:ring-teal-500"
-                      />
-                      <span>{reg.label}</span>
-                    </label>
-                  );
-                })}
-              </div>
-            </div>
-
-            <div className="space-y-3">
-              <label className="block text-sm font-bold text-slate-900">
-                5. Khoảng ngân sách học phí dự kiến của gia đình
-              </label>
-              <div className="space-y-2">
-                {BUDGET_OPTIONS.map((bud) => (
-                  <label
-                    key={bud}
-                    className="flex items-center gap-2 p-2.5 rounded-xl bg-slate-50 border border-slate-200 cursor-pointer text-xs text-slate-700 hover:bg-slate-100"
-                  >
-                    <input
-                      type="radio"
-                      name="budget"
-                      checked={profile.budgetRange === bud}
-                      onChange={() => handleUpdateField('budgetRange', bud)}
-                      className="w-4 h-4 text-teal-600 focus:ring-teal-500"
-                    />
-                    <span>{bud}</span>
-                  </label>
-                ))}
-              </div>
-
-              {/* Scholarship toggle */}
-              <label className="flex items-center gap-2 pt-2 cursor-pointer text-xs text-slate-700 font-semibold">
-                <input
-                  type="checkbox"
-                  checked={profile.scholarshipInterest}
-                  onChange={(e) => handleUpdateField('scholarshipInterest', e.target.checked)}
-                  className="w-4 h-4 rounded text-teal-600 focus:ring-teal-500"
-                />
-                <span>Em có nguyện vọng tìm hiểu các chính sách học bổng / miễn giảm học phí</span>
-              </label>
-            </div>
-          </div>
-
-          <div className="pt-6 border-t border-slate-100 flex items-center justify-between">
+          {/* Next Step */}
+          <div className="pt-6 border-t border-slate-200 flex items-center justify-between">
             <span className="text-xs text-slate-500">
-              Mọi thông tin đều có thể thay đổi lại bất kỳ lúc nào.
+              Thông tin học tập sẽ được lưu vào thiết bị và đồng bộ cùng báo cáo hướng nghiệp.
             </span>
             <button
               onClick={onGoToRecommendations}
-              className="px-5 py-2.5 rounded-xl bg-teal-600 hover:bg-teal-700 text-white font-bold text-xs shadow-md transition-all flex items-center gap-2"
+              className="px-6 py-3 rounded-xl bg-teal-600 hover:bg-teal-700 text-white font-bold text-xs shadow-md flex items-center gap-2"
             >
-              <span>Xem gợi ý nghề có giải thích</span>
+              <span>Xem gợi ý ngành & nghề phù hợp</span>
               <ArrowRight className="w-4 h-4" />
             </button>
           </div>

@@ -35,25 +35,42 @@ export const HomeView: React.FC<HomeViewProps> = ({
         <div className="absolute top-0 right-0 -mr-20 -mt-20 w-96 h-96 rounded-full bg-teal-500/20 blur-3xl pointer-events-none"></div>
         <div className="absolute bottom-0 left-0 -ml-20 -mb-20 w-80 h-80 rounded-full bg-amber-500/20 blur-3xl pointer-events-none"></div>
 
-        <div className="relative z-10 max-w-3xl space-y-6">
-          <div className="inline-flex items-center gap-2 px-3 py-1.5 rounded-full bg-white/10 backdrop-blur-md border border-white/20 text-teal-200 text-xs font-semibold">
-            <Sparkles className="w-3.5 h-3.5 text-amber-300" />
-            <span>Nền tảng Hướng nghiệp & Tuyển sinh THPT Việt Nam</span>
+        <div className="relative z-10 space-y-8">
+          <div className="flex flex-col lg:flex-row items-start lg:items-center justify-between gap-8">
+            <div className="max-w-3xl space-y-6">
+              <div className="inline-flex items-center gap-2.5 px-3.5 py-1.5 rounded-full bg-white/10 backdrop-blur-md border border-white/20 text-teal-200 text-xs font-semibold">
+                <img src="/logo.png" alt="CHẠM VIỆC" className="w-5 h-5 object-contain bg-white rounded-full p-0.5" />
+                <span>Nền tảng Hướng nghiệp & Tuyển sinh THPT Việt Nam</span>
+              </div>
+
+              <h1 className="text-3xl sm:text-5xl lg:text-6xl font-extrabold tracking-tight leading-tight text-white">
+                Em chưa cần biết ngay mình sẽ làm nghề gì.{' '}
+                <span className="text-transparent bg-clip-text bg-gradient-to-r from-amber-300 to-orange-400">
+                  Hãy bắt đầu bằng một trải nghiệm.
+                </span>
+              </h1>
+
+              <p className="text-base sm:text-lg text-teal-100/90 leading-relaxed">
+                <strong>CHẠM VIỆC</strong> đồng hành cùng học sinh lớp 10–12 trên khắp mọi miền tổ quốc: khám phá sở thích theo bằng chứng cụ thể, thử sức với các tình huống nghề nghiệp thật, và tra cứu dữ liệu điểm chuẩn đại học 3 năm chính thức có dẫn nguồn minh bạch.
+              </p>
+            </div>
+
+            {/* Official Logo Brand Showcase */}
+            <div className="hidden lg:flex flex-col items-center justify-center p-6 rounded-3xl bg-white/10 backdrop-blur-md border border-white/20 shadow-2xl shrink-0 group hover:bg-white/15 transition-all max-w-[220px]">
+              <img 
+                src="/logo.png" 
+                alt="CHẠM VIỆC - Right career, true you" 
+                className="w-36 h-36 object-contain drop-shadow-xl group-hover:scale-105 transition-transform"
+              />
+              <div className="mt-3 text-center">
+                <div className="font-extrabold text-white text-sm tracking-wide">CHẠM VIỆC</div>
+                <div className="text-[11px] text-teal-200 font-medium italic">Right career, true you.</div>
+              </div>
+            </div>
           </div>
 
-          <h1 className="text-3xl sm:text-5xl lg:text-6xl font-extrabold tracking-tight leading-tight text-white">
-            Em chưa cần biết ngay mình sẽ làm nghề gì.{' '}
-            <span className="text-transparent bg-clip-text bg-gradient-to-r from-amber-300 to-orange-400">
-              Hãy bắt đầu bằng một trải nghiệm.
-            </span>
-          </h1>
-
-          <p className="text-base sm:text-lg text-teal-100/90 leading-relaxed">
-            <strong>CHẠM VIỆC</strong> đồng hành cùng học sinh lớp 10–12 trên khắp mọi miền tổ quốc: khám phá sở thích theo bằng chứng cụ thể, thử sức với các tình huống nghề nghiệp thật, và tra cứu dữ liệu điểm chuẩn đại học 3 năm chính thức có dẫn nguồn minh bạch.
-          </p>
-
           {/* 4 Main Action Buttons */}
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3 pt-4">
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3 pt-2">
             <button
               onClick={() => setCurrentTab('profile')}
               className="flex items-center justify-between p-4 rounded-2xl bg-white text-slate-900 font-bold text-sm shadow-md hover:bg-teal-50 hover:scale-[1.02] transition-all group"

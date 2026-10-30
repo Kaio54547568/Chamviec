@@ -7,10 +7,12 @@ import {
   PlayCircle, 
   FileText, 
   Sliders, 
-  MessageSquare,
-  ShieldCheck
+  ShieldCheck,
+  Briefcase,
+  Globe
 } from 'lucide-react';
 import { StudentProfile } from '../types';
+import { useLanguage } from '../i18n/LanguageContext';
 
 interface NavbarProps {
   currentTab: string;
@@ -25,16 +27,22 @@ export const Navbar: React.FC<NavbarProps> = ({
   profile,
   onOpenAssistant
 }) => {
+  const { t, language, setLanguage } = useLanguage();
+
   const navItems = [
-    { id: 'home', label: 'Trang chủ', icon: Compass },
-    { id: 'profile', label: 'Khám phá RIASEC', icon: Sparkles },
-    { id: 'recommendations', label: 'Gợi ý có giải thích', icon: Compass },
-    { id: 'tasks', label: 'Chạm Nghề (Thử vai)', icon: PlayCircle },
-    { id: 'admissions', label: 'Ngành & Điểm chuẩn', icon: GraduationCap },
-    { id: 'videos', label: 'Chuyện nghề thật', icon: BookOpen },
-    { id: 'report', label: 'Báo cáo & Lộ trình', icon: FileText },
-    { id: 'admin', label: 'Quản trị dữ liệu', icon: Sliders },
+    { id: 'home', label: t.nav.home, icon: Compass },
+    { id: 'profile', label: t.nav.profile, icon: Sparkles },
+    { id: 'tasks', label: t.nav.tasks, icon: PlayCircle },
+    { id: 'enterprise', label: t.nav.enterprise, icon: Briefcase },
+    { id: 'admissions', label: t.nav.admissions, icon: GraduationCap },
+    { id: 'videos', label: t.nav.videos, icon: BookOpen },
+    { id: 'report', label: t.nav.report, icon: FileText },
+    { id: 'admin', label: language === 'vi' ? 'Quản trị' : 'Admin', icon: Sliders },
   ];
+
+  const toggleLanguage = () => {
+    setLanguage(language === 'vi' ? 'en' : 'vi');
+  };
 
   return (
     <header className="sticky top-0 z-40 bg-white/95 backdrop-blur-md border-b border-teal-100 shadow-xs">
@@ -45,8 +53,13 @@ export const Navbar: React.FC<NavbarProps> = ({
             onClick={() => setCurrentTab('home')}
             className="flex items-center gap-3 cursor-pointer group"
           >
-            <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-teal-500 to-emerald-600 flex items-center justify-center text-white font-black text-xl shadow-md group-hover:scale-105 transition-transform">
-              CV
+            <div className="relative w-11 h-11 rounded-2xl bg-white p-1 border border-teal-100/90 shadow-sm flex items-center justify-center group-hover:scale-105 transition-transform shrink-0">
+              <img 
+                src="/logo.png" 
+                alt="CHẠM VIỆC Logo" 
+                className="w-full h-full object-contain"
+                loading="eager"
+              />
             </div>
             <div>
               <div className="flex items-center gap-1.5">
@@ -58,7 +71,7 @@ export const Navbar: React.FC<NavbarProps> = ({
                 </span>
               </div>
               <p className="text-xs text-slate-500 font-medium hidden sm:block">
-                Chạm trải nghiệm – Hiểu bản thân – Chọn hướng đi
+                {t.brand.slogan}
               </p>
             </div>
           </div>
@@ -85,12 +98,17 @@ export const Navbar: React.FC<NavbarProps> = ({
             })}
           </nav>
 
-          {/* Right actions: Cô Phượng Assistant & Local storage indicator */}
+          {/* Right actions: Language switcher, Local storage indicator & CHẠM AI Assistant */}
           <div className="flex items-center gap-2">
-            <div className="hidden md:flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-slate-100 text-slate-600 text-xs font-medium border border-slate-200" title="Dữ liệu lưu an toàn trên trình duyệt của em">
-              <ShieldCheck className="w-3.5 h-3.5 text-emerald-600" />
-              <span>Lưu cục bộ</span>
-            </div>
+            {/* Bilingual Toggle Button */}
+            <button
+              onClick={toggleLanguage}
+              className="flex items-center gap-1.5 px-2.5 py-1.5 rounded-xl border border-slate-200 bg-slate-50 hover:bg-slate-100 text-slate-700 text-xs font-bold transition-colors"
+              title={language === 'vi' ? 'Switch to English' : 'Chuyển sang Tiếng Việt'}
+            >
+              <Globe className="w-3.5 h-3.5 text-teal-600" />
+              <span>{language === 'vi' ? 'VI' : 'EN'}</span>
+            </button>
 
             <button
               onClick={onOpenAssistant}
@@ -99,7 +117,8 @@ export const Navbar: React.FC<NavbarProps> = ({
               <div className="w-5 h-5 rounded-full bg-white/20 flex items-center justify-center">
                 <Sparkles className="w-3 h-3 text-amber-300" />
               </div>
-              <span>CHẠM AI Trợ lý</span>
+              <span className="hidden sm:inline">{t.nav.chatButton}</span>
+              <span className="sm:hidden">AI</span>
               <span className="w-2 h-2 rounded-full bg-amber-400 animate-pulse"></span>
             </button>
           </div>

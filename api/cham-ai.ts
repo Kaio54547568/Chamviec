@@ -36,7 +36,12 @@ export default async function handler(req: any, res: any) {
     });
 
     if (!result.success) {
-      return res.status(result.error === 'EMPTY_MESSAGE' ? 400 : 500).json(result);
+      let statusCode = 500;
+      if (result.error === 'EMPTY_MESSAGE') statusCode = 400;
+      else if (result.error === 'MISSING_API_KEY') statusCode = 503;
+      else if (result.error === 'RATE_LIMIT') statusCode = 429;
+      else if (result.error === 'AUTH_ERROR') statusCode = 403;
+      return res.status(statusCode).json(result);
     }
 
     return res.status(200).json(result);

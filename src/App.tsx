@@ -9,6 +9,7 @@ import { HomeView } from './components/HomeView';
 import { ProfileView } from './components/ProfileView';
 import { RecommendationsView } from './components/RecommendationsView';
 import { SimulationTasksView } from './components/SimulationTasksView';
+import { EnterpriseExperienceView } from './components/EnterpriseExperienceView';
 import { UniversityAdmissionsView } from './components/UniversityAdmissionsView';
 import { VideoStoriesView } from './components/VideoStoriesView';
 import { ReportView } from './components/ReportView';
@@ -18,9 +19,12 @@ import { ChamAiChatbot } from './components/ChamAiChatbot';
 import { StudentProfile } from './types';
 import { loadStudentProfile, saveStudentProfile } from './utils/storage';
 import { Sparkles, HeartHandshake, ShieldCheck, HelpCircle } from 'lucide-react';
+import { useLanguage } from './i18n/LanguageContext';
 
 export default function App() {
+  const { t, language } = useLanguage();
   const [profile, setProfile] = useState<StudentProfile>(() => loadStudentProfile());
+
   const [currentTab, setCurrentTab] = useState<string>('home');
   const [selectedTaskId, setSelectedTaskId] = useState<string | null>(null);
   const [selectedMajorFilter, setSelectedMajorFilter] = useState<string | null>(null);
@@ -105,6 +109,10 @@ export default function App() {
           />
         )}
 
+        {currentTab === 'enterprise' && (
+          <EnterpriseExperienceView />
+        )}
+
         {currentTab === 'admissions' && (
           <UniversityAdmissionsView
             profile={profile}
@@ -155,8 +163,12 @@ export default function App() {
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 space-y-4">
           <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
             <div>
-              <div className="flex items-center gap-2 font-bold text-slate-800 text-sm">
-                <span className="w-6 h-6 rounded-lg bg-teal-600 text-white flex items-center justify-center text-xs">CV</span>
+              <div className="flex items-center gap-2.5 font-bold text-slate-800 text-sm">
+                <img 
+                  src="/logo.png" 
+                  alt="CHẠM VIỆC Logo" 
+                  className="w-7 h-7 rounded-lg object-contain bg-white p-0.5 border border-slate-200 shadow-2xs" 
+                />
                 <span>CHẠM VIỆC — Hướng Nghiệp & Tuyển Sinh Dành Cho Học Sinh Việt Nam</span>
               </div>
               <p className="mt-1 text-slate-500">
