@@ -129,10 +129,44 @@ export const RecommendationsView: React.FC<RecommendationsViewProps> = ({
 
               {/* Card Body Grid */}
               <div className="p-6 sm:p-8 space-y-6 text-xs sm:text-sm">
-                {/* Short summary */}
-                <p className="text-slate-700 leading-relaxed text-sm bg-slate-50 p-4 rounded-2xl border border-slate-100">
-                  {rec.career.shortSummary}
-                </p>
+                {/* Visual Overview: Workplace Photography & Short Summary */}
+                <div className="flex flex-col md:flex-row gap-5 items-stretch bg-slate-50 p-4 sm:p-5 rounded-2xl border border-slate-200/80">
+                  <div className="w-full md:w-64 h-44 sm:h-48 md:h-auto rounded-xl overflow-hidden shrink-0 relative bg-slate-900 group">
+                    <img
+                      src={rec.career.imageUrl || 'https://images.unsplash.com/photo-1522071820081-009f0129c71c?auto=format&fit=crop&w=800&q=80'}
+                      alt={rec.career.imageAlt || rec.career.title}
+                      className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500"
+                      loading="lazy"
+                      onError={(e) => {
+                        (e.target as HTMLImageElement).src = 'https://images.unsplash.com/photo-1522071820081-009f0129c71c?auto=format&fit=crop&w=800&q=80';
+                      }}
+                    />
+                    <div className="absolute inset-0 bg-gradient-to-t from-slate-950/70 via-transparent to-transparent pointer-events-none" />
+                    <div className="absolute bottom-2 left-2 right-2 text-[10px] text-white/90 bg-slate-950/70 backdrop-blur-xs px-2 py-1 rounded">
+                      <span>Môi trường: {rec.career.categoryLabel}</span>
+                    </div>
+                  </div>
+
+                  <div className="flex-1 flex flex-col justify-between space-y-3">
+                    <div className="space-y-2">
+                      <div className="text-[11px] font-bold text-teal-800 uppercase tracking-wider">
+                        Tổng quan nghề nghiệp
+                      </div>
+                      <p className="text-slate-700 leading-relaxed text-sm font-medium">
+                        {rec.career.shortSummary}
+                      </p>
+                      <p className="text-xs text-slate-500 leading-relaxed">
+                        <strong>Môi trường làm việc:</strong> {rec.career.workEnvironment}
+                      </p>
+                    </div>
+
+                    <div className="pt-2 border-t border-slate-200/60 flex flex-wrap items-center gap-x-4 gap-y-1 text-xs text-slate-500">
+                      <span><strong>Công cụ chính:</strong> {rec.career.toolsUsed.slice(0, 4).join(', ')}</span>
+                      <span>·</span>
+                      <span><strong>Môn học:</strong> {rec.career.highSchoolSubjects.join(', ')}</span>
+                    </div>
+                  </div>
+                </div>
 
                 {/* 4 Explanatory Pillars */}
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4">

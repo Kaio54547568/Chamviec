@@ -325,29 +325,52 @@ export const EnterpriseExperienceView: React.FC = () => {
             return (
               <div
                 key={batch.id}
-                className="bg-white rounded-3xl p-6 sm:p-7 border border-slate-200/80 hover:border-indigo-300 hover:shadow-lg transition-all flex flex-col justify-between space-y-5"
+                className="bg-white rounded-3xl border border-slate-200/80 hover:border-teal-400 hover:shadow-xl transition-all duration-300 overflow-hidden flex flex-col justify-between"
               >
-                <div className="space-y-4">
-                  {/* Top Tags */}
-                  <div className="flex items-center justify-between gap-2 text-xs">
-                    <span className="font-bold text-indigo-700 bg-indigo-50 px-2.5 py-1 rounded-full border border-indigo-200">
-                      {batch.careerCategory}
-                    </span>
-                    <span className="font-mono text-[11px] text-slate-400">
-                      {batch.code}
-                    </span>
-                  </div>
+                <div>
+                  {/* Photo Header */}
+                  <div className="relative aspect-[16/9] overflow-hidden bg-slate-900">
+                    <img
+                      src={batch.imageUrl || 'https://images.unsplash.com/photo-1497215728101-856f4ea42174?auto=format&fit=crop&w=800&q=80'}
+                      alt={batch.imageAlt || batch.programName}
+                      className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500"
+                      loading="lazy"
+                      onError={(e) => {
+                        (e.target as HTMLImageElement).src = 'https://images.unsplash.com/photo-1497215728101-856f4ea42174?auto=format&fit=crop&w=800&q=80';
+                      }}
+                    />
+                    <div className="absolute inset-0 bg-gradient-to-t from-slate-950/80 via-transparent to-transparent pointer-events-none" />
 
-                  {/* Program Title & Enterprise */}
-                  <div className="space-y-1">
-                    <h3 className="font-extrabold text-slate-900 text-lg sm:text-xl leading-snug">
-                      {batch.programName}
-                    </h3>
-                    <div className="text-xs font-semibold text-indigo-900 flex items-center gap-1.5">
-                      <Briefcase className="w-3.5 h-3.5 text-indigo-600" />
-                      <span>{batch.enterpriseName}</span>
+                    <div className="absolute top-3 left-3">
+                      <span className="px-2.5 py-1 rounded-lg bg-slate-900/80 backdrop-blur-md text-white text-[11px] font-semibold border border-white/20">
+                        {batch.careerCategory}
+                      </span>
+                    </div>
+
+                    <div className="absolute top-3 right-3">
+                      <span className="px-2 py-0.5 rounded-md bg-amber-400 text-slate-950 text-[10px] font-black uppercase">
+                        {batch.code}
+                      </span>
+                    </div>
+
+                    <div className="absolute bottom-3 left-3 right-3 flex items-center justify-between text-xs text-white">
+                      <span className="font-bold flex items-center gap-1.5">
+                        <Briefcase className="w-3.5 h-3.5 text-amber-300" />
+                        {batch.enterpriseName}
+                      </span>
+                      <span className="text-[11px] font-medium bg-emerald-600/90 px-2 py-0.5 rounded">
+                        {batch.location}
+                      </span>
                     </div>
                   </div>
+
+                  <div className="p-6 space-y-4">
+                    {/* Program Title */}
+                    <div className="space-y-1">
+                      <h3 className="font-extrabold text-slate-900 text-lg sm:text-xl leading-snug">
+                        {batch.programName}
+                      </h3>
+                    </div>
 
                   {/* Key Logistics Grid */}
                   <div className="grid grid-cols-2 gap-3 p-3.5 rounded-2xl bg-slate-50 border border-slate-200/80 text-xs text-slate-600">
@@ -408,10 +431,11 @@ export const EnterpriseExperienceView: React.FC = () => {
                       ))}
                     </ul>
                   </div>
+                  </div>
                 </div>
 
                 {/* Footer Action */}
-                <div className="pt-4 border-t border-slate-100 flex items-center justify-between">
+                <div className="p-6 pt-4 border-t border-slate-100 flex items-center justify-between bg-slate-50/50">
                   <div>
                     <span className="text-[11px] text-slate-400 block">{t.enterprise.price}</span>
                     <span className="font-extrabold text-base text-slate-900">
@@ -429,7 +453,7 @@ export const EnterpriseExperienceView: React.FC = () => {
                     className={`px-5 py-2.5 rounded-xl font-bold text-xs shadow-xs transition-all flex items-center gap-1.5 ${
                       isFull
                         ? 'bg-slate-200 text-slate-400 cursor-not-allowed'
-                        : 'bg-indigo-600 hover:bg-indigo-700 text-white shadow-indigo-600/20'
+                        : 'bg-teal-700 hover:bg-teal-800 text-white shadow-teal-700/20'
                     }`}
                   >
                     <span>{isFull ? t.enterprise.fullSlots : t.enterprise.registerBtn}</span>

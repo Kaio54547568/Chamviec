@@ -40,7 +40,9 @@ export let ENTERPRISE_BATCHES: EnterpriseBatch[] = [
     status: 'DANG_MO',
     contactPerson: 'Chị Mai Lan - Ban Hướng nghiệp FPT',
     contactPhone: '024.7300.7300',
-    contactEmail: 'trainghiem@chamviec.vn'
+    contactEmail: 'trainghiem@chamviec.vn',
+    imageUrl: 'https://images.unsplash.com/photo-1497215728101-856f4ea42174?auto=format&fit=crop&w=800&q=80',
+    imageAlt: 'Khuôn viên công nghệ xanh làng F-Ville Hòa Lạc của FPT Software'
   },
   {
     id: 'batch-vinfast-01',
@@ -80,7 +82,9 @@ export let ENTERPRISE_BATCHES: EnterpriseBatch[] = [
     status: 'DANG_MO',
     contactPerson: 'Kỹ sư Vũ Minh Trí',
     contactPhone: '0988.123.456',
-    contactEmail: 'tour-vinfast@chamviec.vn'
+    contactEmail: 'tour-vinfast@chamviec.vn',
+    imageUrl: 'https://images.unsplash.com/photo-1565043589221-1a6fd9ae45c7?auto=format&fit=crop&w=800&q=80',
+    imageAlt: 'Xưởng hàn khung và lắp ráp tự động hóa robot tại nhà máy VinFast'
   },
   {
     id: 'batch-dalat-farm-01',
@@ -119,7 +123,9 @@ export let ENTERPRISE_BATCHES: EnterpriseBatch[] = [
     status: 'DANG_MO',
     contactPerson: 'Chị Nguyễn Thu Thảo',
     contactPhone: '0263.3822.456',
-    contactEmail: 'agri-tour@chamviec.vn'
+    contactEmail: 'agri-tour@chamviec.vn',
+    imageUrl: 'https://images.unsplash.com/photo-1585320806297-9794b3e4eeae?auto=format&fit=crop&w=800&q=80',
+    imageAlt: 'Khu nhà màng công nghệ cao trồng trọt thủy canh tại Đà Lạt'
   },
   {
     id: 'batch-vinmec-01',
@@ -158,7 +164,9 @@ export let ENTERPRISE_BATCHES: EnterpriseBatch[] = [
     status: 'HET_CHO',
     contactPerson: 'Bác sĩ Trần Khánh Linh',
     contactPhone: '024.3974.3556',
-    contactEmail: 'vinmec-med@chamviec.vn'
+    contactEmail: 'vinmec-med@chamviec.vn',
+    imageUrl: 'https://images.unsplash.com/photo-1519494026892-80bbd2d6fd0d?auto=format&fit=crop&w=800&q=80',
+    imageAlt: 'Không gian phòng khám và trung tâm mô phỏng y khoa bệnh viện quốc tế'
   }
 ];
 

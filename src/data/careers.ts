@@ -8,6 +8,8 @@ export const CAREERS_DATA: Career[] = [
     categoryLabel: 'Công nghệ thông tin',
     riasecCodes: ['I', 'R', 'C'],
     shortSummary: 'Thiết kế, viết mã nguồn, kiểm thử và tối ưu hóa các ứng dụng, phần mềm máy tính và hệ thống số phục vụ đời sống.',
+    imageUrl: 'https://images.unsplash.com/photo-1522071820081-009f0129c71c?auto=format&fit=crop&w=800&q=80',
+    imageAlt: 'Kỹ sư phần mềm làm việc với mã nguồn trong văn phòng công nghệ hiện đại',
     dailyRoutine: [
       'Tham gia họp nhanh đầu ngày (Daily Scrum) để cập nhật tiến độ công việc.',
       'Phân tích yêu cầu chức năng từ khách hàng hoặc trưởng nhóm sản phẩm.',
@@ -47,6 +49,8 @@ export const CAREERS_DATA: Career[] = [
     categoryLabel: 'Công nghệ thông tin & Dữ liệu',
     riasecCodes: ['I', 'C', 'R'],
     shortSummary: 'Thu thập, xử lý và trực quan hóa các tập dữ liệu lớn nhằm tìm ra quy luật, xu hướng ẩn giấu giúp ban giám đốc đưa ra quyết định kinh doanh chính xác.',
+    imageUrl: 'https://images.unsplash.com/photo-1551288049-bebda4e38f71?auto=format&fit=crop&w=800&q=80',
+    imageAlt: 'Chuyên viên phân tích dữ liệu trực quan hóa đồ thị xu hướng trên máy tính',
     dailyRoutine: [
       'Truy vấn dữ liệu từ cơ sở dữ liệu nội bộ qua ngôn ngữ SQL.',
       'Làm sạch và chuẩn hóa dữ liệu bị thiếu hoặc sai lệch bằng Python / Excel.',
@@ -86,6 +90,8 @@ export const CAREERS_DATA: Career[] = [
     categoryLabel: 'Kinh doanh & Tiếp thị',
     riasecCodes: ['E', 'A', 'S'],
     shortSummary: 'Thấu hiểu tâm lý khách hàng, sáng tạo thông điệp thu hút và triển khai các chiến dịch truyền thông đa kênh để đưa sản phẩm đến đúng người có nhu cầu.',
+    imageUrl: 'https://images.unsplash.com/photo-1557804506-669a67965ba0?auto=format&fit=crop&w=800&q=80',
+    imageAlt: 'Đội ngũ chuyên viên marketing thảo luận chiến lược sáng tạo',
     dailyRoutine: [
       'Nghiên cứu xu hướng tiêu dùng thị trường và hoạt động của đối thủ.',
       'Lên ý tưởng kịch bản video ngắn (TikTok, Reels) và bài viết truyền thông.',
@@ -125,6 +131,8 @@ export const CAREERS_DATA: Career[] = [
     categoryLabel: 'Kinh doanh & Vận tải',
     riasecCodes: ['E', 'C', 'R'],
     shortSummary: 'Điều phối và tối ưu hóa toàn bộ hành trình của hàng hóa: từ khâu nhập nguyên liệu, lưu kho, thông quan hải quan đến giao tận tay người tiêu dùng đúng hẹn.',
+    imageUrl: 'https://images.unsplash.com/photo-1586528116311-ad8dd3c8310d?auto=format&fit=crop&w=800&q=80',
+    imageAlt: 'Chuyên viên logistics và quản lý kho vận thông minh',
     dailyRoutine: [
       'Kiểm tra kế hoạch điều động xe tải, container và lịch tàu cập cảng.',
       'Lập và xử lý bộ chứng từ hải quan xuất nhập khẩu (Bill of Lading, Invoice, Packing List).',
@@ -163,6 +171,8 @@ export const CAREERS_DATA: Career[] = [
     categoryLabel: 'Y tế & Chăm sóc sức khỏe',
     riasecCodes: ['I', 'S', 'R'],
     shortSummary: 'Thăm khám, hỏi bệnh sử, chỉ định xét nghiệm chẩn đoán, kê đơn điều trị và thực hiện các thủ thuật y khoa để bảo vệ tính mạng và nâng cao sức khỏe người dân.',
+    imageUrl: 'https://images.unsplash.com/photo-1579684385127-1ef15d508118?auto=format&fit=crop&w=800&q=80',
+    imageAlt: 'Bác sĩ đa khoa thăm khám lâm sàng và tư vấn chăm sóc sức khỏe',
     dailyRoutine: [
       'Đi buồng bệnh nhân đầu giờ sáng, kiểm tra tiến triển bệnh và sinh hiệu.',
       'Khám bệnh ngoại trú, lắng nghe triệu chứng và giải thích bệnh lý cho bệnh nhân.',
@@ -201,6 +211,8 @@ export const CAREERS_DATA: Career[] = [
     categoryLabel: 'Giáo dục & Đào tạo',
     riasecCodes: ['S', 'A', 'I'],
     shortSummary: 'Truyền cảm hứng, giảng dạy kiến thức chuyên môn và đồng hành cùng sự phát triển nhân cách, định hướng tương lai cho học sinh.',
+    imageUrl: 'https://images.unsplash.com/photo-1524178232363-1fb2b075b655?auto=format&fit=crop&w=800&q=80',
+    imageAlt: 'Giáo viên THPT truyền cảm hứng học tập trong lớp học hiện đại',
     dailyRoutine: [
       'Chuẩn bị giáo án, tài liệu trực quan và phiếu học tập trước giờ lên lớp.',
       'Giảng dạy các tiết học theo phân phối chương trình, tổ chức hoạt động nhóm.',
@@ -240,6 +252,8 @@ export const CAREERS_DATA: Career[] = [
     categoryLabel: 'Khoa học Xã hội & Hành vi',
     riasecCodes: ['S', 'I', 'A'],
     shortSummary: 'Lắng nghe, đánh giá và đồng hành hỗ trợ thân chủ vượt qua những tổn thương tinh thần, căng thẳng học đường, khủng hoảng gia đình và phát triển bản thân lành mạnh.',
+    imageUrl: 'https://images.unsplash.com/photo-1573497019940-1c28c88b4f3e?auto=format&fit=crop&w=800&q=80',
+    imageAlt: 'Chuyên viên tư vấn và trị liệu tâm lý lắng nghe thân chủ',
     dailyRoutine: [
       'Tiếp nhận và thực hiện các phiên tham vấn tâm lý cá nhân hoặc gia đình (50 phút/phiên).',
       'Thực hiện các trắc nghiệm lượng giá tâm lý chuẩn hóa (lo âu, trầm cảm, tính cách).',
@@ -278,6 +292,8 @@ export const CAREERS_DATA: Career[] = [
     categoryLabel: 'Truyền thông & Báo chí',
     riasecCodes: ['A', 'E', 'S'],
     shortSummary: 'Sáng tạo nội dung, kiểm chứng thông tin và lan tỏa thông điệp hữu ích tới công chúng qua các kênh báo chí, mạng xã hội và sự kiện.',
+    imageUrl: 'https://images.unsplash.com/photo-1585829365295-ab7cd400c167?auto=format&fit=crop&w=800&q=80',
+    imageAlt: 'Nhà báo tác nghiệp tại trường quay tin tức số',
     dailyRoutine: [
       'Đọc tin tức, theo dõi xu hướng (trends) và phản hồi của cộng đồng.',
       'Lên ý tưởng kịch bản, viết bài báo hoặc bài truyền thông cho chiến dịch.',
@@ -317,6 +333,8 @@ export const CAREERS_DATA: Career[] = [
     categoryLabel: 'Kỹ thuật & Công trình',
     riasecCodes: ['R', 'I', 'C'],
     shortSummary: 'Tính toán kết cấu, lựa chọn vật liệu và giám sát thi công các công trình nhà ở, cầu đường, trường học đảm bảo an toàn và tối ưu chi phí.',
+    imageUrl: 'https://images.unsplash.com/photo-1503387762-592deb58ef4e?auto=format&fit=crop&w=800&q=80',
+    imageAlt: 'Kỹ sư xây dựng kiểm tra kết cấu công trình tại hiện trường',
     dailyRoutine: [
       'Kiểm tra hiện trường thi công, giám sát quy trình an toàn lao động.',
       'Đọc bản vẽ kỹ thuật và đối chiếu sai số thực tế tại công trường.',
@@ -356,6 +374,8 @@ export const CAREERS_DATA: Career[] = [
     categoryLabel: 'Nông nghiệp & Môi trường',
     riasecCodes: ['R', 'I', 'E'],
     shortSummary: 'Ứng dụng công nghệ sinh học, cảm biến tự động và quy trình nông nghiệp tuần hoàn để nâng cao năng suất cây trồng, bảo vệ đất và sức khỏe người tiêu dùng.',
+    imageUrl: 'https://images.unsplash.com/photo-1585320806297-9794b3e4eeae?auto=format&fit=crop&w=800&q=80',
+    imageAlt: 'Kỹ sư nông nghiệp công nghệ cao kiểm tra nhà màng thông minh',
     dailyRoutine: [
       'Kiểm tra vườn ươm, nhà màng hoặc hệ thống thủy canh tự động.',
       'Đọc dữ liệu từ cảm biến nhiệt độ, độ ẩm đất và nồng độ dinh dưỡng EC/pH.',
@@ -395,6 +415,8 @@ export const CAREERS_DATA: Career[] = [
     categoryLabel: 'Y tế & Chăm sóc sức khỏe',
     riasecCodes: ['S', 'R', 'C'],
     shortSummary: 'Chăm sóc, theo dõi dấu hiệu sinh tồn, thực hiện y lệnh điều trị và là chỗ dựa tinh thần ấm áp cho người bệnh và gia đình trong hành trình hồi phục.',
+    imageUrl: 'https://images.unsplash.com/photo-1584515979956-d9f6e5d09982?auto=format&fit=crop&w=800&q=80',
+    imageAlt: 'Điều dưỡng viên theo dõi chỉ số sinh tồn và chăm sóc bệnh nhân',
     dailyRoutine: [
       'Giao ca bệnh viện, nắm rõ diễn biến bệnh án của từng bệnh nhân trong phòng.',
       'Đo dấu hiệu sinh tồn: huyết áp, mạch, nhiệt độ, nhịp thở và SpO2.',
@@ -434,6 +456,8 @@ export const CAREERS_DATA: Career[] = [
     categoryLabel: 'Pháp luật & Tư pháp',
     riasecCodes: ['C', 'I', 'E'],
     shortSummary: 'Rà soát hợp đồng, giải thích văn bản quy phạm pháp luật và hỗ trợ bảo vệ quyền lợi hợp pháp cho người dân, doanh nghiệp theo quy định nhà nước.',
+    imageUrl: 'https://images.unsplash.com/photo-1589829545856-d10d557cf95f?auto=format&fit=crop&w=800&q=80',
+    imageAlt: 'Chuyên viên pháp lý nghiên cứu văn bản pháp luật và hợp đồng',
     dailyRoutine: [
       'Tra cứu các văn bản luật, nghị định, thông tư mới ban hành.',
       'Rà soát điều khoản rủi ro trong các hợp đồng mua bán, lao động, hợp tác.',
@@ -472,6 +496,8 @@ export const CAREERS_DATA: Career[] = [
     categoryLabel: 'Kỹ thuật & Công nghệ Ô tô',
     riasecCodes: ['R', 'I', 'C'],
     shortSummary: 'Khám xét, đo đạc điện áp, chẩn đoán lỗi động cơ/xe điện, thay thế phụ tùng và bảo dưỡng hệ thống an toàn xe hơi trong không gian xưởng dịch vụ hiện đại.',
+    imageUrl: 'https://images.unsplash.com/photo-1619642751034-765dfdf7c58e?auto=format&fit=crop&w=800&q=80',
+    imageAlt: 'Kỹ thuật viên ô tô đo điện áp và kiểm tra khoang máy động cơ',
     dailyRoutine: [
       'Tiếp nhận phiếu lệnh sửa chữa và trao đổi tình trạng xe với cố vấn dịch vụ.',
       'Dùng máy đọc lỗi OBD-II kết nối cổng chẩn đoán ECU để đọc mã lỗi DTC.',

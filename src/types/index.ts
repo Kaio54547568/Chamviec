@@ -86,6 +86,8 @@ export interface Career {
   entryPathway: string;
   linkedMajorIds: string[];
   simulationTaskId?: string;
+  imageUrl?: string;
+  imageAlt?: string;
   dataSource: string;
   lastUpdated: string;
 }
@@ -169,6 +171,8 @@ export interface VideoStory {
   youtubeId: string;
   youtubeVideoId?: string;
   youtubeUrl?: string;
+  thumbnailUrl?: string;
+  duration?: string;
   title: string;
   channelName: string;
   personName?: string;
@@ -270,6 +274,8 @@ export interface EnterpriseBatch {
   contactPerson: string;
   contactPhone: string;
   contactEmail: string;
+  imageUrl?: string;
+  imageAlt?: string;
 }
 
 export interface EnterpriseRegistration {
