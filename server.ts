@@ -361,17 +361,17 @@ app.post(['/api/cham-ai', '/api/cham-ai/chat'], async (req, res) => {
     });
 
     if (!result.success) {
-      return res.status(result.error === 'EMPTY_MESSAGE' ? 400 : 500).json(result);
+      const statusCode = result.error === 'EMPTY_MESSAGE' ? 400 : 503;
+      return res.status(statusCode).json(result);
     }
 
     return res.json(result);
   } catch (err: any) {
     console.error('Error in /api/cham-ai handler:', err);
-    return res.status(500).json({
+    return res.status(503).json({
       success: false,
-      error: 'SERVER_EXCEPTION',
-      errorMessage: 'Đã có sự cố trong quá trình kết nối với máy chủ AI.',
-      errorDetail: err?.message || String(err),
+      error: 'AI_OVERLOADED_503',
+      errorMessage: 'AI đang bận, em vui lòng thử lại sau ít phút.',
       canRetry: true,
       isOfflineMode: false,
     });

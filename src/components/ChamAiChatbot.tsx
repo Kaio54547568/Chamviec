@@ -242,21 +242,41 @@ I am here to assist you with:
       clearTimeout(timeoutId);
       clearTimeout(statusTimer);
 
-      const data = await response.json();
+      let data: any = null;
+      try {
+        data = await response.json();
+      } catch (jsonParseErr) {
+        // In case server returned non-JSON (e.g. 503 HTML page)
+        data = {
+          success: false,
+          error: 'AI_OVERLOADED_503',
+          errorMessage: 'AI đang bận, em vui lòng thử lại sau ít phút.',
+        };
+      }
 
-      if (!response.ok || data.success === false) {
-        const errorMsgText =
-          data.errorMessage ||
-          data.errorDetail ||
-          'Không thể kết nối đến máy chủ AI (HTTP ' + response.status + ').';
+      if (!response.ok || data?.success === false) {
+        // Strictly sanitize: NEVER show technical JSON or status codes to students
+        const rawMsg = String(data?.errorMessage || data?.errorDetail || '');
+        const isTechOr503 = 
+          response.status === 503 ||
+          response.status === 429 ||
+          data?.error === 'AI_OVERLOADED_503' ||
+          rawMsg.includes('{') ||
+          rawMsg.includes('503') ||
+          rawMsg.includes('UNAVAILABLE') ||
+          rawMsg.includes('overload') ||
+          rawMsg.includes('rate limit');
+
+        const studentFriendlyMessage = isTechOr503
+          ? 'AI đang bận, em vui lòng thử lại sau ít phút.'
+          : (data?.errorMessage || 'AI đang bận, em vui lòng thử lại sau ít phút.');
 
         const errorReply: ChatMessage = {
           id: 'err_' + Date.now(),
           sender: 'ai',
           text: '',
           isError: true,
-          errorMessage: errorMsgText,
-          errorDetail: data.errorDetail,
+          errorMessage: studentFriendlyMessage,
           failedPrompt: text,
           canRetry: true,
           timestamp: new Date().toLocaleTimeString('vi-VN', { hour: '2-digit', minute: '2-digit' }),
@@ -267,7 +287,7 @@ I am here to assist you with:
 
       const aiReplyText =
         data.reply ||
-        'CHẠM AI đã tiếp nhận câu hỏi của bạn nhưng chưa nhận được nội dung phản hồi. Bạn vui lòng bấm nút "Thử lại".';
+        'CHẠM AI đã tiếp nhận câu hỏi của bạn nhưng chưa nhận được nội dung phản hồi. Bạn vui lòng bấm nút "Thử lại câu hỏi này".';
 
       const aiReply: ChatMessage = {
         id: 'ai_' + Date.now(),
@@ -281,20 +301,13 @@ I am here to assist you with:
       clearTimeout(statusTimer);
       console.error('[CHAM AI Client fetch error]', err);
 
-      let errDesc = 'Đã xảy ra sự cố kết nối tới máy chủ.';
-      if (err.name === 'AbortError') {
-        errDesc = 'Thời gian phản hồi quá lâu (quá 25 giây). Vui lòng kiểm tra kết nối mạng và thử lại.';
-      } else if (!navigator.onLine) {
-        errDesc = 'Thiết bị của bạn đang mất kết nối Internet. Vui lòng kiểm tra lại mạng.';
-      }
-
+      // Student-friendly message without technical JSON
       const errorReply: ChatMessage = {
         id: 'err_' + Date.now(),
         sender: 'ai',
         text: '',
         isError: true,
-        errorMessage: errDesc,
-        errorDetail: err?.message || String(err),
+        errorMessage: 'AI đang bận, em vui lòng thử lại sau ít phút.',
         failedPrompt: text,
         canRetry: true,
         timestamp: new Date().toLocaleTimeString('vi-VN', { hour: '2-digit', minute: '2-digit' }),
@@ -310,6 +323,16 @@ I am here to assist you with:
     // Remove the error message that has failedPrompt
     setMessages((prev) => prev.filter((m) => !(m.isError && m.failedPrompt === failedPrompt)));
     handleSendMessage(failedPrompt);
+  };
+
+  const handleEditFailedPrompt = (failedPrompt?: string) => {
+    if (!failedPrompt) return;
+    setInputText(failedPrompt);
+    // Remove the error message
+    setMessages((prev) => prev.filter((m) => !(m.isError && m.failedPrompt === failedPrompt)));
+    if (textareaRef.current) {
+      textareaRef.current.focus();
+    }
   };
 
   const handleClearConversation = () => {
@@ -605,31 +628,40 @@ I am here to assist you with:
                     </div>
                   )}
 
-                  {/* Error message bubble with friendly details and Retry button */}
+                  {/* Error message bubble: strictly student-friendly, no JSON tech dump, retains question */}
                   {m.isError && (
-                    <div className="max-w-[92%] sm:max-w-[85%] rounded-2xl p-3.5 text-xs bg-rose-50 border border-rose-200 text-rose-950 rounded-bl-xs shadow-2xs space-y-2">
-                      <div className="flex items-start gap-2">
-                        <AlertCircle className="w-4 h-4 text-rose-600 shrink-0 mt-0.5" />
+                    <div className="max-w-[92%] sm:max-w-[85%] rounded-2xl p-3.5 sm:p-4 text-xs bg-amber-50/90 border border-amber-200 text-slate-800 rounded-bl-xs shadow-2xs space-y-3">
+                      <div className="flex items-start gap-2.5">
+                        <AlertCircle className="w-4 h-4 text-amber-600 shrink-0 mt-0.5" />
                         <div className="space-y-1">
-                          <p className="font-bold text-rose-900">
-                            {m.errorMessage || 'Không thể kết nối đến CHẠM AI'}
+                          <p className="font-bold text-slate-900 text-xs sm:text-sm">
+                            {m.errorMessage || 'AI đang bận, em vui lòng thử lại sau ít phút.'}
                           </p>
-                          {m.errorDetail && (
-                            <p className="text-[11px] text-rose-700 leading-normal">
-                              {m.errorDetail}
-                            </p>
+                          {m.failedPrompt && (
+                            <div className="text-[11px] text-slate-600 bg-white/80 p-2 rounded-xl border border-amber-200/60 mt-1">
+                              <span className="font-semibold text-slate-700 block text-[10px] uppercase tracking-wider text-teal-800">
+                                Câu hỏi của em được giữ nguyên:
+                              </span>
+                              <span className="italic line-clamp-3 mt-0.5">"{m.failedPrompt}"</span>
+                            </div>
                           )}
                         </div>
                       </div>
 
                       {m.canRetry && m.failedPrompt && (
-                        <div className="pt-1 flex items-center justify-end">
+                        <div className="pt-1 flex flex-wrap items-center gap-2">
                           <button
                             onClick={() => handleRetry(m.failedPrompt)}
-                            className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-rose-600 hover:bg-rose-700 text-white font-bold text-[11px] shadow-xs active:scale-95 transition-all"
+                            className="flex items-center gap-1.5 px-3.5 py-1.5 rounded-xl bg-teal-700 hover:bg-teal-800 text-white font-bold text-[11px] shadow-xs active:scale-95 transition-all"
                           >
                             <RefreshCw className="w-3.5 h-3.5" />
-                            <span>Thử lại</span>
+                            <span>Thử lại câu hỏi này</span>
+                          </button>
+                          <button
+                            onClick={() => handleEditFailedPrompt(m.failedPrompt)}
+                            className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-white hover:bg-slate-100 text-slate-700 font-medium text-[11px] border border-slate-200 transition-all"
+                          >
+                            <span>Sửa lại câu hỏi</span>
                           </button>
                         </div>
                       )}

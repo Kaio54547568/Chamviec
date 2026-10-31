@@ -72,6 +72,7 @@ export interface ProcessChamAiParams {
   profile?: any;
   currentContext?: string;
   chatHistory?: Array<{ sender: 'ai' | 'user'; text: string }>;
+  customAiClient?: any;
 }
 
 export interface ChamAiResponseResult {
@@ -85,7 +86,7 @@ export interface ChamAiResponseResult {
 }
 
 export async function processChamAiChat(params: ProcessChamAiParams): Promise<ChamAiResponseResult> {
-  const { message, profile, currentContext, chatHistory } = params;
+  const { message, profile, currentContext, chatHistory, customAiClient } = params;
 
   if (!message || !message.trim()) {
     return {
@@ -97,7 +98,8 @@ export async function processChamAiChat(params: ProcessChamAiParams): Promise<Ch
     };
   }
 
-  const { ai } = getGeminiClient();
+  const { ai: envAi } = getGeminiClient();
+  const ai = customAiClient || envAi;
 
   if (!ai) {
     return {
@@ -241,55 +243,138 @@ Hãy trả lời học sinh với vai trò "CHẠM AI – Người bạn đồng
   });
 
   try {
-    // Enforce modern Gemini SDK model selection per gemini-api guidelines
-    const modelsToTry = [
-      process.env.GEMINI_MODEL || 'gemini-3.8-flash',
+    // Supported Gemini models strictly following gemini-api skill:
+    // 1. Primary standard text model: gemini-3.8-flash (or process.env.GEMINI_MODEL if specified)
+    // 2. Primary fallback model: gemini-flash-latest
+    // 3. Lightweight fallback model: gemini-3.1-flash-lite
+    // (Never use deprecated 1.5/2.0 or paid models)
+    const configuredModel = process.env.GEMINI_MODEL?.trim();
+    const modelsToTry: string[] = [
+      configuredModel || 'gemini-3.8-flash',
       'gemini-flash-latest',
-    ].filter((v, idx, arr) => arr.indexOf(v) === idx);
+      'gemini-3.1-flash-lite',
+    ].filter((m, idx, arr) => m && arr.indexOf(m) === idx);
+
+    // Helper to detect 503 UNAVAILABLE or overload transients
+    const is503OrOverloaded = (err: any): boolean => {
+      if (!err) return false;
+      const status = err?.status || err?.statusCode || err?.code;
+      if (status === 503 || status === 429 || status === 502 || status === 504) {
+        return true;
+      }
+      const msg = String(err?.message || err).toLowerCase();
+      return (
+        msg.includes('503') ||
+        msg.includes('unavailable') ||
+        msg.includes('overloaded') ||
+        msg.includes('high demand') ||
+        msg.includes('temporarily unavailable') ||
+        msg.includes('service unavailable') ||
+        msg.includes('resource_exhausted') ||
+        msg.includes('rate limit') ||
+        msg.includes('econnreset')
+      );
+    };
+
+    const isNotFoundError = (err: any): boolean => {
+      const msg = String(err?.message || err).toLowerCase();
+      const status = err?.status || err?.statusCode || err?.code;
+      return (
+        status === 404 ||
+        msg.includes('404') ||
+        msg.includes('not_found') ||
+        msg.includes('not found') ||
+        msg.includes('not supported')
+      );
+    };
 
     let response: any = null;
     let lastError: any = null;
+    let successfulModel: string | null = null;
 
+    // Outer loop: Try supported models sequentially if previous fails
     for (const modelName of modelsToTry) {
-      try {
-        const callPromise = ai.models.generateContent({
-          model: modelName,
-          contents: contents,
-          config: {
-            systemInstruction,
-          },
-        });
+      console.log(`[CHAM AI] Attempting Gemini model: ${modelName}`);
 
-        const timeoutPromise = new Promise<never>((_, reject) =>
-          setTimeout(() => reject(new Error('TIMEOUT_15S')), 15000)
-        );
+      // Inner loop: Retry up to 3 times on 503 / overload with exponential backoff and jitter
+      const MAX_RETRIES = 3;
+      let attempt = 0;
+      let modelSucceeded = false;
 
-        response = await Promise.race([callPromise, timeoutPromise]);
-        if (response && response.text) {
+      while (attempt <= MAX_RETRIES) {
+        try {
+          const callPromise = ai.models.generateContent({
+            model: modelName,
+            contents: contents,
+            config: {
+              systemInstruction,
+            },
+          });
+
+          const timeoutPromise = new Promise<never>((_, reject) =>
+            setTimeout(() => reject(new Error('TIMEOUT_20S')), 20000)
+          );
+
+          response = await Promise.race([callPromise, timeoutPromise]);
+          if (response && response.text) {
+            successfulModel = modelName;
+            modelSucceeded = true;
+            break;
+          }
+        } catch (callErr: any) {
+          lastError = callErr;
+          console.warn(
+            `[CHAM AI] Error calling model ${modelName} (attempt ${attempt + 1}/${MAX_RETRIES + 1}):`,
+            callErr?.message || callErr
+          );
+
+          // If model is not found / unsupported on this key, do not retry this model; jump to next model immediately
+          if (isNotFoundError(callErr)) {
+            console.warn(`[CHAM AI] Model ${modelName} not available on this API key, switching to next fallback model...`);
+            break;
+          }
+
+          // If error is 503 UNAVAILABLE or overload, retry up to 3 times with exponential backoff + jitter
+          if (is503OrOverloaded(callErr) && attempt < MAX_RETRIES) {
+            // Exponential backoff: attempt 0 -> ~1000ms, attempt 1 -> ~2000ms, attempt 2 -> ~4000ms
+            const baseDelay = 1000 * Math.pow(2, attempt);
+            // Random jitter between 200ms and 600ms to prevent thundering herd
+            const jitter = Math.floor(Math.random() * 400) + 200;
+            const delayMs = baseDelay + jitter;
+
+            console.log(
+              `[CHAM AI] 503 UNAVAILABLE / Overload detected. Retrying model ${modelName} in ${delayMs}ms (retry ${attempt + 1}/${MAX_RETRIES})...`
+            );
+            await new Promise((resolve) => setTimeout(resolve, delayMs));
+            attempt++;
+            continue;
+          }
+
+          // Non-retryable error (e.g. auth 401/403) or max retries reached for this model
           break;
         }
-      } catch (callErr: any) {
-        lastError = callErr;
-        const msg = String(callErr?.message || callErr);
-        if (msg.includes('404') || msg.includes('NOT_FOUND') || msg.includes('not supported') || msg.includes('not found')) {
-          console.warn(`[CHAM AI] Model ${modelName} not available, attempting fallback...`);
-          continue;
-        }
-        throw callErr;
+      }
+
+      if (modelSucceeded && response && response.text) {
+        console.log(`[CHAM AI] Successfully generated response using model: ${successfulModel}`);
+        break;
       }
     }
 
-    if (!response && lastError) {
-      throw lastError;
+    if (!response || !response.text) {
+      if (lastError) {
+        throw lastError;
+      }
+      throw new Error('NO_RESPONSE_FROM_AI');
     }
 
-    const replyText = response?.text?.trim();
+    const replyText = response.text.trim();
 
     if (!replyText) {
       return {
         success: false,
         error: 'EMPTY_AI_RESPONSE',
-        errorMessage: 'Mô hình AI chưa trả về nội dung câu trả lời. Vui lòng bấm "Thử lại".',
+        errorMessage: 'AI đang bận, em vui lòng thử lại sau ít phút.',
         canRetry: true,
         isOfflineMode: false,
       };
@@ -305,28 +390,40 @@ Hãy trả lời học sinh với vai trò "CHẠM AI – Người bạn đồng
     console.error('[CHAM AI Backend Error]', err);
 
     let errorCode = 'API_ERROR';
-    let errorMessage = 'Không thể kết nối đến mô hình Gemini AI vào lúc này.';
+    // Friendly, student-appropriate message per prompt requirement
+    let errorMessage = 'AI đang bận, em vui lòng thử lại sau ít phút.';
     const detail = err?.message || String(err);
 
-    if (detail.includes('TIMEOUT_15S')) {
-      errorCode = 'TIMEOUT';
-      errorMessage = 'Thời gian kết nối đến mô hình AI vượt quá 15 giây. Vui lòng kiểm tra đường truyền và thử lại.';
+    const is503 = 
+      err?.status === 503 || 
+      detail.includes('503') || 
+      detail.includes('UNAVAILABLE') || 
+      detail.includes('overload') ||
+      detail.includes('high demand') ||
+      detail.includes('temporarily unavailable');
+
+    if (is503) {
+      errorCode = 'AI_OVERLOADED_503';
+      errorMessage = 'AI đang bận, em vui lòng thử lại sau ít phút.';
     } else if (err?.status === 429 || detail.includes('quota') || detail.includes('RESOURCE_EXHAUSTED')) {
       errorCode = 'RATE_LIMIT';
-      errorMessage = 'Hạn ngạch gọi AI tạm thời đạt giới hạn (429 Rate Limit). Vui lòng đợi vài giây và bấm "Thử lại".';
-    } else if (err?.status === 403 || err?.status === 401 || detail.includes('API_KEY_INVALID') || detail.includes('API key not valid') || detail.includes('INVALID_ARGUMENT')) {
+      errorMessage = 'AI đang bận, em vui lòng thử lại sau ít phút.';
+    } else if (err?.status === 403 || err?.status === 401 || detail.includes('API_KEY_INVALID') || detail.includes('API key not valid')) {
       errorCode = 'AUTH_ERROR';
-      errorMessage = 'Khóa GEMINI_API_KEY chưa hợp lệ hoặc chưa được kích hoạt quyền truy cập.';
+      errorMessage = 'Chưa thể kết nối tới trợ lý AI do cấu hình máy chủ. Vui lòng thử lại sau.';
+    } else if (detail.includes('TIMEOUT')) {
+      errorCode = 'TIMEOUT';
+      errorMessage = 'AI đang bận, em vui lòng thử lại sau ít phút.';
     } else if (detail.includes('fetch failed') || detail.includes('ENOTFOUND')) {
       errorCode = 'NETWORK_ERROR';
-      errorMessage = 'Lỗi kết nối mạng máy chủ tới dịch vụ Gemini AI. Vui lòng bấm "Thử lại".';
+      errorMessage = 'Lỗi kết nối mạng máy chủ tới AI, em vui lòng thử lại sau ít phút.';
     }
 
     return {
       success: false,
       error: errorCode,
       errorMessage,
-      errorDetail: detail,
+      // Never expose raw technical JSON or internal stack details
       canRetry: true,
       isOfflineMode: false,
     };
