@@ -32,6 +32,7 @@ import { ADMISSION_RECORDS, UNIVERSITIES_DATA } from '../data/admissions';
 import { MAJORS_DATA, MAJOR_CATEGORIES } from '../data/majors';
 import { removeVietnameseTones, matchQuery, matchUniversity, matchAdmissionRecord } from '../utils/vietnameseSearch';
 import { saveStudentProfile } from '../utils/storage';
+import { Admission2026Center } from './Admission2026Center';
 
 interface UniversityAdmissionsViewProps {
   profile: StudentProfile;
@@ -56,8 +57,8 @@ export const UniversityAdmissionsView: React.FC<UniversityAdmissionsViewProps> =
   const [selectedCombination, setSelectedCombination] = useState<string>('all'); // A00, D01, etc.
   const [selectedYear, setSelectedYear] = useState<number>(2024);
 
-  // View Mode: 'search' for table search & filters, 'stats2025' for comprehensive 2025 statistical center
-  const [viewMode, setViewMode] = useState<'search' | 'stats2025'>('search');
+  // View Mode: 'admissions2026' for 2026 MOET rules & 100 exams, 'search' for table search & filters, 'stats2025' for comprehensive 2025 statistical center
+  const [viewMode, setViewMode] = useState<'admissions2026' | 'search' | 'stats2025'>('admissions2026');
   const [stats2025Category, setStats2025Category] = useState<string>('all');
   const [stats2025Region, setStats2025Region] = useState<string>('all');
   const [stats2025Search, setStats2025Search] = useState<string>('');
@@ -357,7 +358,21 @@ export const UniversityAdmissionsView: React.FC<UniversityAdmissionsViewProps> =
 
         {/* VIEW NAVIGATION TABS */}
         <div className="flex flex-wrap items-center justify-between gap-3 pt-3 border-t border-slate-100">
-          <div className="flex items-center gap-2 p-1.5 bg-slate-100 rounded-2xl">
+          <div className="flex flex-wrap items-center gap-2 p-1.5 bg-slate-100 rounded-2xl">
+            <button
+              onClick={() => setViewMode('admissions2026')}
+              className={`px-4 py-2 rounded-xl text-xs sm:text-sm font-bold flex items-center gap-2 transition-all ${
+                viewMode === 'admissions2026'
+                  ? 'bg-gradient-to-r from-teal-700 to-emerald-700 text-white shadow-xs'
+                  : 'text-teal-800 hover:bg-teal-50'
+              }`}
+            >
+              <Sparkles className="w-4 h-4 text-amber-300" />
+              <span>Tuyển sinh 2026 & Kho Đề (Bộ GD&ĐT & EIE)</span>
+              <span className="px-1.5 py-0.5 rounded-md bg-amber-400 text-slate-950 text-[10px] font-black">
+                MỚI
+              </span>
+            </button>
             <button
               onClick={() => setViewMode('search')}
               className={`px-4 py-2 rounded-xl text-xs sm:text-sm font-bold flex items-center gap-2 transition-all ${
@@ -379,14 +394,13 @@ export const UniversityAdmissionsView: React.FC<UniversityAdmissionsViewProps> =
             >
               <BarChart3 className="w-4 h-4" />
               <span>Thống kê Tuyển sinh 2025 ({records2025.length} ngành)</span>
-              <span className="px-1.5 py-0.5 rounded-md bg-amber-400 text-slate-950 text-[10px] font-black">
-                MỚI
-              </span>
             </button>
           </div>
 
           <div className="text-xs text-slate-500 font-medium hidden md:block">
-            {viewMode === 'search' 
+            {viewMode === 'admissions2026'
+              ? 'Quy chế Bộ GD&ĐT 2026, Kho 100 Đề ĐGNL & Quà tặng EIE Education'
+              : viewMode === 'search' 
               ? `Hiển thị ${filteredRecords.length} phương án tuyển sinh`
               : `Thống kê ${filteredStats2025Records.length}/${records2025.length} ngành đề án 2025`
             }
@@ -406,8 +420,10 @@ export const UniversityAdmissionsView: React.FC<UniversityAdmissionsViewProps> =
         </div>
       </div>
 
-      {/* RENDER VIEW MODE: STATS 2025 OR STANDARD SEARCH */}
-      {viewMode === 'stats2025' ? (
+      {/* RENDER VIEW MODE: 2026 CENTER, STATS 2025 OR STANDARD SEARCH */}
+      {viewMode === 'admissions2026' ? (
+        <Admission2026Center onOpenChamAi={onAskAiAboutSchool} />
+      ) : viewMode === 'stats2025' ? (
         /* ========================================================= */
         /* DEDICATED 2025 ADMISSIONS & MAJORS STATISTICAL CENTER    */
         /* ========================================================= */

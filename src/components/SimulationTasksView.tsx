@@ -26,6 +26,7 @@ interface SimulationTasksViewProps {
 import { CircuitSimulation3D } from './simulations/CircuitSimulation3D';
 import { ArchitectureSimulation3D } from './simulations/ArchitectureSimulation3D';
 import { AgricultureSimulation3D } from './simulations/AgricultureSimulation3D';
+import { AutomotiveTechnicianSimulation } from './simulations/AutomotiveTechnicianSimulation';
 import { useLanguage } from '../i18n/LanguageContext';
 
 export const SimulationTasksView: React.FC<SimulationTasksViewProps> = ({
@@ -38,7 +39,7 @@ export const SimulationTasksView: React.FC<SimulationTasksViewProps> = ({
   const currentTask = SIMULATION_TASKS.find((t) => t.id === selectedTaskId) || null;
 
   // Active 3D simulation modal state
-  const [active3DModal, setActive3DModal] = useState<'circuit' | 'architecture' | 'agriculture' | null>(null);
+  const [active3DModal, setActive3DModal] = useState<'circuit' | 'architecture' | 'agriculture' | 'automotive' | null>(null);
   const [activeTab, setActiveTab] = useState<'3D' | '2D'>('3D');
 
   // Task active states
@@ -122,6 +123,11 @@ export const SimulationTasksView: React.FC<SimulationTasksViewProps> = ({
       {active3DModal === 'agriculture' && (
         <AgricultureSimulation3D onClose={() => setActive3DModal(null)} />
       )}
+      {active3DModal === 'automotive' && (
+        <div className="fixed inset-0 z-50 bg-black/80 backdrop-blur-sm flex items-center justify-center p-2 sm:p-4 overflow-y-auto">
+          <AutomotiveTechnicianSimulation onClose={() => setActive3DModal(null)} />
+        </div>
+      )}
 
       {/* Header */}
       <div className="bg-white rounded-3xl p-6 sm:p-8 border border-slate-200/80 shadow-xs space-y-4">
@@ -148,7 +154,7 @@ export const SimulationTasksView: React.FC<SimulationTasksViewProps> = ({
           >
             <Sparkles className="w-3.5 h-3.5 text-cyan-400" />
             <span>{t.simulation.tab3D}</span>
-            <span className="text-[10px] px-1.5 py-0.2 rounded-full bg-cyan-500/30 text-cyan-300 font-mono">3 Labs</span>
+            <span className="text-[10px] px-1.5 py-0.2 rounded-full bg-cyan-500/30 text-cyan-300 font-mono">4 Labs 3D</span>
           </button>
 
           <button
@@ -169,9 +175,9 @@ export const SimulationTasksView: React.FC<SimulationTasksViewProps> = ({
       {/* 3D LABS SHOWCASE SECTION */}
       {activeTab === '3D' && !currentTask && (
         <div className="space-y-4">
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-5">
             {/* Lab 1: Circuit */}
-            <div className="bg-slate-900 text-white rounded-3xl p-6 border border-slate-800 hover:border-amber-400 transition-all flex flex-col justify-between space-y-4 group">
+            <div className="bg-slate-900 text-white rounded-3xl p-5 border border-slate-800 hover:border-amber-400 transition-all flex flex-col justify-between space-y-4 group">
               <div className="space-y-3">
                 <div className="w-12 h-12 rounded-2xl bg-amber-500/20 text-amber-400 flex items-center justify-center border border-amber-500/40">
                   <PlayCircle className="w-6 h-6" />
@@ -262,6 +268,38 @@ export const SimulationTasksView: React.FC<SimulationTasksViewProps> = ({
                 className="w-full py-2.5 rounded-xl bg-emerald-500 hover:bg-emerald-400 text-slate-950 font-bold text-xs transition-colors shadow-md flex items-center justify-center gap-2"
               >
                 <span>Vào Nhà kính Nông nghiệp 4.0</span>
+                <ArrowRight className="w-4 h-4" />
+              </button>
+            </div>
+
+            {/* Lab 4: Automotive Technician */}
+            <div className="bg-slate-900 text-white rounded-3xl p-5 border border-slate-800 hover:border-teal-400 transition-all flex flex-col justify-between space-y-4 group">
+              <div className="space-y-3">
+                <div className="w-12 h-12 rounded-2xl bg-teal-500/20 text-teal-400 flex items-center justify-center border border-teal-500/40">
+                  <PlayCircle className="w-6 h-6" />
+                </div>
+                <div>
+                  <span className="text-[10px] font-mono font-bold text-teal-400 uppercase tracking-wider block">
+                    Three.js WebGL Lab 04
+                  </span>
+                  <h3 className="font-bold text-white text-lg group-hover:text-teal-300 transition-colors">
+                    Kỹ Thuật Viên Sửa Chữa Ô Tô 3D
+                  </h3>
+                </div>
+                <p className="text-xs text-slate-400 leading-relaxed">
+                  Tương tác trực tiếp khoang máy 3D: kiểm tra ắc quy 12V, thay lọc gió, đo điện cực bugi, bổ sung nước giải nhiệt và nổ máy thử nghiệm.
+                </p>
+                <div className="text-[11px] text-slate-400 space-y-1 pt-2 border-t border-slate-800">
+                  <div>• Tương tác: Ắc quy, bugi, lọc gió, que dầu, nổ máy RPM</div>
+                  <div>• Năng lực rèn luyện: Chẩn đoán & an toàn kỹ thuật (R - Realistic)</div>
+                </div>
+              </div>
+
+              <button
+                onClick={() => setActive3DModal('automotive')}
+                className="w-full py-2.5 rounded-xl bg-teal-500 hover:bg-teal-400 text-slate-950 font-extrabold text-xs transition-colors shadow-md flex items-center justify-center gap-2"
+              >
+                <span>Vào Xưởng Chẩn Đoán Ô Tô 3D</span>
                 <ArrowRight className="w-4 h-4" />
               </button>
             </div>

@@ -11,7 +11,9 @@ import {
   ShieldAlert,
   HelpCircle,
   Eye,
-  Award
+  Award,
+  Gift,
+  Wrench
 } from 'lucide-react';
 import { StudentProfile } from '../types';
 import { SIMULATION_TASKS } from '../data/tasks';
@@ -121,6 +123,87 @@ export const HomeView: React.FC<HomeViewProps> = ({
                 <span>4. Chuyện nghề thật</span>
               </div>
               <ArrowRight className="w-4 h-4 text-teal-300 group-hover:translate-x-1 transition-transform" />
+            </button>
+          </div>
+        </div>
+      </section>
+
+      {/* FEATURED: 2026 ADMISSIONS & FREE EXAM REPOSITORY (EIE EDUCATION) & 3D AUTOMOTIVE LAB */}
+      <section className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+        {/* Card 1: Tuyển sinh 2026 & Quà tặng EIE Education */}
+        <div className="bg-gradient-to-br from-indigo-950 via-slate-900 to-teal-950 text-white rounded-3xl p-6 sm:p-8 border border-indigo-500/40 shadow-lg flex flex-col justify-between space-y-5">
+          <div className="space-y-3">
+            <div className="flex items-center gap-2">
+              <span className="px-3 py-1 rounded-full bg-amber-400 text-slate-950 text-xs font-black uppercase tracking-wider">
+                MỚI 2026
+              </span>
+              <span className="text-xs text-indigo-200 font-semibold">
+                Đồng hành bởi EIE Education
+              </span>
+            </div>
+            <h3 className="text-xl sm:text-2xl font-black text-white tracking-tight">
+              Tuyển sinh 2026 — Quy chế Bộ, Kho Đề ĐGNL & Quà tặng Tiếng Anh
+            </h3>
+            <p className="text-xs sm:text-sm text-slate-300 leading-relaxed">
+              CHẠM VIỆC tặng học sinh cẩm nang tuyển sinh, thư viện đề tham khảo chính thức và các bài luyện tư duy miễn phí, giúp các em chủ động chuẩn bị cho lựa chọn tương lai.
+            </p>
+            <div className="grid grid-cols-2 gap-2 pt-2 text-xs text-teal-200">
+              <div className="p-2.5 rounded-xl bg-white/10 border border-white/10">
+                • Thông tư 06/2026/TT-BGDĐT
+              </div>
+              <div className="p-2.5 rounded-xl bg-white/10 border border-white/10">
+                • 100 Đề ĐGNL/TSA mục tiêu
+              </div>
+            </div>
+          </div>
+
+          <div className="flex flex-col sm:flex-row items-center gap-3 pt-2">
+            <button
+              onClick={() => setCurrentTab('admissions')}
+              className="w-full sm:w-auto px-5 py-3 rounded-2xl bg-gradient-to-r from-amber-400 to-amber-500 hover:from-amber-300 hover:to-amber-400 text-slate-950 font-black text-xs sm:text-sm shadow-md transition-all flex items-center justify-center gap-2"
+            >
+              <Gift className="w-4 h-4" />
+              <span>Nhận Tài Khoản EIE & Luyện Đề Ngay</span>
+              <ArrowRight className="w-4 h-4" />
+            </button>
+          </div>
+        </div>
+
+        {/* Card 2: 3D Automotive Technician Simulation Lab */}
+        <div className="bg-gradient-to-br from-slate-900 via-teal-950 to-slate-950 text-white rounded-3xl p-6 sm:p-8 border border-teal-500/40 shadow-lg flex flex-col justify-between space-y-5">
+          <div className="space-y-3">
+            <div className="flex items-center gap-2">
+              <span className="px-3 py-1 rounded-full bg-teal-500 text-slate-950 text-xs font-black uppercase tracking-wider">
+                THREE.JS WEBGL
+              </span>
+              <span className="text-xs text-teal-300 font-semibold">
+                Tương tác 3D chân thực
+              </span>
+            </div>
+            <h3 className="text-xl sm:text-2xl font-black text-white tracking-tight">
+              Mô Phỏng 3D: Kỹ Thuật Viên Sửa Chữa Ô Tô
+            </h3>
+            <p className="text-xs sm:text-sm text-slate-300 leading-relaxed">
+              Trực tiếp mở nắp capo xe hơi, xoay góc nhìn 360°, kiểm tra điện áp ắc quy, thay lõi lọc gió, căn chỉnh bugi đánh lửa và nổ máy thử nghiệm ngay trong trình duyệt.
+            </p>
+            <div className="grid grid-cols-2 gap-2 pt-2 text-xs text-teal-200">
+              <div className="p-2.5 rounded-xl bg-white/10 border border-white/10">
+                • Đo điện áp ắc quy & thay mới
+              </div>
+              <div className="p-2.5 rounded-xl bg-white/10 border border-white/10">
+                • Khởi động máy rung 850 RPM
+              </div>
+            </div>
+          </div>
+
+          <div className="flex flex-col sm:flex-row items-center gap-3 pt-2">
+            <button
+              onClick={() => setCurrentTab('tasks')}
+              className="w-full sm:w-auto px-5 py-3 rounded-2xl bg-teal-500 hover:bg-teal-400 text-slate-950 font-black text-xs sm:text-sm shadow-md transition-all flex items-center justify-center gap-2"
+            >
+              <Wrench className="w-4 h-4" />
+              <span>Vào Xưởng Ô Tô 3D Thực Hành</span>
+              <ArrowRight className="w-4 h-4" />
             </button>
           </div>
         </div>

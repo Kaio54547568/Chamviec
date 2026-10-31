@@ -464,5 +464,44 @@ export const CAREERS_DATA: Career[] = [
     linkedMajorIds: ['luat'],
     dataSource: 'Liên đoàn Luật sư Việt Nam & Luật Luật sư hiện hành',
     lastUpdated: '2024-11-12'
+  },
+  {
+    id: 'ky-thuat-vien-o-to',
+    title: 'Kỹ thuật viên Sửa chữa & Chẩn đoán Ô tô',
+    category: 'KyThuat',
+    categoryLabel: 'Kỹ thuật & Công nghệ Ô tô',
+    riasecCodes: ['R', 'I', 'C'],
+    shortSummary: 'Khám xét, đo đạc điện áp, chẩn đoán lỗi động cơ/xe điện, thay thế phụ tùng và bảo dưỡng hệ thống an toàn xe hơi trong không gian xưởng dịch vụ hiện đại.',
+    dailyRoutine: [
+      'Tiếp nhận phiếu lệnh sửa chữa và trao đổi tình trạng xe với cố vấn dịch vụ.',
+      'Dùng máy đọc lỗi OBD-II kết nối cổng chẩn đoán ECU để đọc mã lỗi DTC.',
+      'Mở khoang máy, kiểm tra ắc quy, hệ thống đánh lửa, lọc gió và mức dung dịch giải nhiệt.',
+      'Thao tác tháo lắp, căn chỉnh khe hở bugi, bảo dưỡng phanh và thay dầu bôi trơn.',
+      'Nổ máy thử nghiệm, chạy kiểm tra thông số vòng tua RPM và dòng sạc máy phát điện.'
+    ],
+    typicalTasks: [
+      'Xử lý hiện tượng xe đề khó nổ do sụt áp ắc quy hoặc đánh lửa yếu.',
+      'Thay thế cụm lọc gió và vệ sinh bướm ga giúp xe tiết kiệm nhiên liệu.',
+      'Bảo dưỡng hệ thống làm mát ngăn ngừa động cơ bị quá nhiệt trên cao tốc.'
+    ],
+    toolsUsed: ['Đồng hồ vạn năng điện tử', 'Máy chẩn đoán OBD-II', 'Cờ-lê lực & tuýp mở bugi', 'Cầu nâng thủy lực', 'Bộ đo áp suất nén buồng đốt'],
+    workEnvironment: 'Xưởng dịch vụ đại lý 3S/4S chính hãng (Toyota, VinFast, Hyundai, Thaco); môi trường tiếp xúc máy móc cơ điện, tiếng động cơ và mùi dầu mỡ kỹ thuật.',
+    difficultiesAndTradeoffs: [
+      'Công việc đòi hỏi thể lực, thao tác đứng và cúi người nhiều giờ trong ngày.',
+      'Xe hơi hiện đại và xe điện tích hợp rất nhiều vi điều khiển, phải liên tục cập nhật tài liệu kỹ thuật điện tử.',
+      'Tuyệt đối tuân thủ quy tắc an toàn lao động chống điện giật và cháy nổ.'
+    ],
+    coreSkills: [
+      'Khéo léo thao tác chân tay với dụng cụ cơ khí chuyên dụng',
+      'Tư duy logic phân tích nguyên nhân - kết quả khi chẩn đoán lỗi',
+      'Đọc hiểu sơ đồ mạch điện xe hơi (Wiring diagram)',
+      'Tính cẩn trọng, kỷ luật tuân thủ thứ tự tháo lắp'
+    ],
+    highSchoolSubjects: ['Vật lý', 'Toán học', 'Tin học', 'Công nghệ'],
+    entryPathway: 'Tốt nghiệp Trung cấp/Cao đẳng/Đại học ngành Công nghệ Kỹ thuật Ô tô, Kỹ thuật Cơ điện tử; hoặc hoàn thành chương trình đào tạo nghề kỹ thuật viên chuẩn hãng.',
+    linkedMajorIds: ['ktoto', 'cddt'],
+    simulationTaskId: 'task-automotive-3d',
+    dataSource: 'Hiệp hội Các nhà sản xuất Ô tô Việt Nam (VAMA) & Khung kỹ năng nghề ô tô 2024',
+    lastUpdated: '2024-11-25'
   }
 ];

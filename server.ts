@@ -567,6 +567,78 @@ app.patch('/api/enterprise/registrations/:code/status', (req, res) => {
   return res.json({ success: true, data: reg, message: `Đã cập nhật trạng thái sang ${status}` });
 });
 
+// EIE Education Free English Account Registration
+interface EieEnglishRegistration {
+  registrationCode: string;
+  fullName: string;
+  gradeLevel: string;
+  contactEmail: string;
+  partnerUnit: string;
+  status: 'PENDING_RECEIVED' | 'PROCESSING' | 'ACCOUNT_ISSUED';
+  createdAt: string;
+}
+
+const EIE_ENGLISH_REGISTRATIONS: EieEnglishRegistration[] = [];
+
+app.post('/api/eie/register-english-account', (req, res) => {
+  try {
+    const { fullName, gradeLevel, contactEmail } = req.body;
+    if (!fullName || !contactEmail || !contactEmail.includes('@')) {
+      return res.status(400).json({
+        success: false,
+        error: 'INVALID_INPUT',
+        message: 'Vui lòng điền họ tên hiển thị và email liên hệ hợp lệ.'
+      });
+    }
+
+    const existing = EIE_ENGLISH_REGISTRATIONS.find(
+      (r) => r.contactEmail.toLowerCase() === contactEmail.toLowerCase()
+    );
+    if (existing) {
+      return res.json({
+        success: true,
+        alreadyRegistered: true,
+        data: existing,
+        message: 'Email này đã được ghi nhận trong danh sách tiếp nhận của EIE Education.'
+      });
+    }
+
+    const regCode = 'EIE-' + Date.now().toString(36).toUpperCase() + '-' + Math.floor(100 + Math.random() * 900);
+    const newReg: EieEnglishRegistration = {
+      registrationCode: regCode,
+      fullName: String(fullName).trim(),
+      gradeLevel: gradeLevel || 'lop_12',
+      contactEmail: String(contactEmail).trim().toLowerCase(),
+      partnerUnit: 'EIE Education',
+      status: 'PENDING_RECEIVED',
+      createdAt: new Date().toISOString()
+    };
+
+    EIE_ENGLISH_REGISTRATIONS.push(newReg);
+
+    return res.json({
+      success: true,
+      data: newReg,
+      message: 'Đã tiếp nhận đăng ký nhận tài khoản tiếng Anh miễn phí từ EIE Education!'
+    });
+  } catch (err: any) {
+    console.error('Error in EIE registration:', err);
+    return res.status(500).json({
+      success: false,
+      error: 'SERVER_ERROR',
+      message: 'Không thể tiếp nhận đăng ký lúc này. Vui lòng thử lại.'
+    });
+  }
+});
+
+app.get('/api/eie/registrations-count', (req, res) => {
+  return res.json({
+    success: true,
+    count: EIE_ENGLISH_REGISTRATIONS.length,
+    partner: 'EIE Education'
+  });
+});
+
 
 async function startServer() {
   if (process.env.NODE_ENV !== 'production') {
@@ -582,8 +654,9 @@ async function startServer() {
     });
   }
 
-  app.listen(PORT, () => {
-    console.log(`Server running on port ${PORT}`);
+  const portNumber = Number(PORT) || 3000;
+  app.listen(portNumber, '0.0.0.0', () => {
+    console.log(`Server running on http://0.0.0.0:${portNumber}`);
   });
 }
 
