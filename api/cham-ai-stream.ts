@@ -26,7 +26,7 @@ export default async function handler(req: any, res: any) {
 
   try {
     const body = typeof req.body === 'string' ? JSON.parse(req.body) : req.body || {};
-    const { message, profile, currentContext, chatHistory } = body;
+    const { message, language, profile, currentContext, chatHistory } = body;
 
     if (!message || !message.trim()) {
       return res.status(400).json({
@@ -50,6 +50,7 @@ export default async function handler(req: any, res: any) {
 
     await streamChamAiChat({
       message,
+      language: language === 'en' ? 'en' : 'vi',
       profile,
       currentContext,
       chatHistory,

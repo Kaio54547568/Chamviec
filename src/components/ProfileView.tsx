@@ -18,6 +18,7 @@ import {
 import { GradeLevel, RiasecCode, StudentProfile, TestQuotaInfo } from '../types';
 import { RIASEC_INFO, RIASEC_QUESTIONS, CAREER_VALUES_LIST } from '../data/riasecQuestions';
 import { exportProfileToJson, resetProfile, saveStudentProfile } from '../utils/storage';
+import { getTestAttemptKey } from '../utils/testAttempt';
 import { useLanguage } from '../i18n/LanguageContext';
 
 interface ProfileViewProps {
@@ -49,14 +50,7 @@ export const ProfileView: React.FC<ProfileViewProps> = ({
   const [quotaInfo, setQuotaInfo] = useState<TestQuotaInfo | null>(null);
   const [isSubmittingAttempt, setIsSubmittingAttempt] = useState(false);
   const [quotaNotice, setQuotaNotice] = useState<string | null>(null);
-  const [idempotencyKey] = useState<string>(() => {
-    let key = sessionStorage.getItem('cham_viec_test_idem_key');
-    if (!key) {
-      key = `CV-TEST-${Date.now()}-${Math.random().toString(36).slice(2, 8)}`;
-      sessionStorage.setItem('cham_viec_test_idem_key', key);
-    }
-    return key;
-  });
+
 
   // Fetch quota from server on mount
   useEffect(() => {
@@ -139,7 +133,8 @@ export const ProfileView: React.FC<ProfileViewProps> = ({
 
     const updatedProfile = {
       ...profile,
-      riasecScores: newScores
+      riasecScores: newScores,
+      riasecAnswerCount: Object.keys(nextAnswers).length
     };
     setProfile(updatedProfile);
     saveStudentProfile(updatedProfile);
@@ -147,6 +142,7 @@ export const ProfileView: React.FC<ProfileViewProps> = ({
   };
 
   const handleSubmitCompleteTest = async () => {
+    if (Object.keys(questionAnswers).length !== RIASEC_QUESTIONS.length || isSubmittingAttempt) return;
     setIsSubmittingAttempt(true);
     setQuotaNotice(null);
 
@@ -156,7 +152,7 @@ export const ProfileView: React.FC<ProfileViewProps> = ({
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
           email: 'student@chamviec.vn',
-          idempotencyKey,
+          idempotencyKey: getTestAttemptKey(questionAnswers),
           riasecScores: profile.riasecScores,
         })
       });
@@ -404,7 +400,7 @@ export const ProfileView: React.FC<ProfileViewProps> = ({
               </span>
 
               <button
-                disabled={isSubmittingAttempt}
+                disabled={isSubmittingAttempt || answeredCount !== RIASEC_QUESTIONS.length}
                 onClick={handleSubmitCompleteTest}
                 className="px-6 py-3 rounded-xl bg-teal-600 hover:bg-teal-700 text-white font-bold text-xs shadow-md transition-all flex items-center gap-2"
               >

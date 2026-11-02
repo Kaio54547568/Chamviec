@@ -2,10 +2,11 @@ import { StudentProfile, RecommendationSnapshot, RiasecCode, ActionPlanItem } fr
 import { CAREERS_DATA } from '../data/careers';
 import { MAJORS_DATA } from '../data/majors';
 import { SIMULATION_TASKS } from '../data/tasks';
+import { hasCompletedRiasec, RIASEC_MAX_SCORES } from './riasec';
 import { RIASEC_INFO } from '../data/riasecQuestions';
 import { localizeCareer, localizeMajor, localizeTask, localizeSubject } from './i18nData';
 
-export const RULE_ENGINE_VERSION = '2.4.0-transparent-2026';
+export const RULE_ENGINE_VERSION = '2.4.1-transparent-2026';
 
 // Map each task ID to the RIASEC codes of its associated career for fast, crash-safe lookup
 const TASK_RIASEC_MAP: Record<string, RiasecCode[]> = (() => {
@@ -26,6 +27,9 @@ export function generateRecommendations(
   profile: StudentProfile,
   lang: 'vi' | 'en' = 'vi'
 ): RecommendationSnapshot {
+  if (!hasCompletedRiasec(profile)) {
+    return { ruleVersion: RULE_ENGINE_VERSION, generatedDate: new Date().toLocaleDateString(lang === 'en' ? 'en-US' : 'vi-VN'), recommendations: [] };
+  }
   const scores = profile.riasecScores || { R: 0, I: 0, A: 0, S: 0, E: 0, C: 0 };
   const favoriteSubjects = profile.favoriteSubjects || [];
   const academicStrengths = profile.academicStrengths || [];
@@ -38,7 +42,6 @@ export function generateRecommendations(
   const top1 = sortedCodes[0] || 'I';
   const top2 = sortedCodes[1] || 'R';
   const top3 = sortedCodes[2] || 'S';
-  const maxRiasecPossible = 50;
 
   const localizedSubjects = favoriteSubjects.map((s) => localizeSubject(s, lang));
   const localizedStrengths = academicStrengths.map((s) => localizeSubject(s, lang));
@@ -49,15 +52,15 @@ export function generateRecommendations(
     const careerCodes = rawCareer.riasecCodes || [];
 
     if (careerCodes.includes(top1)) {
-      const ratio = Math.min(1, Math.max(0.4, (scores[top1] || 0) / maxRiasecPossible));
+      const ratio = Math.min(1, Math.max(0, (scores[top1] || 0) / RIASEC_MAX_SCORES[top1]));
       riasecPoints += Math.round(25 * ratio);
     }
     if (careerCodes.includes(top2)) {
-      const ratio = Math.min(1, Math.max(0.4, (scores[top2] || 0) / maxRiasecPossible));
+      const ratio = Math.min(1, Math.max(0, (scores[top2] || 0) / RIASEC_MAX_SCORES[top2]));
       riasecPoints += Math.round(15 * ratio);
     }
     if (careerCodes.includes(top3)) {
-      const ratio = Math.min(1, Math.max(0.4, (scores[top3] || 0) / maxRiasecPossible));
+      const ratio = Math.min(1, Math.max(0, (scores[top3] || 0) / RIASEC_MAX_SCORES[top3]));
       riasecPoints += Math.round(5 * ratio);
     }
 
@@ -241,6 +244,7 @@ export function generateActionPlan(
   existingSnapshot?: RecommendationSnapshot
 ): ActionPlanItem[] {
   const snapshot = existingSnapshot || generateRecommendations(profile, lang);
+  if (snapshot.recommendations.length === 0) return [];
   const topRec = snapshot.recommendations[0];
   const topCareerTitle = topRec?.career.title || (lang === 'en' ? 'target career' : 'nghề nghiệp mục tiêu');
   const suggestedTaskTitle = topRec?.suggestedTask.title || (lang === 'en' ? 'Career Simulation' : 'Mô phỏng nghề nghiệp');

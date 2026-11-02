@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, lazy, Suspense } from 'react';
 import { 
   PlayCircle, 
   CheckCircle2, 
@@ -23,11 +23,11 @@ interface SimulationTasksViewProps {
   setProfile: React.Dispatch<React.SetStateAction<StudentProfile>>;
 }
 
-import { SemiconductorSimulation3D } from './simulations/SemiconductorSimulation3D';
-import { CircuitSimulation3D } from './simulations/CircuitSimulation3D';
-import { ArchitectureSimulation3D } from './simulations/ArchitectureSimulation3D';
-import { AgricultureSimulation3D } from './simulations/AgricultureSimulation3D';
-import { AutomotiveTechnicianSimulation } from './simulations/AutomotiveTechnicianSimulation';
+const SemiconductorSimulation3D = lazy(() => import('./simulations/SemiconductorSimulation3D').then(m => ({ default: m.SemiconductorSimulation3D })));
+const CircuitSimulation3D = lazy(() => import('./simulations/CircuitSimulation3D').then(m => ({ default: m.CircuitSimulation3D })));
+const ArchitectureSimulation3D = lazy(() => import('./simulations/ArchitectureSimulation3D').then(m => ({ default: m.ArchitectureSimulation3D })));
+const AgricultureSimulation3D = lazy(() => import('./simulations/AgricultureSimulation3D').then(m => ({ default: m.AgricultureSimulation3D })));
+const AutomotiveTechnicianSimulation = lazy(() => import('./simulations/AutomotiveTechnicianSimulation').then(m => ({ default: m.AutomotiveTechnicianSimulation })));
 import { useLanguage } from '../i18n/LanguageContext';
 import { localizeTask } from '../utils/i18nData';
 
@@ -115,6 +115,7 @@ export const SimulationTasksView: React.FC<SimulationTasksViewProps> = ({
   };
 
   return (
+    <Suspense fallback={<p role="status">{language === 'vi' ? 'Đang tải mô phỏng…' : 'Loading simulation…'}</p>}>
     <div className="space-y-8 pb-16">
       {/* 3D Modals */}
       {active3DModal === 'semiconductor' && (
@@ -654,5 +655,6 @@ export const SimulationTasksView: React.FC<SimulationTasksViewProps> = ({
         </div>
       )}
     </div>
+    </Suspense>
   );
 };

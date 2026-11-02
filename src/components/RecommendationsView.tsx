@@ -1,3 +1,4 @@
+import { IncompleteProfileNotice } from './IncompleteProfileNotice';
 import React, { useState, useMemo } from 'react';
 import { 
   Sparkles, 
@@ -253,6 +254,7 @@ export const RecommendationsView: React.FC<RecommendationsViewProps> = ({
       </div>
 
       {/* TAB 1: RECOMMENDED CAREERS */}
+      {activeTab === 'recommended' && snapshot.recommendations.length === 0 && <IncompleteProfileNotice />}
       {activeTab === 'recommended' && (
         <div className="space-y-6">
           {snapshot.recommendations.map((rec, index) => {

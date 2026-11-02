@@ -1,3 +1,4 @@
+import { isEnterpriseBatchOpen } from '../utils/enterpriseAvailability';
 import React, { useState, useEffect } from 'react';
 import { 
   Briefcase, 
@@ -58,6 +59,8 @@ export const EnterpriseExperienceView: React.FC = () => {
 
   // Admin View State
   const [showAdminTab, setShowAdminTab] = useState(false);
+  const [adminToken, setAdminToken] = useState('');
+  const [adminError, setAdminError] = useState<string | null>(null);
   const [adminRegistrations, setAdminRegistrations] = useState<EnterpriseRegistration[]>([]);
   const [adminSearch, setAdminSearch] = useState('');
 
@@ -83,13 +86,14 @@ export const EnterpriseExperienceView: React.FC = () => {
 
   const fetchAdminRegistrations = async () => {
     try {
-      const res = await fetch('/api/enterprise/registrations');
+      setAdminError(null);
+      const res = await fetch('/api/enterprise/registrations', { headers: { Authorization: `Bearer ${adminToken}` } });
       const data = await res.json();
-      if (data.success && data.data) {
-        setAdminRegistrations(data.data);
-      }
+      if (!res.ok || !data.success) throw new Error(data.message || 'Unable to load registrations');
+      setAdminRegistrations(data.data);
     } catch (e) {
-      console.error('Failed to load registrations:', e);
+      setAdminRegistrations([]);
+      setAdminError(e instanceof Error ? e.message : 'Unable to load registrations');
     }
   };
 
@@ -189,14 +193,16 @@ export const EnterpriseExperienceView: React.FC = () => {
     try {
       const res = await fetch(`/api/enterprise/registrations/${code}/status`, {
         method: 'PATCH',
-        headers: { 'Content-Type': 'application/json' },
+        headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${adminToken}` },
         body: JSON.stringify({ status: newStatus })
       });
-      if (res.ok) {
-        fetchAdminRegistrations();
+      if (!res.ok) {
+        const data = await res.json();
+        throw new Error(data.message || 'Unable to update registration');
       }
+      await fetchAdminRegistrations();
     } catch (e) {
-      console.error(e);
+      setAdminError(e instanceof Error ? e.message : 'Unable to update registration');
     }
   };
 
@@ -217,7 +223,9 @@ export const EnterpriseExperienceView: React.FC = () => {
           <button
             onClick={() => {
               setShowAdminTab(!showAdminTab);
-              if (!showAdminTab) fetchAdminRegistrations();
+              setAdminRegistrations([]);
+              setAdminToken('');
+              setAdminError(null);
             }}
             className="text-xs font-semibold text-slate-500 hover:text-indigo-600 flex items-center gap-1.5 px-3 py-1 rounded-xl bg-slate-100 hover:bg-slate-200/80"
           >
@@ -277,6 +285,19 @@ export const EnterpriseExperienceView: React.FC = () => {
               </button>
             </div>
           </div>
+
+          <form onSubmit={e => { e.preventDefault(); fetchAdminRegistrations(); }} className="flex flex-wrap items-end gap-3">
+            <label className="text-sm font-semibold">
+              {language === 'vi' ? 'Khóa quản trị' : 'Admin access key'}
+              <input type="password" autoComplete="off" required value={adminToken}
+                onChange={e => { setAdminToken(e.target.value); setAdminRegistrations([]); setAdminError(null); }}
+                className="block mt-1 p-2 rounded-lg border border-slate-300" />
+            </label>
+            <button type="submit" disabled={!adminToken.trim()} className="rounded-lg bg-indigo-700 px-4 py-2 text-sm text-white disabled:opacity-50">
+              {language === 'vi' ? 'Tải danh sách' : 'Load registrations'}
+            </button>
+          </form>
+          {adminError && <p role="alert" className="text-sm text-rose-700">{adminError}</p>}
 
           <div className="overflow-x-auto">
             <table className="w-full text-xs text-left">
@@ -355,6 +376,7 @@ export const EnterpriseExperienceView: React.FC = () => {
           {localizedBatches.map((batch) => {
             const slotsRemaining = batch.totalSlots - batch.registeredSlots;
             const isFull = slotsRemaining <= 0 || batch.status === 'HET_CHO';
+            const isClosed = !isEnterpriseBatchOpen(batch);
 
             return (
               <div
@@ -482,16 +504,16 @@ export const EnterpriseExperienceView: React.FC = () => {
                   </div>
 
                   <button
-                    disabled={isFull}
+                    disabled={isClosed}
                     onClick={() => handleOpenRegisterModal(batch)}
                     className={`px-5 py-2.5 rounded-xl font-bold text-xs shadow-xs transition-all flex items-center gap-1.5 ${
-                      isFull
+                      isClosed
                         ? 'bg-slate-200 text-slate-400 cursor-not-allowed'
                         : 'bg-teal-700 hover:bg-teal-800 text-white shadow-teal-700/20'
                     }`}
                   >
-                    <span>{isFull ? t.enterprise.fullSlots : t.enterprise.registerBtn}</span>
-                    {!isFull && <ChevronRight className="w-4 h-4" />}
+                    <span>{isFull ? t.enterprise.fullSlots : isClosed ? (language === 'vi' ? 'Đã đóng / Chưa mở đăng ký' : 'Registration closed / Not open') : t.enterprise.registerBtn}</span>
+                    {!isClosed && <ChevronRight className="w-4 h-4" />}
                   </button>
                 </div>
               </div>

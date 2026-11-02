@@ -3,23 +3,24 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, lazy, Suspense } from 'react';
 import { Navbar } from './components/Navbar';
-import { HomeView } from './components/HomeView';
-import { ProfileView } from './components/ProfileView';
-import { RecommendationsView } from './components/RecommendationsView';
-import { SimulationTasksView } from './components/SimulationTasksView';
-import { EnterpriseExperienceView } from './components/EnterpriseExperienceView';
-import { UniversityAdmissionsView } from './components/UniversityAdmissionsView';
-import { VideoStoriesView } from './components/VideoStoriesView';
-import { ReportView } from './components/ReportView';
-import { AdminView } from './components/AdminView';
-import { PhuongAssistantModal } from './components/PhuongAssistantModal';
 import { ChamAiChatbot } from './components/ChamAiChatbot';
 import { StudentProfile } from './types';
 import { loadStudentProfile, saveStudentProfile } from './utils/storage';
 import { Sparkles, HeartHandshake, ShieldCheck, HelpCircle } from 'lucide-react';
 import { useLanguage } from './i18n/LanguageContext';
+
+const HomeView = lazy(() => import('./components/HomeView').then(m => ({ default: m.HomeView })));
+const ProfileView = lazy(() => import('./components/ProfileView').then(m => ({ default: m.ProfileView })));
+const RecommendationsView = lazy(() => import('./components/RecommendationsView').then(m => ({ default: m.RecommendationsView })));
+const SimulationTasksView = lazy(() => import('./components/SimulationTasksView').then(m => ({ default: m.SimulationTasksView })));
+const EnterpriseExperienceView = lazy(() => import('./components/EnterpriseExperienceView').then(m => ({ default: m.EnterpriseExperienceView })));
+const UniversityAdmissionsView = lazy(() => import('./components/UniversityAdmissionsView').then(m => ({ default: m.UniversityAdmissionsView })));
+const VideoStoriesView = lazy(() => import('./components/VideoStoriesView').then(m => ({ default: m.VideoStoriesView })));
+const ReportView = lazy(() => import('./components/ReportView').then(m => ({ default: m.ReportView })));
+const AdminView = lazy(() => import('./components/AdminView').then(m => ({ default: m.AdminView })));
+const PhuongAssistantModal = lazy(() => import('./components/PhuongAssistantModal').then(m => ({ default: m.PhuongAssistantModal })));
 
 export default function App() {
   const { t, language } = useLanguage();
@@ -94,6 +95,7 @@ export default function App() {
 
       {/* Main Content Area */}
       <main className="flex-1 max-w-7xl w-full mx-auto px-4 sm:px-6 lg:px-8 pt-6 sm:pt-8">
+        <Suspense fallback={<p role="status" className="py-10 text-center">{language === 'vi' ? 'Đang tải…' : 'Loading…'}</p>}>
         {currentTab === 'home' && (
           <HomeView
             onStartDiscovery={() => handleNavigateTab('profile')}
@@ -159,6 +161,7 @@ export default function App() {
         {currentTab === 'admin' && (
           <AdminView />
         )}
+        </Suspense>
       </main>
 
       {/* CHẠM AI — Trợ lý hướng nghiệp (Floating Widget & Popup Drawer) */}
@@ -173,12 +176,14 @@ export default function App() {
       />
 
       {/* Assistant Modal (Cô Phượng) */}
-      <PhuongAssistantModal
+      <Suspense fallback={null}>
+      {isAssistantOpen && <PhuongAssistantModal
         isOpen={isAssistantOpen}
         onClose={() => setIsAssistantOpen(false)}
         profile={profile}
         currentTab={currentTab}
-      />
+      />}
+      </Suspense>
 
       {/* Footer */}
       <footer className="bg-white border-t border-slate-200 mt-auto py-8 text-xs text-slate-500">

@@ -32,6 +32,7 @@ export interface MatchScoreBreakdown {
 }
 
 export interface StudentProfile {
+  riasecAnswerCount?: number;
   id: string;
   updatedAt: string;
   grade: GradeLevel;

@@ -1,13 +1,57 @@
 {
   "version": 2,
   "rewrites": [
-    { "source": "/api/cham-ai/stream", "destination": "/api/cham-ai-stream" },
-    { "source": "/api/cham-ai/chat", "destination": "/api/cham-ai" },
-    { "source": "/api/cham-ai", "destination": "/api/cham-ai" },
-    { "source": "/api/phuong-chat", "destination": "/api/cham-ai" },
-    { "source": "/api/test-quota", "destination": "/api/test-quota" },
-    { "source": "/api/test-attempts", "destination": "/api/test-attempts" },
-    { "source": "/api/enterprise/batches", "destination": "/api/enterprise-batches" },
-    { "source": "/api/enterprise/register", "destination": "/api/enterprise-register" }
+    {
+      "source": "/api/cham-ai/stream",
+      "destination": "/api/cham-ai-stream"
+    },
+    {
+      "source": "/api/cham-ai/chat",
+      "destination": "/api/cham-ai"
+    },
+    {
+      "source": "/api/cham-ai",
+      "destination": "/api/cham-ai"
+    },
+    {
+      "source": "/api/phuong-chat",
+      "destination": "/api/cham-ai"
+    },
+    {
+      "source": "/api/test-quota",
+      "destination": "/api/test-quota"
+    },
+    {
+      "source": "/api/test-attempts",
+      "destination": "/api/test-attempts"
+    },
+    {
+      "source": "/api/enterprise/batches",
+      "destination": "/api/enterprise-batches"
+    },
+    {
+      "source": "/api/enterprise/register",
+      "destination": "/api/enterprise-register"
+    },
+    {
+      "source": "/api/enterprise/registrations",
+      "destination": "/api/enterprise-admin"
+    },
+    {
+      "source": "/api/enterprise/registrations/:code/status",
+      "destination": "/api/enterprise-admin?code=:code"
+    },
+    {
+      "source": "/api/test-quota/grant-credit",
+      "destination": "/api/test-quota-grant-credit"
+    },
+    {
+      "source": "/api/eie/register-english-account",
+      "destination": "/api/eie"
+    },
+    {
+      "source": "/api/eie/registrations-count",
+      "destination": "/api/eie"
+    }
   ]
 }

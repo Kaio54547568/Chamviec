@@ -1,3 +1,4 @@
+import { isEnterpriseBatchOpen } from '../src/utils/enterpriseAvailability.ts';
 import { ENTERPRISE_BATCHES, ENTERPRISE_REGISTRATIONS } from '../src/server/enterpriseAndQuotaService.ts';
 
 export default async function handler(req: any, res: any) {
@@ -51,6 +52,10 @@ export default async function handler(req: any, res: any) {
         error: 'BATCH_FULL',
         message: 'Đợt trải nghiệm này hiện đã hết chỗ. Vui lòng chọn đợt khác hoặc tham gia danh sách chờ.'
       });
+    }
+
+    if (!isEnterpriseBatchOpen(batch)) {
+      return res.status(409).json({ success: false, error: 'BATCH_CLOSED', message: 'Đợt trải nghiệm chưa mở, đã đóng hoặc đã quá hạn đăng ký.' });
     }
 
     batch.registeredSlots += 1;

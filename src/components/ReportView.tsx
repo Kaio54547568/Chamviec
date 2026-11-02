@@ -1,3 +1,4 @@
+import { IncompleteProfileNotice } from './IncompleteProfileNotice';
 import React, { useState, useMemo } from 'react';
 import { 
   FileText, 
@@ -135,6 +136,8 @@ Saved Majors & Universities: ${savedAdmissionsRecords.map(a => `${a.universityNa
     setCopied(true);
     setTimeout(() => setCopied(false), 2000);
   };
+
+  if (snapshot.recommendations.length === 0) return <IncompleteProfileNotice />;
 
   return (
     <div className="space-y-8 pb-16">

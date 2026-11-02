@@ -172,7 +172,7 @@ export const TRANSLATIONS = {
     },
     riasec: {
       title: 'Trắc nghiệm Sở thích Nghề nghiệp RIASEC (John Holland)',
-      subtitle: '60 câu hỏi chuẩn hóa theo lý thuyết Holland & SCCT, giúp học sinh nhận diện thiên hướng sở thích và thế mạnh cốt lõi.',
+      subtitle: '24 câu hỏi theo lý thuyết Holland & SCCT, giúp học sinh nhận diện thiên hướng sở thích và thế mạnh cốt lõi.',
       progress: 'Tiến độ làm bài',
       question: 'Câu hỏi',
       scale1: 'Hoàn toàn không thích',
@@ -491,7 +491,7 @@ export const TRANSLATIONS = {
     },
     riasec: {
       title: 'RIASEC Career Interest Assessment (John Holland)',
-      subtitle: '60 standardized items based on Holland & SCCT frameworks to uncover core personality interests and vocational fit.',
+      subtitle: '24 items based on Holland & SCCT frameworks to uncover core personality interests and vocational fit.',
       progress: 'Assessment Progress',
       question: 'Question',
       scale1: 'Strongly Dislike',
