@@ -309,7 +309,7 @@ export const ProfileView: React.FC<ProfileViewProps> = ({
                         {code}
                       </div>
                       <div className={`font-bold text-xs ${info.color}`}>
-                        {language === "vi" ? info.titleVi : info.name}
+                        {language === "vi" ? info.title.vi : info.title.en}
                       </div>
                       <div className="font-extrabold text-sm text-slate-800">
                         {score} {language === "vi" ? "đ" : "pts"}
@@ -321,18 +321,20 @@ export const ProfileView: React.FC<ProfileViewProps> = ({
             </div>
           )}
 
-          {/* 60 Standard Questions List */}
+          {/* Standard Questions List */}
           <div className="bg-white rounded-3xl p-6 sm:p-8 border border-slate-200/80 shadow-xs space-y-6">
             <div className="flex items-center justify-between pb-3 border-b border-slate-200">
               <span className="text-xs font-bold text-slate-800">
-                {language === "vi" ? `Thang đo 5 mức độ: 1 (${t.riasec.scale1}) đến 5 (${t.riasec.scale5})` : `5-Point Likert Scale: 1 (${t.riasec.scale1}) to 5 (${t.riasec.scale5})`}
+                {language === "vi" 
+                  ? `Thang đo 5 mức độ: 1 (${t.riasec.scale1}) đến 5 (${t.riasec.scale5})` 
+                  : `Rate each activity on a scale from 1 (${t.riasec.scale1}) to 5 (${t.riasec.scale5}).`}
               </span>
               <button
                 onClick={handleResetData}
-                className="text-xs text-rose-600 hover:underline flex items-center gap-1 font-semibold"
+                className="text-xs text-rose-600 hover:underline flex items-center gap-1 font-semibold cursor-pointer"
               >
                 <RefreshCw className="w-3.5 h-3.5" />
-                <span>{language === "vi" ? "Làm mới kết quả" : "Reset Assessment"}</span>
+                <span>{language === "vi" ? "Làm mới kết quả" : "Reset results"}</span>
               </button>
             </div>
 
@@ -357,14 +359,14 @@ export const ProfileView: React.FC<ProfileViewProps> = ({
                             #{idx + 1}
                           </span>
                           <span className={`text-[10px] font-bold px-2 py-0.5 rounded-full border ${info.bgLight} ${info.color}`}>
-                            {language === "vi" ? `Nhóm ${q.code} - ${info.titleVi}` : `Group ${q.code} - ${info.name}`}
+                            {language === "vi" ? `Nhóm ${q.code} - ${info.title.vi}` : `Group ${q.code} – ${info.title.en}`}
                           </span>
                         </div>
                         <p className="text-xs sm:text-sm font-bold text-slate-900 leading-snug">
-                          {language === "en" && q.activityTextEn ? q.activityTextEn : q.activityText}
+                          {q.text[language]}
                         </p>
                         <p className="text-[11px] text-slate-500 italic">
-                          {language === "vi" ? `💡 Gợi ý thực tế: ${q.vietnameseContextTip}` : `💡 Practical example: ${q.contextTipEn || q.vietnameseContextTip}`}
+                          {language === "vi" ? `💡 Gợi ý thực tế: ${q.hint.vi}` : `💡 Practical example: ${q.hint.en}`}
                         </p>
                       </div>
 
@@ -455,12 +457,34 @@ export const ProfileView: React.FC<ProfileViewProps> = ({
               </span>
             </div>
             <div className="flex flex-wrap gap-2">
-              {SUBJECT_OPTIONS.map((sub) => {
-                const isSelected = profile.favoriteSubjects.includes(sub);
+              {SUBJECT_OPTIONS.map((sub, idx) => {
+                const viSubjects = [
+                  'Toán học', 'Ngữ văn', 'Tiếng Anh', 'Vật lý', 'Hóa học', 'Sinh học',
+                  'Lịch sử', 'Địa lý', 'Tin học', 'Giáo dục kinh tế & Pháp luật', 'Công nghệ', 'Mỹ thuật / Âm nhạc'
+                ];
+                const enSubjects = [
+                  'Mathematics', 'Literature', 'English', 'Physics', 'Chemistry', 'Biology',
+                  'History', 'Geography', 'Informatics / CS', 'Economics & Law', 'Technology / Engineering', 'Arts / Music'
+                ];
+                const isSelected =
+                  profile.favoriteSubjects.includes(sub) ||
+                  profile.favoriteSubjects.includes(viSubjects[idx]) ||
+                  profile.favoriteSubjects.includes(enSubjects[idx]);
                 return (
                   <button
                     key={sub}
-                    onClick={() => toggleArrayItem('favoriteSubjects', sub)}
+                    onClick={() => {
+                      const current = [...profile.favoriteSubjects];
+                      const existingIdx = current.findIndex(
+                        (item) => item === sub || item === viSubjects[idx] || item === enSubjects[idx]
+                      );
+                      if (existingIdx > -1) {
+                        current.splice(existingIdx, 1);
+                      } else {
+                        current.push(sub);
+                      }
+                      handleUpdateField('favoriteSubjects', current);
+                    }}
                     className={`px-3 py-1.5 rounded-xl text-xs font-semibold transition-all ${
                       isSelected
                         ? 'bg-teal-600 text-white shadow-xs'
@@ -500,7 +524,7 @@ export const ProfileView: React.FC<ProfileViewProps> = ({
                 type="text"
                 value={(profile.targetCombinations || ['A00', 'D01']).join(', ')}
                 onChange={(e) => handleUpdateField('targetCombinations', e.target.value.split(',').map(s => s.trim()))}
-                placeholder="Ví dụ: A00, A01, D01, K01..."
+                placeholder={language === "vi" ? "Ví dụ: A00, A01, D01, K01..." : "E.g.: A00, A01, D01, K01..."}
                 className="w-full p-2.5 rounded-xl border border-slate-300 font-mono text-slate-900 text-sm focus:ring-2 focus:ring-teal-500 focus:outline-none"
               />
               <span className="text-[11px] text-slate-500">{language === "vi" ? "Bao gồm cả các tổ hợp mới 2025 (K01 Toán-Lý-Tin)." : "Includes new 2025 combinations (K01 Math-Physics-Informatics)."}</span>

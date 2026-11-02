@@ -18,6 +18,7 @@ import { VideoStory, StudentProfile, ReflectionRecord } from '../types';
 import { VIDEO_STORIES_DATA } from '../data/videoStories';
 import { saveStudentProfile } from '../utils/storage';
 import { useLanguage } from '../i18n/LanguageContext';
+import { localizeVideoStory } from '../utils/i18nData';
 
 interface VideoStoriesViewProps {
   profile: StudentProfile;
@@ -61,8 +62,18 @@ export const VideoStoriesView: React.FC<VideoStoriesViewProps> = ({
     { id: 'ThuCong', label: language === 'vi' ? 'Thủ công truyền thống' : 'Traditional Crafts' },
   ], [t, language]);
 
+  const localizedVideos = useMemo(() => {
+    return VIDEO_STORIES_DATA.map((v) => localizeVideoStory(v, language));
+  }, [language]);
+
+  const activeSelectedVideo = useMemo(() => {
+    if (!selectedVideo) return null;
+    const raw = VIDEO_STORIES_DATA.find((v) => v.id === selectedVideo.id) || selectedVideo;
+    return localizeVideoStory(raw, language);
+  }, [selectedVideo, language]);
+
   const filteredVideos = useMemo(() => {
-    return VIDEO_STORIES_DATA.filter((video) => {
+    return localizedVideos.filter((video) => {
       // Category filter
       if (selectedCategory !== 'ALL') {
         if (selectedCategory === 'CongNghe' && video.category !== 'CongNghe' && video.category !== 'KyThuat') return false;
@@ -93,7 +104,7 @@ export const VideoStoriesView: React.FC<VideoStoriesViewProps> = ({
 
       return true;
     });
-  }, [selectedCategory, selectedLangFilter, searchQuery]);
+  }, [localizedVideos, selectedCategory, selectedLangFilter, searchQuery]);
 
   const handleToggleSaveVideo = (videoId: string, e: React.MouseEvent) => {
     e.stopPropagation();
@@ -186,7 +197,7 @@ export const VideoStoriesView: React.FC<VideoStoriesViewProps> = ({
               className="py-2.5 px-3 rounded-xl border border-slate-300 text-xs font-medium text-slate-700 bg-white focus:outline-none focus:ring-2 focus:ring-emerald-500"
             >
               <option value="ALL">{language === 'vi' ? 'Mọi ngôn ngữ' : 'All Languages'}</option>
-              <option value="VI">Tiếng Việt</option>
+              <option value="VI">{language === 'vi' ? 'Tiếng Việt' : 'Vietnamese'}</option>
               <option value="EN">English</option>
             </select>
           </div>
@@ -269,7 +280,7 @@ export const VideoStoriesView: React.FC<VideoStoriesViewProps> = ({
                       className={`p-2 rounded-xl backdrop-blur-md transition-colors ${
                         isSaved ? 'bg-amber-500 text-white' : 'bg-slate-900/60 text-white/80 hover:text-white hover:bg-slate-900/90'
                       }`}
-                      title={isSaved ? 'Đã lưu' : 'Lưu video'}
+                      title={isSaved ? (language === 'vi' ? 'Đã lưu' : 'Saved') : (language === 'vi' ? 'Lưu video' : 'Save video')}
                     >
                       <Bookmark className="w-4 h-4 fill-current" />
                     </button>
@@ -325,7 +336,7 @@ export const VideoStoriesView: React.FC<VideoStoriesViewProps> = ({
       )}
 
       {/* DETAIL & REFLECTION MODAL (WITH PROMINENT CLOSE BUTTON) */}
-      {selectedVideo && (
+      {activeSelectedVideo && (
         <div 
           onClick={() => {
             setSelectedVideo(null);
@@ -343,14 +354,14 @@ export const VideoStoriesView: React.FC<VideoStoriesViewProps> = ({
               <div className="space-y-1">
                 <div className="flex items-center gap-2">
                   <span className="text-[11px] font-bold text-emerald-800 uppercase tracking-wider bg-emerald-50 px-2.5 py-0.5 rounded-full border border-emerald-200">
-                    {selectedVideo.careerTitle}
+                    {activeSelectedVideo.careerTitle}
                   </span>
                   <span className="text-[11px] text-slate-400">
-                    {language === 'vi' ? `Kênh: ${selectedVideo.channelName}` : `Channel: ${selectedVideo.channelName}`}
+                    {language === 'vi' ? `Kênh: ${activeSelectedVideo.channelName}` : `Channel: ${activeSelectedVideo.channelName}`}
                   </span>
                 </div>
                 <h3 className="text-lg sm:text-xl font-extrabold text-slate-900 leading-snug">
-                  {selectedVideo.title}
+                  {activeSelectedVideo.title}
                 </h3>
               </div>
 
@@ -363,7 +374,7 @@ export const VideoStoriesView: React.FC<VideoStoriesViewProps> = ({
                   setReflectionAnswer('');
                 }}
                 className="p-2.5 rounded-2xl bg-slate-100 hover:bg-slate-200 text-slate-600 hover:text-slate-900 transition-colors shrink-0 shadow-xs focus:ring-2 focus:ring-emerald-500"
-                aria-label="Đóng cửa sổ"
+                aria-label={t.common.close}
                 title={t.common.close}
               >
                 <X className="w-5 h-5 stroke-[2.5]" />
@@ -374,8 +385,8 @@ export const VideoStoriesView: React.FC<VideoStoriesViewProps> = ({
             <div className="space-y-3">
               <div className="relative aspect-video rounded-2xl overflow-hidden bg-black shadow-md border border-slate-900">
                 <iframe
-                  src={`https://www.youtube-nocookie.com/embed/${selectedVideo.youtubeId}?rel=0&modestbranding=1`}
-                  title={selectedVideo.title}
+                  src={`https://www.youtube-nocookie.com/embed/${activeSelectedVideo.youtubeId}?rel=0&modestbranding=1`}
+                  title={activeSelectedVideo.title}
                   allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
                   allowFullScreen
                   className="w-full h-full border-0"
@@ -394,7 +405,7 @@ export const VideoStoriesView: React.FC<VideoStoriesViewProps> = ({
                 </div>
 
                 <a
-                  href={`https://www.youtube.com/watch?v=${selectedVideo.youtubeId}`}
+                  href={`https://www.youtube.com/watch?v=${activeSelectedVideo.youtubeId}`}
                   target="_blank"
                   rel="noopener noreferrer"
                   className="inline-flex items-center gap-1.5 px-3.5 py-1.5 rounded-xl bg-red-600 hover:bg-red-700 text-white font-bold text-xs shrink-0 shadow-xs transition-colors"
@@ -412,14 +423,14 @@ export const VideoStoriesView: React.FC<VideoStoriesViewProps> = ({
                   {language === 'vi' ? 'Tóm tắt bài học cốt lõi:' : 'Core Lesson Takeaway:'}
                 </h4>
                 <p className="text-slate-600 leading-relaxed font-medium">
-                  {selectedVideo.takeaway || selectedVideo.summary}
+                  {activeSelectedVideo.takeaway || activeSelectedVideo.summary}
                 </p>
 
                 <h4 className="font-bold text-rose-900 pt-2 flex items-center gap-1">
                   <span>{t.stories.hardships}</span>
                 </h4>
                 <ul className="list-disc list-inside space-y-1 text-slate-600">
-                  {selectedVideo.realHardships.map((h, i) => (
+                  {activeSelectedVideo.realHardships.map((h, i) => (
                     <li key={i}>{h}</li>
                   ))}
                 </ul>
@@ -431,7 +442,7 @@ export const VideoStoriesView: React.FC<VideoStoriesViewProps> = ({
                   <span>{t.stories.keyTimestamps}</span>
                 </h4>
                 <div className="space-y-1.5">
-                  {selectedVideo.keyTimestamps.map((ts, i) => (
+                  {activeSelectedVideo.keyTimestamps.map((ts, i) => (
                     <div key={i} className="flex items-start gap-2 text-slate-600">
                       <span className="font-mono font-bold text-emerald-800 bg-emerald-100 px-1.5 py-0.5 rounded text-[11px] shrink-0">
                         {ts.time}
@@ -450,7 +461,7 @@ export const VideoStoriesView: React.FC<VideoStoriesViewProps> = ({
                 <span>{t.stories.reflectionsTitle}</span>
               </h4>
               <ol className="list-decimal list-inside space-y-1.5 text-xs text-amber-900 leading-relaxed font-medium">
-                {selectedVideo.reflectionQuestions.map((q, i) => (
+                {activeSelectedVideo.reflectionQuestions.map((q, i) => (
                   <li key={i}>{q}</li>
                 ))}
               </ol>
@@ -460,8 +471,8 @@ export const VideoStoriesView: React.FC<VideoStoriesViewProps> = ({
             <form onSubmit={handleSaveVideoReflection} className="space-y-3">
               <label className="block text-xs font-bold text-slate-800">
                 {language === 'vi'
-                  ? `Ghi lại suy nghĩ của em sau khi xem câu chuyện của ${selectedVideo.characterName}:`
-                  : `Record your personal reflection after watching ${selectedVideo.characterName}:`}
+                  ? `Ghi lại suy nghĩ của em sau khi xem câu chuyện của ${activeSelectedVideo.characterName}:`
+                  : `Record your personal reflection after watching ${activeSelectedVideo.characterName}:`}
               </label>
               <textarea
                 required

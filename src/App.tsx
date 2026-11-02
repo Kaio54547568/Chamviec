@@ -96,9 +96,12 @@ export default function App() {
       <main className="flex-1 max-w-7xl w-full mx-auto px-4 sm:px-6 lg:px-8 pt-6 sm:pt-8">
         {currentTab === 'home' && (
           <HomeView
-            setCurrentTab={handleNavigateTab}
-            profile={profile}
-            onOpenTask={handleOpenTask}
+            onStartDiscovery={() => handleNavigateTab('profile')}
+            onExploreTasks={() => handleNavigateTab('tasks')}
+            onWatchStories={() => handleNavigateTab('videos')}
+            onViewAdmissions={() => handleNavigateTab('admissions')}
+            onViewRecommendations={() => handleNavigateTab('recommendations')}
+            onViewEnterprise={() => handleNavigateTab('enterprise')}
           />
         )}
 

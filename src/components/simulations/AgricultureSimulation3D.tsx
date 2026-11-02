@@ -374,7 +374,7 @@ export const AgricultureSimulation3D: React.FC<AgricultureSimulation3DProps> = (
               className="px-3 py-1.5 rounded-xl bg-slate-800 hover:bg-slate-700 text-slate-300 text-xs font-medium border border-slate-700 flex items-center gap-1.5"
             >
               <Layers className="w-3.5 h-3.5 text-emerald-400" />
-              <span className="hidden sm:inline">{is2DMode ? 'Chế độ 3D' : 'Dashboard 2D'}</span>
+              <span className="hidden sm:inline">{is2DMode ? (language === 'vi' ? 'Chế độ 3D' : '3D View') : (language === 'vi' ? 'Dashboard 2D' : '2D Dashboard')}</span>
             </button>
 
             <button
@@ -392,7 +392,11 @@ export const AgricultureSimulation3D: React.FC<AgricultureSimulation3DProps> = (
           <div className="space-y-0.5">
             <div className="font-bold text-emerald-300 flex items-center gap-1.5">
               <Sparkles className="w-4 h-4 text-emerald-400" />
-              <span>{t.simulation.missionGoal}: Điều chỉnh 3 chỉ số vào dải tối ưu để đạt Chỉ số Sức sống cây trồng {'>'} 85%</span>
+              <span>
+                {language === 'vi'
+                  ? `${t.simulation.missionGoal}: Điều chỉnh 3 chỉ số vào dải tối ưu để đạt Chỉ số Sức sống cây trồng > 85%`
+                  : `${t.simulation.missionGoal}: Tune the 3 microclimate parameters into the optimal band to reach Plant Vitality > 85%`}
+              </span>
             </div>
             <p className="text-slate-400">
               {language === 'vi'
@@ -405,7 +409,9 @@ export const AgricultureSimulation3D: React.FC<AgricultureSimulation3DProps> = (
             <div className="flex items-center gap-2 bg-slate-900/90 px-3.5 py-1.5 rounded-xl border border-slate-700">
               <Activity className="w-4 h-4 text-emerald-400" />
               <div className="text-right">
-                <span className="text-[10px] text-slate-400 block leading-none">Chỉ số sinh trưởng:</span>
+                <span className="text-[10px] text-slate-400 block leading-none">
+                  {language === 'vi' ? 'Chỉ số sinh trưởng:' : 'Plant Vitality:'}
+                </span>
                 <span className={`font-mono font-bold text-sm ${healthScore >= 80 ? 'text-emerald-400' : healthScore >= 50 ? 'text-amber-400' : 'text-rose-400'}`}>
                   {healthScore}%
                 </span>
@@ -420,32 +426,38 @@ export const AgricultureSimulation3D: React.FC<AgricultureSimulation3DProps> = (
             <div className="w-full h-full p-8 flex flex-col items-center justify-center space-y-4 bg-slate-950">
               <div className="w-80 sm:w-96 p-6 rounded-2xl bg-slate-900 border border-emerald-500/40 space-y-4">
                 <div className="flex items-center justify-between">
-                  <span className="font-bold text-white text-sm">Cảm biến IoT Nhà Màng 4.0</span>
+                  <span className="font-bold text-white text-sm">
+                    {language === 'vi' ? 'Cảm biến IoT Nhà Màng 4.0' : 'Greenhouse 4.0 IoT Telemetry'}
+                  </span>
                   <span className="font-mono text-xs px-2 py-0.5 rounded bg-emerald-950 text-emerald-400 border border-emerald-800">ONLINE</span>
                 </div>
 
                 <div className="space-y-2 text-xs">
                   <div className="flex justify-between text-slate-300">
-                    <span>Ánh sáng quang hợp:</span>
+                    <span>{language === 'vi' ? 'Ánh sáng quang hợp:' : 'Photosynthetic Light:'}</span>
                     <strong className="font-mono text-amber-300">{lightLux.toLocaleString()} Lux</strong>
                   </div>
                   <div className="flex justify-between text-slate-300">
-                    <span>Độ ẩm cơ chất tưới:</span>
+                    <span>{language === 'vi' ? 'Độ ẩm cơ chất tưới:' : 'Substrate Moisture:'}</span>
                     <strong className="font-mono text-cyan-300">{moisture}%</strong>
                   </div>
                   <div className="flex justify-between text-slate-300">
-                    <span>Dẫn điện dinh dưỡng EC:</span>
+                    <span>{language === 'vi' ? 'Dẫn điện dinh dưỡng EC:' : 'Nutrient EC Level:'}</span>
                     <strong className="font-mono text-emerald-300">{nutrientEC} mS/cm</strong>
                   </div>
                   <div className="pt-2 border-t border-slate-800 flex justify-between font-bold text-sm">
-                    <span>Đánh giá sức khỏe cây:</span>
+                    <span>{language === 'vi' ? 'Đánh giá sức khỏe cây:' : 'Crop Health Status:'}</span>
                     <span className={healthScore >= 80 ? 'text-emerald-400' : 'text-amber-400'}>
-                      {healthScore >= 80 ? 'Phát triển xuất sắc' : 'Cần tối ưu vi khí hậu'}
+                      {healthScore >= 80
+                        ? (language === 'vi' ? 'Phát triển xuất sắc' : 'Thriving Growth')
+                        : (language === 'vi' ? 'Cần tối ưu vi khí hậu' : 'Needs Microclimate Tuning')}
                     </span>
                   </div>
                 </div>
               </div>
-              <p className="text-xs text-slate-400">Chế độ 2D Bảng Điều Khiển Cảm Biến Nông Nghiệp Thông Minh</p>
+              <p className="text-xs text-slate-400">
+                {language === 'vi' ? 'Chế độ 2D Bảng Điều Khiển Cảm Biến Nông Nghiệp Thông Minh' : '2D Smart Agriculture IoT Sensor Control Panel'}
+              </p>
             </div>
           ) : (
             <>
@@ -475,7 +487,7 @@ export const AgricultureSimulation3D: React.FC<AgricultureSimulation3DProps> = (
             <div className="flex items-center justify-between">
               <span className="font-bold text-slate-300 flex items-center gap-1">
                 <Sun className="w-3.5 h-3.5 text-amber-400" />
-                <span>1. Cường độ ánh sáng:</span>
+                <span>{language === 'vi' ? '1. Cường độ ánh sáng:' : '1. Light Intensity:'}</span>
               </span>
               <span className="font-mono font-bold text-amber-400">{lightLux.toLocaleString()} Lux</span>
             </div>
@@ -489,9 +501,9 @@ export const AgricultureSimulation3D: React.FC<AgricultureSimulation3DProps> = (
               className="w-full accent-amber-400"
             />
             <div className="flex justify-between text-[10px] text-slate-500">
-              <span>Thiếu sáng (5k)</span>
-              <span className="text-emerald-400 font-semibold">Tối ưu (25k-35k)</span>
-              <span>Cháy lá (50k)</span>
+              <span>{language === 'vi' ? 'Thiếu sáng (5k)' : 'Low Light (5k)'}</span>
+              <span className="text-emerald-400 font-semibold">{language === 'vi' ? 'Tối ưu (25k-35k)' : 'Optimal (25k-35k)'}</span>
+              <span>{language === 'vi' ? 'Cháy lá (50k)' : 'Leaf Scorch (50k)'}</span>
             </div>
           </div>
 
@@ -500,7 +512,7 @@ export const AgricultureSimulation3D: React.FC<AgricultureSimulation3DProps> = (
             <div className="flex items-center justify-between">
               <span className="font-bold text-slate-300 flex items-center gap-1">
                 <Droplets className="w-3.5 h-3.5 text-cyan-400" />
-                <span>2. Độ ẩm giá thể (Tưới nhỏ giọt):</span>
+                <span>{language === 'vi' ? '2. Độ ẩm giá thể (Tưới nhỏ giọt):' : '2. Substrate Moisture (Drip):'}</span>
               </span>
               <span className="font-mono font-bold text-cyan-400">{moisture}%</span>
             </div>
@@ -514,9 +526,9 @@ export const AgricultureSimulation3D: React.FC<AgricultureSimulation3DProps> = (
               className="w-full accent-cyan-400"
             />
             <div className="flex justify-between text-[10px] text-slate-500">
-              <span>Khô héo (20%)</span>
-              <span className="text-emerald-400 font-semibold">Tối ưu (60%-75%)</span>
-              <span>Ngập úng (100%)</span>
+              <span>{language === 'vi' ? 'Khô héo (20%)' : 'Wilted (20%)'}</span>
+              <span className="text-emerald-400 font-semibold">{language === 'vi' ? 'Tối ưu (60%-75%)' : 'Optimal (60%-75%)'}</span>
+              <span>{language === 'vi' ? 'Ngập úng (100%)' : 'Waterlogged (100%)'}</span>
             </div>
           </div>
 
@@ -525,7 +537,7 @@ export const AgricultureSimulation3D: React.FC<AgricultureSimulation3DProps> = (
             <div className="flex items-center justify-between">
               <span className="font-bold text-slate-300 flex items-center gap-1">
                 <Sprout className="w-3.5 h-3.5 text-emerald-400" />
-                <span>3. Nồng độ dinh dưỡng EC:</span>
+                <span>{language === 'vi' ? '3. Nồng độ dinh dưỡng EC:' : '3. Nutrient EC Concentration:'}</span>
               </span>
               <span className="font-mono font-bold text-emerald-400">{nutrientEC} mS/cm</span>
             </div>
@@ -539,9 +551,9 @@ export const AgricultureSimulation3D: React.FC<AgricultureSimulation3DProps> = (
               className="w-full accent-emerald-400"
             />
             <div className="flex justify-between text-[10px] text-slate-500">
-              <span>Suy dinh dưỡng (0.5)</span>
-              <span className="text-emerald-400 font-semibold">Chuẩn (2.0-2.8)</span>
-              <span>Ngộ độc muối (4.0)</span>
+              <span>{language === 'vi' ? 'Suy dinh dưỡng (0.5)' : 'Deficient (0.5)'}</span>
+              <span className="text-emerald-400 font-semibold">{language === 'vi' ? 'Chuẩn (2.0-2.8)' : 'Optimal (2.0-2.8)'}</span>
+              <span>{language === 'vi' ? 'Ngộ độc muối (4.0)' : 'Salt Stress (4.0)'}</span>
             </div>
           </div>
         </div>
@@ -550,31 +562,51 @@ export const AgricultureSimulation3D: React.FC<AgricultureSimulation3DProps> = (
         <div className="p-4 rounded-2xl bg-slate-800/80 border border-slate-700 space-y-3 text-xs">
           <h4 className="font-bold text-emerald-400 flex items-center gap-1.5">
             <HelpCircle className="w-4 h-4 text-emerald-400" />
-            <span>Phản tư trải nghiệm Kỹ sư Nông nghiệp Công nghệ cao (Kolb Learning Cycle):</span>
+            <span>
+              {language === 'vi'
+                ? 'Phản tư trải nghiệm Kỹ sư Nông nghiệp Công nghệ cao (Kolb Learning Cycle):'
+                : 'Smart Agriculture Engineer Experiential Reflection (Kolb Learning Cycle):'}
+            </span>
           </h4>
 
-          <ol className="list-decimal list-inside space-y-1 text-slate-300 leading-relaxed">
-            <li><strong>Trải nghiệm:</strong> Khi độ ẩm vượt quá 85% hoặc dưới 40%, cây cà chua biến đổi màu lá và sức sống ra sao?</li>
-            <li><strong>Quan sát:</strong> Tại sao nông nghiệp công nghệ cao lại giảm được 70% lượng nước tưới so với tưới tràn truyền thống?</li>
-            <li><strong>Khái niệm hóa:</strong> Tìm hiểu về công nghệ tưới nhỏ giọt hồi lưu (Drip Fertigation) và vai trò của vi sinh học rễ cây.</li>
-            <li><strong>Ứng dụng:</strong> Nếu gia đình em hoặc địa phương có vườn cây, em có thể đề xuất giải pháp cảm biến tự động nào đơn giản?</li>
-          </ol>
+          {language === 'vi' ? (
+            <ol className="list-decimal list-inside space-y-1 text-slate-300 leading-relaxed">
+              <li><strong>Trải nghiệm:</strong> Khi độ ẩm vượt quá 85% hoặc dưới 40%, cây cà chua biến đổi màu lá và sức sống ra sao?</li>
+              <li><strong>Quan sát:</strong> Tại sao nông nghiệp công nghệ cao lại giảm được 70% lượng nước tưới so với tưới tràn truyền thống?</li>
+              <li><strong>Khái niệm hóa:</strong> Tìm hiểu về công nghệ tưới nhỏ giọt hồi lưu (Drip Fertigation) và vai trò của vi sinh học rễ cây.</li>
+              <li><strong>Ứng dụng:</strong> Nếu gia đình em hoặc địa phương có vườn cây, em có thể đề xuất giải pháp cảm biến tự động nào đơn giản?</li>
+            </ol>
+          ) : (
+            <ol className="list-decimal list-inside space-y-1 text-slate-300 leading-relaxed">
+              <li><strong>Experience:</strong> When substrate moisture exceeds 85% or drops below 40%, how do leaf color and plant vitality change?</li>
+              <li><strong>Observation:</strong> Why does precision drip irrigation save up to 70% more water than traditional flood irrigation?</li>
+              <li><strong>Conceptualization:</strong> Explore closed-loop drip fertigation and the role of root-zone microbiology.</li>
+              <li><strong>Application:</strong> If your family or local community has a garden or farm, what simple automated sensor setup could you propose?</li>
+            </ol>
+          )}
 
           <form onSubmit={handleSaveReflection} className="space-y-2 pt-1">
             <textarea
               value={reflectionAnswer}
               onChange={(e) => setReflectionAnswer(e.target.value)}
-              placeholder="Ghi lại cảm nghĩ của em về nông nghiệp hiện đại và cơ hội phát triển nông sản quê hương..."
+              placeholder={
+                language === 'vi'
+                  ? 'Ghi lại cảm nghĩ của em về nông nghiệp hiện đại và cơ hội phát triển nông sản quê hương...'
+                  : 'Write your thoughts on modern precision agriculture and opportunities for sustainable local farming...'
+              }
               className="w-full h-16 p-2.5 rounded-xl bg-slate-900 border border-slate-700 text-slate-200 text-xs focus:ring-2 focus:ring-emerald-500 focus:outline-none"
             />
             <div className="flex items-center justify-between">
               {reflectionSaved ? (
                 <span className="text-xs text-emerald-400 font-bold flex items-center gap-1">
-                  <CheckCircle2 className="w-4 h-4" /> Đã lưu phản tư ngành Nông nghiệp CNC vào báo cáo!
+                  <CheckCircle2 className="w-4 h-4" />
+                  {language === 'vi' ? 'Đã lưu phản tư ngành Nông nghiệp CNC vào báo cáo!' : 'Saved Smart Agriculture reflection to your career report!'}
                 </span>
               ) : (
                 <span className="text-[11px] text-slate-500">
-                  Phản tư này giúp học sinh đánh giá mức độ gắn bó với thiên nhiên và khoa học ứng dụng.
+                  {language === 'vi'
+                    ? 'Phản tư này giúp học sinh đánh giá mức độ gắn bó với thiên nhiên và khoa học ứng dụng.'
+                    : 'This reflection helps evaluate your interest in nature, sustainability, and applied biosciences.'}
                 </span>
               )}
               <div className="flex items-center gap-2">
@@ -589,7 +621,7 @@ export const AgricultureSimulation3D: React.FC<AgricultureSimulation3DProps> = (
                   type="submit"
                   className="px-4 py-1.5 rounded-xl bg-emerald-600 hover:bg-emerald-500 text-white font-bold text-xs"
                 >
-                  Lưu phản tư
+                  {language === 'vi' ? 'Lưu phản tư' : 'Save Reflection'}
                 </button>
               </div>
             </div>

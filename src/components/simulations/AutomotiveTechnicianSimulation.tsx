@@ -72,11 +72,85 @@ export const AutomotiveTechnicianSimulation: React.FC<AutomotiveTechnicianSimula
   const [selectedComponentId, setSelectedComponentId] = useState<string | null>('battery');
   const [engineRunning, setEngineRunning] = useState<boolean>(false);
   const [rpmValue, setRpmValue] = useState<number>(0);
-  const [activeToast, setActiveToast] = useState<{ title: string; desc: string; type: 'success' | 'info' | 'warning' } | null>({
-    title: 'Hệ thống chẩn đoán khoang máy sẵn sàng',
-    desc: 'Nhấp chuột hoặc chạm vào các chi tiết 3D để kiểm tra và khắc phục sự cố.',
-    type: 'info'
-  });
+  const [activeToast, setActiveToast] = useState<{ title: string; desc: string; type: 'success' | 'info' | 'warning' } | null>(null);
+
+  useEffect(() => {
+    setActiveToast({
+      title: language === 'vi' ? 'Hệ thống chẩn đoán khoang máy sẵn sàng' : '3D Engine Bay Diagnostics Ready',
+      desc: language === 'vi'
+        ? 'Nhấp chuột hoặc chạm vào các chi tiết 3D để kiểm tra và khắc phục sự cố.'
+        : 'Click or tap any 3D engine component to inspect and service it.',
+      type: 'info'
+    });
+  }, [language]);
+
+  const EN_COMPONENT_DATA: Record<string, {
+    nominalStatus: string;
+    problemStatus: string;
+    reading: string;
+    instructions: string;
+    successMessage: string;
+  }> = {
+    battery: {
+      nominalStatus: '12.6V – 12.8V (Fully Charged)',
+      problemStatus: '10.2V (Low Voltage / Insufficient Cranking Amps)',
+      reading: '10.2V — Requires Recharge or Replacement',
+      instructions: 'Measure terminal voltage with a digital multimeter. If < 11.8V, replace with a fresh 12V 60Ah battery and tighten terminals.',
+      successMessage: 'Installed new 12V 60Ah battery! Measured 12.65V with 540A Cold Cranking Amps (CCA).'
+    },
+    air_filter: {
+      nominalStatus: 'Clean Pleats, Unobstructed Airflow',
+      problemStatus: 'Heavy Carbon Soot & Dust Clogging',
+      reading: 'Intake Airflow Restricted by 32%',
+      instructions: 'Release the 4 airbox clips, inspect filter pleats against light, and install a new OEM air filter element.',
+      successMessage: 'Replaced intake air filter element! Restored clean oxygen flow to combustion chambers (+28% airflow).'
+    },
+    spark_plugs: {
+      nominalStatus: '1.1mm Electrode Gap, Crisp Blue Spark',
+      problemStatus: 'Carbon Fouling & Weak Ignition Spark',
+      reading: 'High Coil Resistance, Mild Cylinder Misfire',
+      instructions: 'Disconnect ignition coil harnesses, remove spark plugs with a socket wrench, clean carbon deposits, and set gap to 1.1mm.',
+      successMessage: 'Cleaned spark plug electrodes and calibrated 1.1mm gap. Strong ignition across all 4 cylinders!'
+    },
+    coolant: {
+      nominalStatus: 'Coolant Level at FULL Mark',
+      problemStatus: 'Coolant Below LOW Mark (Overheat Risk)',
+      reading: 'Level: LOW (Only 30% Reservoir Capacity)',
+      instructions: 'Inspect OAT ethylene-glycol coolant level when cold and top up reservoir to the FULL indicator line.',
+      successMessage: 'Topped up OAT coolant to FULL mark. Optimal thermal dissipation under heavy engine load.'
+    },
+    oil_dipstick: {
+      nominalStatus: 'Oil Between MIN-MAX, Golden Amber Viscosity',
+      problemStatus: 'Dark Oxidized Oil & Sludge After 10,000km',
+      reading: 'Degraded Lubrication & Reduced Viscosity',
+      instructions: 'Pull dipstick, wipe clean with a lint-free cloth, re-insert fully, and inspect oil film level and clarity.',
+      successMessage: 'Performed API SP 5W-30 synthetic oil change! Optimal oil film protection for pistons and bearings.'
+    }
+  };
+
+  const getCompText = (comp: EngineComponentItem) => {
+    if (language === 'vi') {
+      return {
+        title: comp.nameVi,
+        subtitle: comp.name,
+        nominalStatus: comp.nominalStatus,
+        problemStatus: comp.problemStatus,
+        reading: comp.fixed ? comp.nominalStatus : comp.reading,
+        instructions: comp.instructions,
+        successMessage: comp.successMessage
+      };
+    }
+    const en = EN_COMPONENT_DATA[comp.id];
+    return {
+      title: comp.name,
+      subtitle: comp.category.toUpperCase(),
+      nominalStatus: en?.nominalStatus || comp.nominalStatus,
+      problemStatus: en?.problemStatus || comp.problemStatus,
+      reading: comp.fixed ? (en?.nominalStatus || comp.nominalStatus) : (en?.reading || comp.reading),
+      instructions: en?.instructions || comp.instructions,
+      successMessage: en?.successMessage || comp.successMessage
+    };
+  };
 
   // Track components status
   const [components, setComponents] = useState<EngineComponentItem[]>([
@@ -592,9 +666,12 @@ export const AutomotiveTechnicianSimulation: React.FC<AutomotiveTechnicianSimula
           setSelectedComponentId(compId);
           const found = components.find((c) => c.id === compId);
           if (found) {
+            const cText = getCompText(found);
             setActiveToast({
-              title: `Đã chọn: ${found.nameVi}`,
-              desc: `Trạng thái: ${found.fixed ? 'Đã chuẩn' : found.problemStatus}. Nhấn "Kiểm tra & Xử lý" bên dưới.`,
+              title: language === 'vi' ? `Đã chọn: ${cText.title}` : `Selected: ${cText.title}`,
+              desc: language === 'vi'
+                ? `Trạng thái: ${found.fixed ? 'Đã chuẩn' : cText.problemStatus}. Nhấn "Kiểm tra & Xử lý" bên dưới.`
+                : `Status: ${found.fixed ? 'Serviced' : cText.problemStatus}. Click "Inspect & Service" below.`,
               type: 'info'
             });
           }
@@ -685,9 +762,10 @@ export const AutomotiveTechnicianSimulation: React.FC<AutomotiveTechnicianSimula
 
     const target = components.find((c) => c.id === componentId);
     if (target) {
+      const cText = getCompText(target);
       setActiveToast({
-        title: `Thao tác thành công: ${target.nameVi}`,
-        desc: target.successMessage,
+        title: language === 'vi' ? `Thao tác thành công: ${cText.title}` : `Service Complete: ${cText.title}`,
+        desc: cText.successMessage,
         type: 'success'
       });
 
@@ -710,8 +788,10 @@ export const AutomotiveTechnicianSimulation: React.FC<AutomotiveTechnicianSimula
     const unCheckedRequired = components.filter((c) => !c.fixed && (c.id === 'battery' || c.id === 'spark_plugs'));
     if (unCheckedRequired.length > 0 && !engineRunning) {
       setActiveToast({
-        title: 'Chưa đủ điều kiện khởi động!',
-        desc: `Cần hoàn thành kiểm tra và thay mới: ${unCheckedRequired.map((u) => u.nameVi).join(', ')} trước khi đề máy.`,
+        title: language === 'vi' ? 'Chưa đủ điều kiện khởi động!' : 'Pre-Ignition Check Incomplete!',
+        desc: language === 'vi'
+          ? `Cần hoàn thành kiểm tra và thay mới: ${unCheckedRequired.map((u) => u.nameVi).join(', ')} trước khi đề máy.`
+          : `Please inspect and service: ${unCheckedRequired.map((u) => u.name).join(', ')} before cranking the engine.`,
         type: 'warning'
       });
       return;
@@ -722,8 +802,10 @@ export const AutomotiveTechnicianSimulation: React.FC<AutomotiveTechnicianSimula
       setRpmValue(850);
       headLightsRef.current.forEach((l) => (l.intensity = 2.5));
       setActiveToast({
-        title: 'Động cơ khởi động thành công! (850 RPM)',
-        desc: 'Tiếng nổ êm dịu, dòng nạp máy phát 14.2V, hệ thống điện và làm mát vận hành trơn tru.',
+        title: language === 'vi' ? 'Động cơ khởi động thành công! (850 RPM)' : 'Engine Started Smoothly! (850 RPM)',
+        desc: language === 'vi'
+          ? 'Tiếng nổ êm dịu, dòng nạp máy phát 14.2V, hệ thống điện và làm mát vận hành trơn tru.'
+          : 'Smooth idle achieved, alternator charging at 14.2V, electrical and cooling systems nominal.',
         type: 'success'
       });
     } else {
@@ -731,8 +813,8 @@ export const AutomotiveTechnicianSimulation: React.FC<AutomotiveTechnicianSimula
       setRpmValue(0);
       headLightsRef.current.forEach((l) => (l.intensity = 0));
       setActiveToast({
-        title: 'Đã tắt máy',
-        desc: 'Động cơ dừng hoạt động an toàn.',
+        title: language === 'vi' ? 'Đã tắt máy' : 'Engine Shut Off',
+        desc: language === 'vi' ? 'Động cơ dừng hoạt động an toàn.' : 'Engine safely powered down.',
         type: 'info'
       });
     }
@@ -755,13 +837,16 @@ export const AutomotiveTechnicianSimulation: React.FC<AutomotiveTechnicianSimula
       (batteryMeshRef.current.material as THREE.MeshStandardMaterial).color.setHex(0x1e3a8a);
     }
     setActiveToast({
-      title: 'Đã đặt lại mô phỏng',
-      desc: 'Khoang máy đã trở về trạng thái ban đầu để em thực hành lại từ đầu.',
+      title: language === 'vi' ? 'Đã đặt lại mô phỏng' : 'Simulation Reset',
+      desc: language === 'vi'
+        ? 'Khoang máy đã trở về trạng thái ban đầu để em thực hành lại từ đầu.'
+        : 'Engine bay restored to initial diagnostic state for practice.',
       type: 'info'
     });
   };
 
   const selectedComponent = components.find((c) => c.id === selectedComponentId) || components[0];
+  const selectedCompText = getCompText(selectedComponent);
   const completedCount = components.filter((c) => c.fixed).length;
   const isAllCompleted = completedCount === components.length;
 
@@ -776,14 +861,18 @@ export const AutomotiveTechnicianSimulation: React.FC<AutomotiveTechnicianSimula
           <div>
             <div className="flex items-center gap-2">
               <span className="font-extrabold text-base sm:text-lg tracking-tight text-white">
-                Mô Phỏng 3D: Kỹ Thuật Viên Sửa Chữa & Chẩn Đoán Ô Tô
+                {language === 'vi'
+                  ? 'Mô Phỏng 3D: Kỹ Thuật Viên Sửa Chữa & Chẩn Đoán Ô Tô'
+                  : '3D Simulation: Automotive Diagnostic & Service Technician'}
               </span>
               <span className="px-2.5 py-0.5 rounded-full text-[11px] font-bold bg-teal-900/60 text-teal-300 border border-teal-700/50">
                 Three.js WebGL
               </span>
             </div>
             <p className="text-xs text-slate-400 hidden sm:block">
-              Khám phá khoang máy động cơ, đo đạc điện áp, tháo lắp thay thế linh kiện và thử nghiệm nổ máy thực tế.
+              {language === 'vi'
+                ? 'Khám phá khoang máy động cơ, đo đạc điện áp, tháo lắp thay thế linh kiện và thử nghiệm nổ máy thực tế.'
+                : 'Inspect the 3D engine bay, measure battery voltage, service intake/ignition components, and perform a live ignition test.'}
             </p>
           </div>
         </div>
@@ -792,16 +881,16 @@ export const AutomotiveTechnicianSimulation: React.FC<AutomotiveTechnicianSimula
           <button
             onClick={handleResetSimulation}
             className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-slate-800 hover:bg-slate-700 text-xs text-slate-300 hover:text-white transition-all font-semibold"
-            title="Đặt lại mô phỏng ban đầu"
+            title={language === 'vi' ? 'Đặt lại mô phỏng ban đầu' : 'Reset simulation'}
           >
             <RotateCcw className="w-3.5 h-3.5" />
-            <span className="hidden sm:inline">Đặt lại</span>
+            <span className="hidden sm:inline">{language === 'vi' ? 'Đặt lại' : 'Reset'}</span>
           </button>
           {onClose && (
             <button
               onClick={onClose}
               className="p-1.5 rounded-xl bg-slate-800 hover:bg-rose-900/60 hover:text-rose-300 text-slate-400 transition-all"
-              title="Đóng mô phỏng"
+              title={language === 'vi' ? 'Đóng mô phỏng' : 'Close simulation'}
             >
               <X className="w-5 h-5" />
             </button>
@@ -820,19 +909,19 @@ export const AutomotiveTechnicianSimulation: React.FC<AutomotiveTechnicianSimula
                 onClick={() => setPresetView('engine')}
                 className="px-2.5 py-1 rounded-xl bg-slate-800 hover:bg-teal-600 text-slate-200 hover:text-white transition-all font-medium"
               >
-                Khoang máy
+                {language === 'vi' ? 'Khoang máy' : 'Engine Bay'}
               </button>
               <button
                 onClick={() => setPresetView('front')}
                 className="px-2.5 py-1 rounded-xl bg-slate-800 hover:bg-teal-600 text-slate-200 hover:text-white transition-all font-medium"
               >
-                Chính diện
+                {language === 'vi' ? 'Chính diện' : 'Front View'}
               </button>
               <button
                 onClick={() => setPresetView('top')}
                 className="px-2.5 py-1 rounded-xl bg-slate-800 hover:bg-teal-600 text-slate-200 hover:text-white transition-all font-medium"
               >
-                Góc trên xuống
+                {language === 'vi' ? 'Góc trên xuống' : 'Top-Down'}
               </button>
             </div>
 
@@ -841,19 +930,19 @@ export const AutomotiveTechnicianSimulation: React.FC<AutomotiveTechnicianSimula
               <button
                 onClick={() => handleZoom(-1.2)}
                 className="p-1.5 rounded-xl bg-slate-800 hover:bg-slate-700 text-slate-200 hover:text-white transition-all"
-                title="Phóng to"
+                title={language === 'vi' ? 'Phóng to' : 'Zoom In'}
               >
                 <ZoomIn className="w-4 h-4" />
               </button>
               <button
                 onClick={() => handleZoom(1.2)}
                 className="p-1.5 rounded-xl bg-slate-800 hover:bg-slate-700 text-slate-200 hover:text-white transition-all"
-                title="Thu nhỏ"
+                title={language === 'vi' ? 'Thu nhỏ' : 'Zoom Out'}
               >
                 <ZoomOut className="w-4 h-4" />
               </button>
               <div className="text-[11px] text-slate-400 px-1 hidden sm:block">
-                Kéo chuột/chạm để xoay 360°
+                {language === 'vi' ? 'Kéo chuột/chạm để xoay 360°' : 'Drag/touch to orbit 360°'}
               </div>
             </div>
 
@@ -861,9 +950,11 @@ export const AutomotiveTechnicianSimulation: React.FC<AutomotiveTechnicianSimula
             <div className="absolute top-4 right-4 z-10 bg-slate-900/85 border border-slate-700/80 p-3 rounded-2xl backdrop-blur-md flex items-center gap-3">
               <div className={`w-3.5 h-3.5 rounded-full ${engineRunning ? 'bg-emerald-400 animate-ping' : 'bg-slate-600'}`} />
               <div>
-                <div className="text-[11px] font-semibold text-slate-400 uppercase tracking-wider">Trạng thái máy</div>
+                <div className="text-[11px] font-semibold text-slate-400 uppercase tracking-wider">
+                  {language === 'vi' ? 'Trạng thái máy' : 'Engine Status'}
+                </div>
                 <div className="text-sm font-extrabold text-white flex items-center gap-2">
-                  <span>{engineRunning ? 'ĐANG CHẠY' : 'ĐÃ TẮT'}</span>
+                  <span>{engineRunning ? (language === 'vi' ? 'ĐANG CHẠY' : 'RUNNING') : (language === 'vi' ? 'ĐÃ TẮT' : 'OFF')}</span>
                   {engineRunning && (
                     <span className="text-emerald-400 text-xs font-mono font-bold">
                       {rpmValue} RPM
@@ -900,8 +991,10 @@ export const AutomotiveTechnicianSimulation: React.FC<AutomotiveTechnicianSimula
             {/* Checklist Progress */}
             <div className="p-3.5 rounded-2xl bg-slate-950/80 border border-slate-800 space-y-2">
               <div className="flex items-center justify-between text-xs font-bold text-slate-300">
-                <span>Tiến độ chẩn đoán & bảo dưỡng</span>
-                <span className="text-teal-400 font-mono">{completedCount} / {components.length} hạng mục</span>
+                <span>{language === 'vi' ? 'Tiến độ chẩn đoán & bảo dưỡng' : 'Diagnostic & Service Progress'}</span>
+                <span className="text-teal-400 font-mono">
+                  {completedCount} / {components.length} {language === 'vi' ? 'hạng mục' : 'items'}
+                </span>
               </div>
               <div className="w-full h-2 rounded-full bg-slate-800 overflow-hidden">
                 <div 
@@ -914,19 +1007,22 @@ export const AutomotiveTechnicianSimulation: React.FC<AutomotiveTechnicianSimula
             {/* Quick Component Selector Buttons */}
             <div>
               <label className="text-[11px] font-bold text-slate-400 uppercase tracking-wider block mb-2">
-                Danh sách chi tiết khoang máy (Click để chọn):
+                {language === 'vi' ? 'Danh sách chi tiết khoang máy (Click để chọn):' : 'Engine Bay Components (Click to Inspect):'}
               </label>
               <div className="grid grid-cols-1 gap-1.5">
                 {components.map((comp) => {
                   const isSelected = comp.id === selectedComponentId;
+                  const cText = getCompText(comp);
                   return (
                     <button
                       key={comp.id}
                       onClick={() => {
                         setSelectedComponentId(comp.id);
                         setActiveToast({
-                          title: `Đã chọn: ${comp.nameVi}`,
-                          desc: comp.fixed ? 'Chi tiết đã được kiểm tra đạt chuẩn.' : comp.instructions,
+                          title: language === 'vi' ? `Đã chọn: ${cText.title}` : `Selected: ${cText.title}`,
+                          desc: comp.fixed
+                            ? (language === 'vi' ? 'Chi tiết đã được kiểm tra đạt chuẩn.' : 'Component inspected and serviced to spec.')
+                            : cText.instructions,
                           type: 'info'
                         });
                       }}
@@ -938,14 +1034,14 @@ export const AutomotiveTechnicianSimulation: React.FC<AutomotiveTechnicianSimula
                     >
                       <div className="flex items-center gap-2 text-xs font-semibold truncate">
                         <span className={`w-2 h-2 rounded-full ${comp.fixed ? 'bg-emerald-400' : 'bg-amber-400 animate-pulse'}`} />
-                        <span className="truncate">{comp.nameVi}</span>
+                        <span className="truncate">{cText.title}</span>
                       </div>
                       <span className={`text-[10px] px-2 py-0.5 rounded-md font-bold ${
                         comp.fixed 
                           ? 'bg-emerald-950 text-emerald-300 border border-emerald-800' 
                           : 'bg-amber-950 text-amber-300 border border-amber-800'
                       }`}>
-                        {comp.fixed ? 'ĐẠT CHUẨN' : 'CẦN XỬ LÝ'}
+                        {comp.fixed ? (language === 'vi' ? 'ĐẠT CHUẨN' : 'NOMINAL') : (language === 'vi' ? 'CẦN XỬ LÝ' : 'SERVICE REQ')}
                       </span>
                     </button>
                   );
@@ -957,31 +1053,33 @@ export const AutomotiveTechnicianSimulation: React.FC<AutomotiveTechnicianSimula
             <div className="p-4 rounded-2xl bg-slate-950 border border-teal-500/30 space-y-3">
               <div className="flex items-center justify-between">
                 <span className="text-xs font-bold text-teal-400 uppercase tracking-wider">
-                  Chi tiết đang kiểm tra
+                  {language === 'vi' ? 'Chi tiết đang kiểm tra' : 'Active Component Inspection'}
                 </span>
                 <span className="text-xs text-slate-400 font-mono">ID: {selectedComponent.id}</span>
               </div>
 
               <div>
                 <h4 className="font-extrabold text-sm sm:text-base text-white">
-                  {selectedComponent.nameVi}
+                  {selectedCompText.title}
                 </h4>
                 <div className="text-[11px] text-slate-400 italic">
-                  {selectedComponent.name}
+                  {selectedCompText.subtitle}
                 </div>
               </div>
 
               <div className="space-y-2 text-xs">
                 <div className="flex items-start justify-between p-2 rounded-lg bg-slate-900 border border-slate-800">
-                  <span className="text-slate-400">Thông số kỹ thuật:</span>
+                  <span className="text-slate-400">{language === 'vi' ? 'Thông số kỹ thuật:' : 'Diagnostic Reading:'}</span>
                   <span className={`font-mono font-bold ${selectedComponent.fixed ? 'text-emerald-400' : 'text-amber-400'}`}>
-                    {selectedComponent.reading}
+                    {selectedCompText.reading}
                   </span>
                 </div>
 
                 <div className="p-2.5 rounded-lg bg-slate-900/90 border border-slate-800 text-slate-300 leading-relaxed text-xs">
-                  <span className="font-bold text-teal-300">Hướng dẫn kỹ thuật viên: </span>
-                  {selectedComponent.instructions}
+                  <span className="font-bold text-teal-300">
+                    {language === 'vi' ? 'Hướng dẫn kỹ thuật viên: ' : 'Technician Procedure: '}
+                  </span>
+                  {selectedCompText.instructions}
                 </div>
               </div>
 
@@ -997,7 +1095,9 @@ export const AutomotiveTechnicianSimulation: React.FC<AutomotiveTechnicianSimula
               >
                 <CheckCircle2 className="w-4 h-4" />
                 <span>
-                  {selectedComponent.fixed ? 'Đã kiểm tra & Xử lý đạt chuẩn' : 'Kiểm tra & Thay thế linh kiện này'}
+                  {selectedComponent.fixed
+                    ? (language === 'vi' ? 'Đã kiểm tra & Xử lý đạt chuẩn' : 'Inspected & Serviced to Spec')
+                    : (language === 'vi' ? 'Kiểm tra & Thay thế linh kiện này' : 'Inspect & Service This Component')}
                 </span>
               </button>
             </div>
@@ -1014,7 +1114,11 @@ export const AutomotiveTechnicianSimulation: React.FC<AutomotiveTechnicianSimula
               }`}
             >
               <Zap className="w-4 h-4" />
-              <span>{engineRunning ? 'Tắt động cơ' : 'Đề nổ & Thử máy thực tế'}</span>
+              <span>
+                {engineRunning
+                  ? (language === 'vi' ? 'Tắt động cơ' : 'Stop Engine')
+                  : (language === 'vi' ? 'Đề nổ & Thử máy thực tế' : 'Crank & Test Engine Ignition')}
+              </span>
             </button>
 
             {isAllCompleted && (
@@ -1023,7 +1127,7 @@ export const AutomotiveTechnicianSimulation: React.FC<AutomotiveTechnicianSimula
                 className="w-full py-2.5 px-4 rounded-xl bg-teal-600/90 hover:bg-teal-500 text-white text-xs font-bold flex items-center justify-center gap-2 transition-all shadow-md"
               >
                 <Sparkles className="w-4 h-4 text-amber-300" />
-                <span>Hoàn thành & Xem đúc kết nghề</span>
+                <span>{language === 'vi' ? 'Hoàn thành & Xem đúc kết nghề' : 'Complete & Open Career Reflection'}</span>
               </button>
             )}
           </div>
@@ -1037,10 +1141,10 @@ export const AutomotiveTechnicianSimulation: React.FC<AutomotiveTechnicianSimula
             <div className="flex items-start justify-between">
               <div className="space-y-1">
                 <span className="px-3 py-1 rounded-full bg-teal-900/60 text-teal-300 text-xs font-bold border border-teal-700/50">
-                  Mô hình Kolb: Đúc kết trải nghiệm nghề nghiệp
+                  {language === 'vi' ? 'Mô hình Kolb: Đúc kết trải nghiệm nghề nghiệp' : 'Kolb Cycle: Career Experience Reflection'}
                 </span>
                 <h3 className="text-xl sm:text-2xl font-extrabold text-white">
-                  Tổng kết Mô phỏng Kỹ thuật viên Ô tô
+                  {language === 'vi' ? 'Tổng kết Mô phỏng Kỹ thuật viên Ô tô' : 'Automotive Technician Simulation Summary'}
                 </h3>
               </div>
               <button
@@ -1053,13 +1157,23 @@ export const AutomotiveTechnicianSimulation: React.FC<AutomotiveTechnicianSimula
 
             {/* Ethical Notice */}
             <div className="p-3.5 rounded-2xl bg-teal-950/60 border border-teal-800 text-teal-200 text-xs leading-relaxed">
-              <strong>Nguyên tắc CHẠM VIỆC:</strong> Kết quả mô phỏng giúp em làm quen với không gian làm việc kỹ thuật thực tế và tự cảm nhận hứng thú của bản thân. <em>Hệ thống không đánh giá hay gắn nhãn em phù hợp hay không phù hợp với nghề chỉ qua một bài thử nghiệm.</em>
+              {language === 'vi' ? (
+                <>
+                  <strong>Nguyên tắc CHẠM VIỆC:</strong> Kết quả mô phỏng giúp em làm quen với không gian làm việc kỹ thuật thực tế và tự cảm nhận hứng thú của bản thân. <em>Hệ thống không đánh giá hay gắn nhãn em phù hợp hay không phù hợp với nghề chỉ qua một bài thử nghiệm.</em>
+                </>
+              ) : (
+                <>
+                  <strong>CHẠM VIỆC Principle:</strong> This simulation helps you explore a realistic automotive workshop environment and gauge your personal interest. <em>The system never labels your fixed aptitude based on a single simulation.</em>
+                </>
+              )}
             </div>
 
             <div className="space-y-4">
               <div>
                 <label className="text-xs font-bold text-slate-300 block mb-1">
-                  1. Mức độ hứng thú của em khi thao tác máy móc & đo đạc kỹ thuật:
+                  {language === 'vi'
+                    ? '1. Mức độ hứng thú của em khi thao tác máy móc & đo đạc kỹ thuật:'
+                    : '1. How interested did you feel while diagnosing and servicing engine components?'}
                 </label>
                 <div className="flex items-center gap-2">
                   {[1, 2, 3, 4, 5].map((star) => (
@@ -1076,19 +1190,29 @@ export const AutomotiveTechnicianSimulation: React.FC<AutomotiveTechnicianSimula
                     </button>
                   ))}
                   <span className="text-xs text-slate-400 ml-2">
-                    {reflectionInterest >= 4 ? 'Rất thích thú' : reflectionInterest === 3 ? 'Bình thường' : 'Chưa cảm thấy hứng thú'}
+                    {reflectionInterest >= 4
+                      ? (language === 'vi' ? 'Rất thích thú' : 'Highly Interested')
+                      : reflectionInterest === 3
+                      ? (language === 'vi' ? 'Bình thường' : 'Neutral')
+                      : (language === 'vi' ? 'Chưa cảm thấy hứng thú' : 'Not Very Interested')}
                   </span>
                 </div>
               </div>
 
               <div>
                 <label className="text-xs font-bold text-slate-300 block mb-1">
-                  2. Cảm nhận của em về kỹ năng quan trọng nhất cần có ở nghề này:
+                  {language === 'vi'
+                    ? '2. Cảm nhận của em về kỹ năng quan trọng nhất cần có ở nghề này:'
+                    : '2. What do you think is the most important skill for an Automotive Technician?'}
                 </label>
                 <textarea
                   value={reflectionComment}
                   onChange={(e) => setReflectionComment(e.target.value)}
-                  placeholder="Ví dụ: Em nhận thấy nghề này cần tính kiên nhẫn, sự tỉ mỉ khi đo điện áp và tuân thủ an toàn cháy nổ..."
+                  placeholder={
+                    language === 'vi'
+                      ? 'Ví dụ: Em nhận thấy nghề này cần tính kiên nhẫn, sự tỉ mỉ khi đo điện áp và tuân thủ an toàn cháy nổ...'
+                      : 'E.g., This profession requires methodical troubleshooting, precision with electrical measurements, and strict workshop safety...'
+                  }
                   rows={3}
                   className="w-full p-3 rounded-xl bg-slate-950 border border-slate-700 text-white text-xs focus:outline-none focus:border-teal-400"
                 />
@@ -1100,7 +1224,7 @@ export const AutomotiveTechnicianSimulation: React.FC<AutomotiveTechnicianSimula
                 onClick={() => setShowReflectionModal(false)}
                 className="px-4 py-2 rounded-xl bg-slate-800 hover:bg-slate-700 text-xs font-bold text-slate-300"
               >
-                Đóng
+                {language === 'vi' ? 'Đóng' : 'Close'}
               </button>
               <button
                 onClick={() => {
@@ -1108,14 +1232,16 @@ export const AutomotiveTechnicianSimulation: React.FC<AutomotiveTechnicianSimula
                   setShowReflectionModal(false);
                   if (onComplete) onComplete();
                   setActiveToast({
-                    title: 'Đã lưu phản tư thành công!',
-                    desc: 'Cảm nhận của em đã được ghi nhận vào hồ sơ hướng nghiệp cá nhân.',
+                    title: language === 'vi' ? 'Đã lưu phản tư thành công!' : 'Reflection Saved!',
+                    desc: language === 'vi'
+                      ? 'Cảm nhận của em đã được ghi nhận vào hồ sơ hướng nghiệp cá nhân.'
+                      : 'Your reflection has been recorded in your career profile.',
                     type: 'success'
                   });
                 }}
                 className="px-5 py-2 rounded-xl bg-teal-500 hover:bg-teal-400 text-slate-950 text-xs font-extrabold shadow-md"
               >
-                Lưu vào Hồ sơ cá nhân
+                {language === 'vi' ? 'Lưu vào Hồ sơ cá nhân' : 'Save to Profile'}
               </button>
             </div>
           </div>

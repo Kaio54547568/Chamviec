@@ -81,12 +81,30 @@ I am here to assist you with:
       id: 'welcome_1',
       sender: 'ai',
       text: initialWelcomeText,
-      timestamp: 'Vừa xong',
+      timestamp: language === 'vi' ? 'Vừa xong' : 'Just now',
     },
   ]);
+
+  // Synchronize initial welcome message when user toggles language before starting conversation
+  useEffect(() => {
+    setMessages((prev) => {
+      if (prev.length === 1 && prev[0].id === 'welcome_1') {
+        return [
+          {
+            id: 'welcome_1',
+            sender: 'ai',
+            text: initialWelcomeText,
+            timestamp: language === 'vi' ? 'Vừa xong' : 'Just now',
+          },
+        ];
+      }
+      return prev;
+    });
+  }, [language, initialWelcomeText]);
+
   const [inputText, setInputText] = useState('');
   const [chatStatus, setChatStatus] = useState<ChatStatus>('idle');
-  const [loadingStatus, setLoadingStatus] = useState('Đang kết nối...');
+  const [loadingStatus, setLoadingStatus] = useState(language === 'vi' ? 'Đang kết nối...' : 'Connecting...');
   const [isExpanded, setIsExpanded] = useState(false);
   const [showClearConfirm, setShowClearConfirm] = useState(false);
 
@@ -200,7 +218,7 @@ I am here to assist you with:
     }
 
     setChatStatus('sending');
-    setLoadingStatus('CHẠM AI đang suy nghĩ...');
+    setLoadingStatus(language === 'vi' ? 'CHẠM AI đang suy nghĩ...' : 'CHẠM AI is thinking...');
 
     const controller = new AbortController();
     abortControllerRef.current = controller;
@@ -235,6 +253,7 @@ I am here to assist you with:
           signal: controller.signal,
           body: JSON.stringify({
             message: text,
+            language,
             profile: {
               grade: profile.grade,
               favoriteSubjects: profile.favoriteSubjects,
@@ -327,6 +346,7 @@ I am here to assist you with:
           signal: controller.signal,
           body: JSON.stringify({
             message: text,
+            language,
             profile: {
               grade: profile.grade,
               favoriteSubjects: profile.favoriteSubjects,
@@ -352,7 +372,9 @@ I am here to assist you with:
         const data = await response.json();
 
         if (!response.ok || data?.success === false) {
-          const studentFriendlyMessage = 'AI đang bận, em vui lòng thử lại sau ít phút.';
+          const studentFriendlyMessage = language === 'vi' 
+            ? 'AI đang bận, em vui lòng thử lại sau ít phút.' 
+            : 'AI is currently busy. Please try again in a few moments.';
           const errorReply: ChatMessage = {
             id: 'err_' + Date.now(),
             sender: 'ai',
@@ -361,14 +383,14 @@ I am here to assist you with:
             errorMessage: studentFriendlyMessage,
             failedPrompt: text,
             canRetry: true,
-            timestamp: new Date().toLocaleTimeString('vi-VN', { hour: '2-digit', minute: '2-digit' }),
+            timestamp: new Date().toLocaleTimeString(language === 'vi' ? 'vi-VN' : 'en-US', { hour: '2-digit', minute: '2-digit' }),
           };
           setMessages((prev) => prev.filter((m) => m.id !== aiMsgId).concat(errorReply));
           setChatStatus('error');
           return;
         }
 
-        const replyText = data.reply || 'AI đang bận, em vui lòng thử lại sau ít phút.';
+        const replyText = data.reply || (language === 'vi' ? 'AI đang bận, em vui lòng thử lại sau ít phút.' : 'AI is currently busy. Please try again in a few moments.');
         const aiReply: ChatMessage = {
           id: 'ai_' + Date.now(),
           sender: 'ai',
@@ -391,10 +413,10 @@ I am here to assist you with:
         sender: 'ai',
         text: '',
         isError: true,
-        errorMessage: 'AI đang bận, em vui lòng thử lại sau ít phút.',
+        errorMessage: language === 'vi' ? 'AI đang bận, em vui lòng thử lại sau ít phút.' : 'AI is currently busy. Please try again in a few moments.',
         failedPrompt: text,
         canRetry: true,
-        timestamp: new Date().toLocaleTimeString('vi-VN', { hour: '2-digit', minute: '2-digit' }),
+        timestamp: new Date().toLocaleTimeString(language === 'vi' ? 'vi-VN' : 'en-US', { hour: '2-digit', minute: '2-digit' }),
       };
       setMessages((prev) => prev.filter((m) => m.id !== aiMsgId).concat(errorReply));
       setChatStatus('error');
@@ -427,7 +449,7 @@ I am here to assist you with:
         id: 'welcome_' + Date.now(),
         sender: 'ai',
         text: initialWelcomeText,
-        timestamp: 'Vừa xong',
+        timestamp: language === 'vi' ? 'Vừa xong' : 'Just now',
       },
     ]);
     setShowClearConfirm(false);
@@ -449,7 +471,7 @@ I am here to assist you with:
         return (
           <span className="inline-flex items-center gap-1.5 text-xs text-teal-700 animate-pulse">
             <span className="w-2 h-2 rounded-full bg-teal-500 animate-ping" />
-            <span>Đang phản hồi từng chữ...</span>
+            <span>{language === 'vi' ? 'Đang phản hồi từng chữ...' : 'Streaming response...'}</span>
           </span>
         );
       }
@@ -514,11 +536,15 @@ I am here to assist you with:
         flushTable();
 
         // Detect curated database fallback banner
-        if (trimmed.includes('[Thông tin từ kho nghề')) {
+        if (trimmed.includes('[Thông tin từ kho nghề') || trimmed.includes('[Verified CHẠM VIỆC Database')) {
           elements.push(
             <div key={'curated_' + idx} className="my-2 p-2.5 rounded-xl bg-teal-50 border border-teal-300 text-teal-900 text-xs font-bold flex items-center gap-2">
               <BookOpen className="w-4 h-4 text-teal-600 shrink-0" />
-              <span>Dữ liệu đối chiếu từ Kho Nghề & Điểm Tuyển Sinh CHẠM VIỆC</span>
+              <span>
+                {language === 'vi'
+                  ? 'Dữ liệu đối chiếu từ Kho Nghề & Điểm Tuyển Sinh CHẠM VIỆC'
+                  : 'Verified Data from CHẠM VIỆC Career & Admissions Repository'}
+              </span>
             </div>
           );
         } else if (!trimmed) {
@@ -701,15 +727,15 @@ I am here to assist you with:
                 <div className="flex items-center gap-2">
                   <button
                     onClick={() => setShowClearConfirm(false)}
-                    className="px-2 py-1 rounded bg-white text-slate-700 text-[11px] font-medium border border-amber-300 hover:bg-slate-100"
+                    className="px-2 py-1 rounded bg-white text-slate-700 text-[11px] font-medium border border-amber-300 hover:bg-slate-100 cursor-pointer"
                   >
-                    Hủy
+                    {language === "vi" ? "Hủy" : "Cancel"}
                   </button>
                   <button
                     onClick={handleClearConversation}
-                    className="px-2.5 py-1 rounded bg-amber-600 text-white text-[11px] font-bold hover:bg-amber-700"
+                    className="px-2.5 py-1 rounded bg-amber-600 text-white text-[11px] font-bold hover:bg-amber-700 cursor-pointer"
                   >
-                    Xác nhận
+                    {language === "vi" ? "Xác nhận" : "Confirm"}
                   </button>
                 </div>
               </div>
@@ -719,7 +745,9 @@ I am here to assist you with:
             <div className="bg-teal-50/80 px-3.5 py-1.5 border-b border-teal-200/60 text-[10px] text-teal-900 flex items-center gap-1.5 shrink-0">
               <ShieldCheck className="w-3.5 h-3.5 text-teal-700 shrink-0" />
               <span className="truncate">
-                Căn cứ từ đề án & điểm chuẩn chính thức đã xác minh. Hỗ trợ học sinh mọi vùng miền.
+                {language === "vi"
+                  ? "Căn cứ từ đề án & điểm chuẩn chính thức đã xác minh. Hỗ trợ học sinh mọi vùng miền."
+                  : "Grounded in verified official admission records. Supporting students nationwide."}
               </span>
             </div>
 
@@ -758,12 +786,12 @@ I am here to assist you with:
                           <AlertCircle className="w-4 h-4 text-amber-600 shrink-0 mt-0.5" />
                           <div className="space-y-1">
                             <p className="font-bold text-slate-900 text-xs sm:text-sm">
-                              {m.errorMessage || 'AI đang bận, em vui lòng thử lại sau ít phút.'}
+                              {m.errorMessage || (language === 'vi' ? 'AI đang bận, em vui lòng thử lại sau ít phút.' : 'AI is currently busy. Please try again in a few moments.')}
                             </p>
                             {m.failedPrompt && (
                               <div className="text-[11px] text-slate-600 bg-white/80 p-2 rounded-xl border border-amber-200/60 mt-1">
                                 <span className="font-semibold text-slate-700 block text-[10px] uppercase tracking-wider text-teal-800">
-                                  Câu hỏi của em được giữ nguyên:
+                                  {language === 'vi' ? 'Câu hỏi của em được giữ nguyên:' : 'Your question was preserved:'}
                                 </span>
                                 <span className="italic line-clamp-3 mt-0.5">"{m.failedPrompt}"</span>
                               </div>
@@ -775,16 +803,16 @@ I am here to assist you with:
                           <div className="pt-1 flex flex-wrap items-center gap-2">
                             <button
                               onClick={() => handleRetry(m.failedPrompt)}
-                              className="flex items-center gap-1.5 px-3.5 py-1.5 rounded-xl bg-teal-700 hover:bg-teal-800 text-white font-bold text-[11px] shadow-xs active:scale-95 transition-all"
+                              className="flex items-center gap-1.5 px-3.5 py-1.5 rounded-xl bg-teal-700 hover:bg-teal-800 text-white font-bold text-[11px] shadow-xs active:scale-95 transition-all cursor-pointer"
                             >
                               <RefreshCw className="w-3.5 h-3.5" />
-                              <span>Thử lại ngay</span>
+                              <span>{language === 'vi' ? 'Thử lại ngay' : 'Retry now'}</span>
                             </button>
                             <button
                               onClick={() => handleEditFailedPrompt(m.failedPrompt)}
-                              className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-white hover:bg-slate-100 text-slate-700 font-medium text-[11px] border border-slate-200 transition-all"
+                              className="flex items-center gap-1.5 px-3.5 py-1.5 rounded-xl bg-white hover:bg-slate-100 text-slate-700 font-medium text-[11px] border border-slate-200 transition-all cursor-pointer"
                             >
-                              <span>Chỉnh sửa câu hỏi</span>
+                              <span>{language === 'vi' ? 'Chỉnh sửa câu hỏi' : 'Edit question'}</span>
                             </button>
                           </div>
                         )}

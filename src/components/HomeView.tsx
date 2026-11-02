@@ -1,643 +1,852 @@
 import React, { useState } from 'react';
-import { 
-  Sparkles, 
-  PlayCircle, 
-  GraduationCap, 
-  BookOpen, 
-  ArrowRight, 
-  CheckCircle2, 
-  Building2, 
-  Shuffle, 
-  ShieldAlert,
+import {
   Compass,
-  Calendar,
-  MapPin,
-  Clock,
-  Gift,
+  BookOpen,
+  PlayCircle,
+  CheckCircle,
+  ArrowRight,
+  GraduationCap,
+  Cpu,
+  HeartHandshake,
+  TrendingUp,
+  Palette,
+  Sprout,
   Wrench,
+  Sparkles,
+  Award,
+  ShieldCheck,
+  Briefcase,
   Search,
-  ExternalLink
+  Building2,
+  MapPin,
+  Users,
+  Calendar,
 } from 'lucide-react';
-import { StudentProfile } from '../types';
-import { SIMULATION_TASKS } from '../data/tasks';
-import { VIDEO_STORIES_DATA } from '../data/videoStories';
 import { CAREERS_DATA } from '../data/careers';
+import { VIDEO_STORIES_DATA } from '../data/videoStories';
+import { useLanguage } from '../i18n/LanguageContext';
+import { localizeCareer, localizeVideoStory } from '../utils/i18nData';
 
 interface HomeViewProps {
-  setCurrentTab: (tab: string) => void;
-  profile: StudentProfile;
-  onOpenTask: (taskId: string) => void;
+  onStartDiscovery: () => void;
+  onExploreTasks: () => void;
+  onWatchStories: () => void;
+  onViewAdmissions: () => void;
+  onViewRecommendations: () => void;
+  onViewEnterprise?: () => void;
+  onSelectCategory?: (categoryKey: string) => void;
 }
 
 export const HomeView: React.FC<HomeViewProps> = ({
-  setCurrentTab,
-  profile,
-  onOpenTask
+  onStartDiscovery,
+  onExploreTasks,
+  onWatchStories,
+  onViewAdmissions,
+  onViewRecommendations,
+  onViewEnterprise,
+  onSelectCategory,
 }) => {
-  const [selectedCareerCategory, setSelectedCareerCategory] = useState<string>('ALL');
+  const { language, t } = useLanguage();
+  const isEn = language === 'en';
+  const [selectedCategory, setSelectedCategory] = useState<string>('ALL');
 
-  // Featured enterprise programs for the homepage showcase
-  const featuredEnterprises = [
-    {
-      id: 'batch-fpt-01',
-      programName: 'Một ngày làm Kỹ sư AI & Phát triển Phần mềm',
-      enterpriseName: 'FPT Software & FPT Telecom',
-      category: 'Công nghệ thông tin',
-      location: 'Hà Nội',
-      date: '19/04/2025',
-      slotsLeft: 17,
-      imageUrl: 'https://images.unsplash.com/photo-1497215728101-856f4ea42174?auto=format&fit=crop&w=800&q=80',
-      imageAlt: 'Khuôn viên công nghệ xanh F-Ville Hòa Lạc của FPT Software'
-    },
-    {
-      id: 'batch-vinfast-01',
-      programName: 'Tổ hợp Nhà máy Sản xuất Ô tô Điện Thông minh',
-      enterpriseName: 'VinFast Auto',
-      category: 'Kỹ thuật - Chế tạo',
-      location: 'Hải Phòng',
-      date: '10/05/2025',
-      slotsLeft: 18,
-      imageUrl: 'https://images.unsplash.com/photo-1617788138017-80ad40651399?auto=format&fit=crop&w=800&q=80',
-      imageAlt: 'Dây chuyền lắp ráp xe điện tự động hóa với cánh tay robot'
-    },
-    {
-      id: 'batch-dalat-01',
-      programName: 'Hệ thống Nông nghiệp Thông minh & Canh tác IoT',
-      enterpriseName: 'Dalat Hasfarm',
-      category: 'Nông nghiệp công nghệ cao',
-      location: 'Lâm Đồng',
-      date: '24/05/2025',
-      slotsLeft: 14,
-      imageUrl: 'https://images.unsplash.com/photo-1585320806297-9794b3e4eeae?auto=format&fit=crop&w=800&q=80',
-      imageAlt: 'Nhà kính công nghệ cao kiểm soát nhiệt độ và vi khí hậu'
-    }
-  ];
+  const featuredEnterprises = isEn
+    ? [
+        {
+          id: 'ent-1',
+          name: 'Half-Day Job Shadowing: Observing AI & Software Engineers',
+          partner: 'FPT Software Academy & Hola Park',
+          location: 'Hoa Lac High-Tech Park, Hanoi',
+          date: 'Saturday, Nov 15, 2026',
+          slotsLeft: 4,
+          totalSlots: 25,
+          badge: 'Information Technology',
+          color: 'teal',
+        },
+        {
+          id: 'ent-2',
+          name: 'Factory Tour: Exploring Robotics & Electric Vehicle Assembly',
+          partner: 'VinFast Manufacturing Complex & Vocational Center',
+          location: 'Cat Hai, Hai Phong',
+          date: 'Sunday, Nov 23, 2026',
+          slotsLeft: 7,
+          totalSlots: 30,
+          badge: 'Mechanical & Electrical Eng.',
+          color: 'blue',
+        },
+        {
+          id: 'ent-3',
+          name: 'Studio Experience: Live Television Newsroom & Control Room',
+          partner: 'Educational TV Production Center & Media Academy',
+          location: 'Ba Dinh, Hanoi',
+          date: 'Saturday, Dec 05, 2026',
+          slotsLeft: 3,
+          totalSlots: 20,
+          badge: 'Media & Journalism',
+          color: 'amber',
+        },
+      ]
+    : [
+        {
+          id: 'ent-1',
+          name: 'Half-day Job Shadowing: Quan sát Kỹ sư Phần mềm & AI',
+          partner: 'FPT Software Academy & Hola Park',
+          location: 'Khu CNC Hòa Lạc, Hà Nội',
+          date: 'Thứ Bảy, 15/11/2026',
+          slotsLeft: 4,
+          totalSlots: 25,
+          badge: 'Công nghệ thông tin',
+          color: 'teal',
+        },
+        {
+          id: 'ent-2',
+          name: 'Factory Tour: Khám phá Dây chuyền Robot & Kỹ thuật Ô tô Điện',
+          partner: 'Tổ hợp Sản xuất VinFast & Trung tâm Đào tạo Nghề',
+          location: 'Cát Hải, Hải Phòng',
+          date: 'Chủ Nhật, 23/11/2026',
+          slotsLeft: 7,
+          totalSlots: 30,
+          badge: 'Kỹ thuật Cơ - Điện',
+          color: 'blue',
+        },
+        {
+          id: 'ent-3',
+          name: 'Trải nghiệm Trường quay: Quy trình Sản xuất Bản tin Truyền hình',
+          partner: 'Trung tâm Sản xuất Truyền hình Giáo dục & Học viện Báo chí',
+          location: 'Ba Đình, Hà Nội',
+          date: 'Thứ Bảy, 05/12/2026',
+          slotsLeft: 3,
+          totalSlots: 20,
+          badge: 'Truyền thông & Báo chí',
+          color: 'amber',
+        },
+      ];
 
   const careerCategories = [
-    { id: 'ALL', label: `Tất cả ${CAREERS_DATA.length} ngành nghề` },
-    { id: 'CongNghe', label: 'Công nghệ thông tin' },
-    { id: 'YTe', label: 'Y tế & Sức khỏe' },
-    { id: 'KyThuat', label: 'Kỹ thuật & Cơ khí' },
-    { id: 'KinhTe', label: 'Kinh tế & Dịch vụ' },
-    { id: 'GiaoDuc', label: 'Giáo dục & Xã hội' }
+    {
+      id: 'ALL',
+      name: isEn ? 'All Fields' : 'Tất cả nhóm ngành',
+      icon: <Briefcase className="w-4 h-4" />,
+      count: CAREERS_DATA.length,
+    },
+    {
+      id: 'CongNghe',
+      name: isEn ? 'IT & AI' : 'Công nghệ thông tin & AI',
+      icon: <Cpu className="w-4 h-4" />,
+      count: CAREERS_DATA.filter((c) => c.category === 'CongNghe').length,
+    },
+    {
+      id: 'KyThuat',
+      name: isEn ? 'Engineering & Automation' : 'Kỹ thuật, Cơ khí & Tự động hóa',
+      icon: <Wrench className="w-4 h-4" />,
+      count: CAREERS_DATA.filter((c) => c.category === 'KyThuat').length,
+    },
+    {
+      id: 'KinhTe',
+      name: isEn ? 'Economics, Finance & Mgmt' : 'Kinh tế, Tài chính & Quản trị',
+      icon: <TrendingUp className="w-4 h-4" />,
+      count: CAREERS_DATA.filter((c) => c.category === 'KinhTe').length,
+    },
+    {
+      id: 'YTe',
+      name: isEn ? 'Healthcare & Medicine' : 'Y tế & Chăm sóc sức khỏe',
+      icon: <HeartHandshake className="w-4 h-4" />,
+      count: CAREERS_DATA.filter((c) => c.category === 'YTe').length,
+    },
+    {
+      id: 'GiaoDuc',
+      name: isEn ? 'Education & Training' : 'Giáo dục & Đào tạo',
+      icon: <BookOpen className="w-4 h-4" />,
+      count: CAREERS_DATA.filter((c) => c.category === 'GiaoDuc').length,
+    },
+    {
+      id: 'TruyenThong',
+      name: isEn ? 'Media, Journalism & Marketing' : 'Truyền thông, Báo chí & Marketing',
+      icon: <Palette className="w-4 h-4" />,
+      count: CAREERS_DATA.filter((c) => c.category === 'TruyenThong').length,
+    },
+    {
+      id: 'NghiepThu',
+      name: isEn ? 'Design, Arts & Creative' : 'Thiết kế, Nghệ thuật & Sáng tạo',
+      icon: <Sparkles className="w-4 h-4" />,
+      count: CAREERS_DATA.filter((c) => c.category === 'NghiepThu').length,
+    },
+    {
+      id: 'NongNghiep',
+      name: isEn ? 'High-Tech Agriculture & Env.' : 'Nông - Lâm - Ngư nghiệp & Môi trường',
+      icon: <Sprout className="w-4 h-4" />,
+      count: CAREERS_DATA.filter((c) => c.category === 'NongNghiep').length,
+    },
+    {
+      id: 'DichVu',
+      name: isEn ? 'Tourism, Hospitality & Services' : 'Du lịch, Khách sạn & Dịch vụ',
+      icon: <Compass className="w-4 h-4" />,
+      count: CAREERS_DATA.filter((c) => c.category === 'DichVu').length,
+    },
+    {
+      id: 'XaHoi',
+      name: isEn ? 'Law, Public Admin & Social Sci.' : 'Luật, Hành chính & Khoa học Xã hội',
+      icon: <ShieldCheck className="w-4 h-4" />,
+      count: CAREERS_DATA.filter((c) => c.category === 'XaHoi').length,
+    },
   ];
 
-  const filteredCareers = selectedCareerCategory === 'ALL'
-    ? CAREERS_DATA.slice(0, 6)
-    : CAREERS_DATA.filter(c => {
-        if (selectedCareerCategory === 'CongNghe') return c.category === 'CongNghe';
-        if (selectedCareerCategory === 'YTe') return c.category === 'YTe';
-        if (selectedCareerCategory === 'KyThuat') return c.category === 'KyThuat';
-        if (selectedCareerCategory === 'KinhTe') return (c.category as string) === 'KinhDoanh' || c.category === 'DichVu';
-        if (selectedCareerCategory === 'GiaoDuc') return c.category === 'GiaoDuc' || (c.category as string) === 'XaHoi';
-        return true;
-      }).slice(0, 6);
+  const displayedCareers = (
+    selectedCategory === 'ALL'
+      ? CAREERS_DATA.slice(0, 8)
+      : CAREERS_DATA.filter((c) => c.category === selectedCategory)
+  ).map((c) => localizeCareer(c, language));
+
+  const featuredVideos = VIDEO_STORIES_DATA.slice(0, 3).map((v) =>
+    localizeVideoStory(v, language)
+  );
 
   return (
-    <div className="space-y-14 pb-16">
-      {/* 1. HERO SECTION: Brand Teal/Blue with Real High School Students Photo */}
-      <section className="relative overflow-hidden rounded-3xl bg-gradient-to-br from-teal-950 via-teal-900 to-slate-950 text-white border border-teal-800/40 shadow-2xl">
-        {/* Ambient Light Accents */}
-        <div className="absolute top-0 right-1/4 -mt-20 w-96 h-96 rounded-full bg-teal-500/15 blur-3xl pointer-events-none" />
-        <div className="absolute bottom-0 left-10 -mb-20 w-80 h-80 rounded-full bg-amber-500/15 blur-3xl pointer-events-none" />
+    <div className="space-y-16 pb-16">
+      {/* 1. HERO SECTION */}
+      <section className="relative overflow-hidden rounded-3xl bg-gradient-to-br from-teal-900 via-teal-800 to-slate-900 text-white shadow-2xl border border-teal-700/50">
+        <div className="absolute -top-24 -right-24 w-96 h-96 rounded-full bg-teal-500/20 blur-3xl pointer-events-none" />
+        <div className="absolute -bottom-24 -left-24 w-96 h-96 rounded-full bg-amber-500/15 blur-3xl pointer-events-none" />
 
-        <div className="relative z-10 p-6 sm:p-10 lg:p-12">
-          <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 items-center">
-            {/* Left Column: Brand Message & Dual CTAs */}
-            <div className="lg:col-span-7 space-y-6">
-              {/* Brand Tagline */}
-              <div className="inline-flex items-center gap-2 px-3 py-1.5 rounded-full bg-white/10 backdrop-blur-md border border-white/20 text-teal-200 text-xs font-semibold">
-                <img 
-                  src="/public/assets/aistudio/LOGO_MASTER_1536_767bc7e6.png" 
-                  alt="Logo CHẠM VIỆC" 
-                  className="w-5 h-5 object-contain"
-                  onError={(e) => {
-                    // Fallback to /logo.png
-                    (e.target as HTMLImageElement).src = '/logo.png';
-                  }}
-                />
-                <span>CHẠM VIỆC · Nền tảng Hướng nghiệp & Tuyển sinh THPT</span>
-              </div>
-
-              {/* Main Headline */}
-              <h1 className="text-3xl sm:text-5xl lg:text-[44px] xl:text-[50px] font-black tracking-tight leading-[1.15] text-white">
-                Em chưa cần biết ngay mình sẽ làm nghề gì.{' '}
-                <span className="text-transparent bg-clip-text bg-gradient-to-r from-amber-300 via-amber-200 to-orange-300">
-                  Hãy bắt đầu bằng một trải nghiệm thực tế.
-                </span>
-              </h1>
-
-              {/* Sub-text */}
-              <p className="text-sm sm:text-base text-teal-100/90 leading-relaxed font-normal max-w-2xl">
-                Khám phá sở thích nghề nghiệp theo cơ sở khoa học <strong>Holland & SCCT</strong>, thử sức với xưởng mô phỏng 3D tương tác, lắng nghe người trong nghề chia sẻ khó khăn thực tế và tra cứu dữ liệu điểm chuẩn đại học 3 năm chính thức.
-              </p>
-
-              {/* Dual Primary CTAs */}
-              <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-3 pt-2">
-                <button
-                  onClick={() => setCurrentTab('profile')}
-                  className="px-6 py-3.5 rounded-2xl bg-amber-400 hover:bg-amber-300 text-slate-950 font-black text-sm shadow-lg hover:shadow-amber-400/20 hover:scale-[1.02] active:scale-[0.98] transition-all flex items-center justify-center gap-2"
-                >
-                  <Sparkles className="w-4 h-4 text-slate-950" />
-                  <span>1. Khám phá bản thân (RIASEC)</span>
-                  <ArrowRight className="w-4 h-4" />
-                </button>
-
-                <button
-                  onClick={() => setCurrentTab('tasks')}
-                  className="px-6 py-3.5 rounded-2xl bg-teal-800/90 hover:bg-teal-700 text-white font-bold text-sm border border-teal-500/60 shadow-md hover:scale-[1.02] active:scale-[0.98] transition-all flex items-center justify-center gap-2"
-                >
-                  <PlayCircle className="w-4 h-4 text-teal-300" />
-                  <span>2. Thử nghiệm nghề 3D</span>
-                </button>
-              </div>
-
-              {/* Trust Indicators */}
-              <div className="pt-3 flex flex-wrap items-center gap-x-6 gap-y-2 text-xs text-teal-200/90">
-                <div className="flex items-center gap-1.5">
-                  <CheckCircle2 className="w-4 h-4 text-amber-400 shrink-0" />
-                  <span>100% Miễn phí cho học sinh</span>
-                </div>
-                <div className="flex items-center gap-1.5">
-                  <CheckCircle2 className="w-4 h-4 text-teal-400 shrink-0" />
-                  <span>Dữ liệu chính thức Bộ GD&ĐT</span>
-                </div>
-                <div className="flex items-center gap-1.5">
-                  <CheckCircle2 className="w-4 h-4 text-emerald-400 shrink-0" />
-                  <span>Đồng hành bởi EIE Education</span>
-                </div>
-              </div>
+        <div className="relative z-10 max-w-7xl mx-auto px-6 py-12 sm:px-12 sm:py-16 lg:py-20 grid grid-cols-1 lg:grid-cols-12 gap-10 items-center">
+          {/* Left Column: Text & CTA */}
+          <div className="lg:col-span-7 space-y-6">
+            <div className="inline-flex items-center space-x-2 px-4 py-1.5 rounded-full bg-teal-700/60 border border-teal-500/40 text-teal-100 text-xs sm:text-sm font-medium backdrop-blur-xs">
+              <Sparkles className="w-4 h-4 text-amber-300" />
+              <span>{t.home.badge}</span>
             </div>
 
-            {/* Right Column: High Quality Student Photo Showcase */}
-            <div className="lg:col-span-5">
-              <div className="relative group">
-                {/* Decorative border frame */}
-                <div className="absolute -inset-1.5 bg-gradient-to-r from-amber-400/30 to-teal-400/30 rounded-3xl blur-lg group-hover:blur-xl transition-all opacity-80" />
-                
-                <div className="relative rounded-2xl overflow-hidden shadow-2xl bg-slate-900 border border-white/20">
-                  <img
-                    src="https://images.unsplash.com/photo-1523240795612-9a054b0db644?auto=format&fit=crop&w=1000&q=80"
-                    alt="Nhóm học sinh THPT cùng nhau khám phá hướng nghiệp và học tập nhóm"
-                    className="w-full h-72 sm:h-84 lg:h-96 object-cover object-center group-hover:scale-105 transition-transform duration-500"
-                    loading="eager"
-                  />
-                  <div className="absolute inset-0 bg-gradient-to-t from-slate-950/85 via-slate-950/20 to-transparent" />
-                  
-                  {/* Floating Caption on Image */}
-                  <div className="absolute bottom-4 left-4 right-4 p-3.5 rounded-xl bg-slate-950/80 backdrop-blur-md border border-white/10 text-white text-xs">
-                    <div className="flex items-center justify-between">
-                      <span className="font-semibold text-teal-300">Không gian trải nghiệm thực tế</span>
-                      <span className="text-[11px] text-amber-300 font-bold">13+ Nghề trọng điểm</span>
-                    </div>
-                    <p className="text-[11px] text-slate-300 mt-1 line-clamp-1">
-                      Mô phỏng xưởng ô tô, lập trình phần mềm, thiết kế, nông nghiệp & y tế
-                    </p>
-                  </div>
-                </div>
+            <h1 className="text-3xl sm:text-5xl lg:text-6xl font-extrabold tracking-tight leading-tight">
+              <span className="text-amber-300">CHẠM VIỆC</span>
+              <span className="block text-2xl sm:text-3xl lg:text-4xl font-bold mt-3 text-teal-50 leading-snug">
+                {t.home.titleSub}
+              </span>
+            </h1>
+
+            <p className="text-teal-100/90 text-base sm:text-lg leading-relaxed max-w-2xl">
+              {t.home.description}
+            </p>
+
+            {/* Primary CTAs */}
+            <div className="flex flex-wrap gap-3.5 pt-2">
+              <button
+                onClick={onStartDiscovery}
+                className="flex items-center space-x-2 px-6 py-3.5 rounded-2xl bg-amber-400 hover:bg-amber-300 text-slate-950 font-bold text-sm sm:text-base shadow-lg shadow-amber-500/20 transition-all transform hover:-translate-y-0.5 cursor-pointer"
+              >
+                <Compass className="w-5 h-5" />
+                <span>{t.home.ctaStart}</span>
+                <ArrowRight className="w-4 h-4" />
+              </button>
+
+              <button
+                onClick={onExploreTasks}
+                className="flex items-center space-x-2 px-5 py-3.5 rounded-2xl bg-white/10 hover:bg-white/20 text-white border border-white/20 font-semibold text-sm sm:text-base backdrop-blur-xs transition-all cursor-pointer"
+              >
+                <Wrench className="w-5 h-5 text-teal-300" />
+                <span>{t.home.ctaSimulate}</span>
+              </button>
+
+              <button
+                onClick={onViewAdmissions}
+                className="flex items-center space-x-2 px-5 py-3.5 rounded-2xl bg-teal-950/60 hover:bg-teal-950/90 text-teal-200 border border-teal-600/40 font-semibold text-sm sm:text-base transition-all cursor-pointer"
+              >
+                <GraduationCap className="w-5 h-5 text-amber-300" />
+                <span>{t.home.ctaAdmissions}</span>
+              </button>
+            </div>
+
+            {/* Trust Indicators */}
+            <div className="pt-4 grid grid-cols-3 gap-4 border-t border-teal-700/60 text-xs sm:text-sm text-teal-200">
+              <div className="flex items-center space-x-2">
+                <CheckCircle className="w-4 h-4 text-emerald-400 shrink-0" />
+                <span>
+                  {isEn
+                    ? '60 Scientific RIASEC Questions'
+                    : '60 Câu hỏi RIASEC khoa học'}
+                </span>
+              </div>
+              <div className="flex items-center space-x-2">
+                <CheckCircle className="w-4 h-4 text-emerald-400 shrink-0" />
+                <span>
+                  {isEn
+                    ? `${CAREERS_DATA.length} Careers & 20 Major Fields`
+                    : `${CAREERS_DATA.length} Nghề & 20 Nhóm ngành`}
+                </span>
+              </div>
+              <div className="flex items-center space-x-2">
+                <CheckCircle className="w-4 h-4 text-emerald-400 shrink-0" />
+                <span>
+                  {isEn
+                    ? '3-Year Cutoff Lookup (2023–2025)'
+                    : 'Tra cứu điểm chuẩn 3 năm'}
+                </span>
               </div>
             </div>
           </div>
 
-          {/* 4 Quick Navigation Cards */}
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3 pt-8 mt-6 border-t border-teal-800/60">
-            <button
-              onClick={() => setCurrentTab('profile')}
-              className="flex items-center justify-between p-3.5 rounded-2xl bg-white/10 hover:bg-white/20 border border-white/15 text-white font-medium text-xs sm:text-sm backdrop-blur-md transition-all group text-left"
-            >
-              <div className="flex items-center gap-2.5">
-                <div className="w-8 h-8 rounded-lg bg-teal-500/20 text-teal-300 flex items-center justify-center font-bold">
-                  <Sparkles className="w-4 h-4" />
-                </div>
-                <div>
-                  <div className="font-bold">1. Khám phá bản thân</div>
-                  <div className="text-[11px] text-teal-200">Trắc nghiệm RIASEC</div>
-                </div>
-              </div>
-              <ArrowRight className="w-4 h-4 text-teal-300 group-hover:translate-x-1 transition-transform" />
-            </button>
+          {/* Right Column: Hero Image / Visual Card */}
+          <div className="lg:col-span-5">
+            <div className="relative rounded-2xl overflow-hidden shadow-2xl border-2 border-teal-500/30 bg-slate-900/60 group">
+              <img
+                src="https://images.unsplash.com/photo-1522202176988-66273c2fd55f?auto=format&fit=crop&w=1000&q=80"
+                alt={
+                  isEn
+                    ? 'Vietnamese high school students exploring future career paths'
+                    : 'Học sinh THPT Việt Nam cùng nhau thảo luận định hướng nghề nghiệp tương lai'
+                }
+                className="w-full h-72 sm:h-80 object-cover object-center group-hover:scale-105 transition-transform duration-700"
+              />
+              <div className="absolute inset-0 bg-gradient-to-t from-slate-950 via-slate-950/40 to-transparent" />
 
-            <button
-              onClick={() => setCurrentTab('tasks')}
-              className="flex items-center justify-between p-3.5 rounded-2xl bg-white/10 hover:bg-white/20 border border-white/15 text-white font-medium text-xs sm:text-sm backdrop-blur-md transition-all group text-left"
-            >
-              <div className="flex items-center gap-2.5">
-                <div className="w-8 h-8 rounded-lg bg-amber-500/20 text-amber-300 flex items-center justify-center font-bold">
-                  <PlayCircle className="w-4 h-4" />
+              {/* Floating Caption inside Hero Image */}
+              <div className="absolute bottom-4 left-4 right-4 p-4 rounded-xl bg-slate-900/90 backdrop-blur-md border border-slate-700/80 text-white">
+                <div className="flex items-center space-x-2 text-amber-300 text-xs font-bold uppercase tracking-wider mb-1">
+                  <Award className="w-4 h-4" />
+                  <span>
+                    {isEn
+                      ? 'Experiential Career Philosophy'
+                      : 'Triết lý Hướng nghiệp Thực chứng'}
+                  </span>
                 </div>
-                <div>
-                  <div className="font-bold">2. Thử một nghề</div>
-                  <div className="text-[11px] text-amber-200">Xưởng 3D & mô phỏng</div>
-                </div>
+                <p className="text-xs sm:text-sm text-slate-200 leading-snug">
+                  {isEn
+                    ? '"Every student has unique potential. Career guidance is not locking you into a mold—it is giving you real experiences to decide with confidence."'
+                    : '“Mỗi học sinh đều có tiềm năng riêng. Hướng nghiệp không phải là gán nhãn ép buộc, mà là trao cho em cơ hội trải nghiệm thực tế để tự tin lựa chọn.”'}
+                </p>
               </div>
-              <ArrowRight className="w-4 h-4 text-amber-300 group-hover:translate-x-1 transition-transform" />
-            </button>
-
-            <button
-              onClick={() => setCurrentTab('admissions')}
-              className="flex items-center justify-between p-3.5 rounded-2xl bg-white/10 hover:bg-white/20 border border-white/15 text-white font-medium text-xs sm:text-sm backdrop-blur-md transition-all group text-left"
-            >
-              <div className="flex items-center gap-2.5">
-                <div className="w-8 h-8 rounded-lg bg-indigo-500/20 text-indigo-300 flex items-center justify-center font-bold">
-                  <GraduationCap className="w-4 h-4" />
-                </div>
-                <div>
-                  <div className="font-bold">3. Tìm ngành & trường</div>
-                  <div className="text-[11px] text-indigo-200">Điểm chuẩn 3 năm</div>
-                </div>
-              </div>
-              <ArrowRight className="w-4 h-4 text-indigo-300 group-hover:translate-x-1 transition-transform" />
-            </button>
-
-            <button
-              onClick={() => setCurrentTab('enterprise')}
-              className="flex items-center justify-between p-3.5 rounded-2xl bg-white/10 hover:bg-white/20 border border-white/15 text-white font-medium text-xs sm:text-sm backdrop-blur-md transition-all group text-left"
-            >
-              <div className="flex items-center gap-2.5">
-                <div className="w-8 h-8 rounded-lg bg-emerald-500/20 text-emerald-300 flex items-center justify-center font-bold">
-                  <Building2 className="w-4 h-4" />
-                </div>
-                <div>
-                  <div className="font-bold">4. Tour doanh nghiệp</div>
-                  <div className="text-[11px] text-emerald-200">Trải nghiệm thực tế</div>
-                </div>
-              </div>
-              <ArrowRight className="w-4 h-4 text-emerald-300 group-hover:translate-x-1 transition-transform" />
-            </button>
+            </div>
           </div>
         </div>
       </section>
 
-      {/* 2. CAREER DIRECTORY SHOWCASE: Real workplace photography for each career */}
+      {/* 2. FOUR CORE MODULES QUICK NAVIGATION CARDS */}
       <section className="space-y-6">
-        <div className="flex flex-col md:flex-row md:items-end justify-between gap-4">
-          <div>
-            <div className="inline-flex items-center gap-2 text-xs font-bold text-teal-800 bg-teal-50 px-3 py-1 rounded-full border border-teal-200">
-              <Compass className="w-3.5 h-3.5 text-teal-600" />
-              <span>Dữ liệu thực chứng · {CAREERS_DATA.length} Ngành nghề tiêu biểu</span>
+        <div className="text-center max-w-3xl mx-auto space-y-2">
+          <span className="text-xs font-bold uppercase tracking-widest text-teal-700 bg-teal-50 px-3 py-1 rounded-full border border-teal-200">
+            {isEn ? 'Complete 4-Step Journey' : 'Hành trình 4 bước toàn diện'}
+          </span>
+          <h2 className="text-2xl sm:text-3xl font-extrabold text-slate-900">
+            {isEn
+              ? 'From Self-Understanding to University & College Decisions'
+              : 'Từ Thấu Hiểu Bản Thân Đến Quyết Định Chọn Trường'}
+          </h2>
+          <p className="text-slate-600 text-sm sm:text-base">
+            {isEn
+              ? 'Scientifically designed for high school students across both urban centers and rural/highland provinces.'
+              : 'Được thiết kế khoa học dành riêng cho học sinh THPT ở cả thành thị, nông thôn và miền núi.'}
+          </p>
+        </div>
+
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+          {/* Card 1: Khám phá bản thân */}
+          <div
+            onClick={onStartDiscovery}
+            className="group bg-white rounded-2xl border border-slate-200/90 overflow-hidden shadow-xs hover:shadow-xl hover:border-teal-500 transition-all duration-300 cursor-pointer flex flex-col"
+          >
+            <div className="relative h-44 overflow-hidden bg-slate-100">
+              <img
+                src="https://images.unsplash.com/photo-1434030216411-0b793f4b4173?auto=format&fit=crop&w=600&q=80"
+                alt={isEn ? 'Self-Discovery Assessment' : 'Trắc nghiệm khám phá bản thân'}
+                className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500"
+              />
+              <div className="absolute top-3 left-3 px-3 py-1 rounded-full bg-teal-700 text-white text-xs font-bold shadow-xs">
+                {isEn ? 'Step 1 • Self-Discovery' : 'Bước 1 • Thấu hiểu mình'}
+              </div>
             </div>
-            <h2 className="text-2xl sm:text-3xl font-extrabold text-slate-900 tracking-tight mt-2">
-              Khám phá môi trường làm việc thực tế
-            </h2>
-            <p className="text-xs sm:text-sm text-slate-600 mt-1">
-              Hình ảnh thực tế về không gian làm việc, thiết bị và công việc hằng ngày của từng nghề.
-            </p>
+            <div className="p-5 flex-1 flex flex-col justify-between space-y-4">
+              <div className="space-y-2">
+                <h3 className="text-lg font-bold text-slate-900 group-hover:text-teal-700 transition-colors">
+                  {isEn ? '60-Question Holland RIASEC Test' : 'Trắc Nghiệm 60 Câu Holland'}
+                </h3>
+                <p className="text-xs sm:text-sm text-slate-600 leading-relaxed">
+                  {isEn
+                    ? 'Assess 6 career interest dimensions (R-I-A-S-E-C) with 10 questions per group, combined with your favorite high school subjects and core values.'
+                    : 'Đánh giá 6 nhóm sở thích nghề nghiệp (R-I-A-S-E-C) với 10 câu hỏi/nhóm, kết hợp môn học yêu thích và điều kiện gia đình.'}
+                </p>
+              </div>
+              <div className="flex items-center text-teal-700 font-bold text-xs sm:text-sm group-hover:translate-x-1 transition-transform">
+                <span>{isEn ? 'Start Assessment' : 'Làm bài khảo sát ngay'}</span>
+                <ArrowRight className="w-4 h-4 ml-1" />
+              </div>
+            </div>
           </div>
 
-          <button
-            onClick={() => setCurrentTab('recommendations')}
-            className="self-start md:self-end text-xs sm:text-sm font-bold text-teal-700 hover:text-teal-900 flex items-center gap-1.5 transition-colors"
+          {/* Card 2: Gợi ý & Kho nghề */}
+          <div
+            onClick={onViewRecommendations}
+            className="group bg-white rounded-2xl border border-slate-200/90 overflow-hidden shadow-xs hover:shadow-xl hover:border-teal-500 transition-all duration-300 cursor-pointer flex flex-col"
           >
-            <span>Xem phân tích chi tiết & bản đồ ngành</span>
-            <ArrowRight className="w-4 h-4" />
+            <div className="relative h-44 overflow-hidden bg-slate-100">
+              <img
+                src="https://images.unsplash.com/photo-1581091226825-a6a2a5aee158?auto=format&fit=crop&w=600&q=80"
+                alt={isEn ? 'Career & Major Exploration' : 'Khám phá nghề nghiệp và ngành học'}
+                className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500"
+              />
+              <div className="absolute top-3 left-3 px-3 py-1 rounded-full bg-blue-700 text-white text-xs font-bold shadow-xs">
+                {isEn ? 'Step 2 • Career Matching' : 'Bước 2 • Định hướng nghề'}
+              </div>
+            </div>
+            <div className="p-5 flex-1 flex flex-col justify-between space-y-4">
+              <div className="space-y-2">
+                <h3 className="text-lg font-bold text-slate-900 group-hover:text-blue-700 transition-colors">
+                  {isEn
+                    ? `Directory of ${CAREERS_DATA.length} Careers & 20 Fields`
+                    : `Kho ${CAREERS_DATA.length} Nghề & 20 Nhóm Ngành`}
+                </h3>
+                <p className="text-xs sm:text-sm text-slate-600 leading-relaxed">
+                  {isEn
+                    ? 'Analyze fit scores transparently across Technology, Engineering, Economics, Pedagogy, Healthcare, Arts, and Agriculture.'
+                    : 'Phân tích mức độ phù hợp minh bạch; khám phá đa dạng từ Công nghệ, Kỹ thuật, Kinh tế đến Sư phạm, Y tế, Nghệ thuật, Nông nghiệp.'}
+                </p>
+              </div>
+              <div className="flex items-center text-blue-700 font-bold text-xs sm:text-sm group-hover:translate-x-1 transition-transform">
+                <span>{isEn ? 'View Matched Careers' : 'Xem danh mục nghề phù hợp'}</span>
+                <ArrowRight className="w-4 h-4 ml-1" />
+              </div>
+            </div>
+          </div>
+
+          {/* Card 3: Chạm thử nghề */}
+          <div
+            onClick={onExploreTasks}
+            className="group bg-white rounded-2xl border border-slate-200/90 overflow-hidden shadow-xs hover:shadow-xl hover:border-teal-500 transition-all duration-300 cursor-pointer flex flex-col"
+          >
+            <div className="relative h-44 overflow-hidden bg-slate-100">
+              <img
+                src="https://images.unsplash.com/photo-1581092160607-ee22621dd758?auto=format&fit=crop&w=600&q=80"
+                alt={isEn ? 'Interactive Career Simulations' : 'Mô phỏng nhiệm vụ nghề nghiệp thực tế'}
+                className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500"
+              />
+              <div className="absolute top-3 left-3 px-3 py-1 rounded-full bg-amber-600 text-white text-xs font-bold shadow-xs">
+                {isEn ? 'Step 3 • Career Simulation' : 'Bước 3 • Chạm thử việc thật'}
+              </div>
+            </div>
+            <div className="p-5 flex-1 flex flex-col justify-between space-y-4">
+              <div className="space-y-2">
+                <h3 className="text-lg font-bold text-slate-900 group-hover:text-amber-600 transition-colors">
+                  {isEn ? 'Interactive 3D & Case Simulations' : 'Mô Phỏng Nhiệm Vụ Nghề'}
+                </h3>
+                <p className="text-xs sm:text-sm text-slate-600 leading-relaxed">
+                  {isEn
+                    ? 'Step into the shoes of a Teacher, Engineer, Designer, Nurse, Data Analyst, or Agronomist through realistic 3-stage challenges and 3D WebGL labs.'
+                    : 'Thử đóng vai Giáo viên, Kỹ sư, Thiết kế, Điều dưỡng, Phân tích dữ liệu... giải quyết tình huống thực tế qua 3 giai đoạn.'}
+                </p>
+              </div>
+              <div className="flex items-center text-amber-600 font-bold text-xs sm:text-sm group-hover:translate-x-1 transition-transform">
+                <span>{isEn ? 'Try Simulations Now' : 'Trải nghiệm thử thách'}</span>
+                <ArrowRight className="w-4 h-4 ml-1" />
+              </div>
+            </div>
+          </div>
+
+          {/* Card 4: Tra cứu Điểm chuẩn Đại học */}
+          <div
+            onClick={onViewAdmissions}
+            className="group bg-white rounded-2xl border border-slate-200/90 overflow-hidden shadow-xs hover:shadow-xl hover:border-teal-500 transition-all duration-300 cursor-pointer flex flex-col"
+          >
+            <div className="relative h-44 overflow-hidden bg-slate-100">
+              <img
+                src="https://images.unsplash.com/photo-1541339907198-e08756dedf3f?auto=format&fit=crop&w=600&q=80"
+                alt={isEn ? 'University Admissions & Cutoff Scores' : 'Tra cứu điểm chuẩn đại học học viện'}
+                className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500"
+              />
+              <div className="absolute top-3 left-3 px-3 py-1 rounded-full bg-purple-700 text-white text-xs font-bold shadow-xs">
+                {isEn ? 'Step 4 • University Lookup' : 'Bước 4 • Chọn trường & ngành'}
+              </div>
+            </div>
+            <div className="p-5 flex-1 flex flex-col justify-between space-y-4">
+              <div className="space-y-2">
+                <h3 className="text-lg font-bold text-slate-900 group-hover:text-purple-700 transition-colors">
+                  {isEn
+                    ? 'Admissions & Cutoff Scores (2023–2026)'
+                    : 'Điểm Chuẩn Đại Học 2022–2024'}
+                </h3>
+                <p className="text-xs sm:text-sm text-slate-600 leading-relaxed">
+                  {isEn
+                    ? 'Look up 3-year cutoff trends, subject combinations (A00, A01, D01, K01...), tuition fees, and 2026 MOET admission regulations across Northern, Central, and Southern Vietnam.'
+                    : 'Tra cứu xu hướng điểm chuẩn 3 năm, tổ hợp xét tuyển (A00, A01, D01, C00...), học phí và học bổng của các trường ĐH cả 3 miền.'}
+                </p>
+              </div>
+              <div className="flex items-center text-purple-700 font-bold text-xs sm:text-sm group-hover:translate-x-1 transition-transform">
+                <span>{isEn ? 'Look Up Cutoff Scores' : 'Tra cứu điểm chuẩn'}</span>
+                <ArrowRight className="w-4 h-4 ml-1" />
+              </div>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      {/* 3. DIVERSE CAREER DIRECTORY SHOWCASE */}
+      <section className="bg-white rounded-3xl p-6 sm:p-10 border border-slate-200/90 shadow-xs space-y-8">
+        <div className="flex flex-col md:flex-row md:items-end justify-between gap-4">
+          <div className="space-y-2">
+            <span className="text-xs font-bold uppercase tracking-wider text-teal-700 bg-teal-50 px-3 py-1 rounded-full">
+              {isEn
+                ? 'Comprehensive Career Ecosystem'
+                : 'Hệ sinh thái nghề nghiệp đa dạng'}
+            </span>
+            <h2 className="text-2xl sm:text-3xl font-extrabold text-slate-900">
+              {isEn
+                ? 'Explore Careers Across 10 Core Industry Groups'
+                : 'Khám Phá Các Nhóm Ngành Nghề Tiêu Biểu'}
+            </h2>
+            <p className="text-slate-600 text-sm sm:text-base max-w-2xl">
+              {isEn
+                ? 'Not just IT or Business—CHẠM VIỆC provides balanced, in-depth guidance across Pedagogy, Healthcare, Engineering, Journalism, Arts, Social Sciences, and High-Tech Agriculture.'
+                : 'Không chỉ có Công nghệ thông tin hay Kinh tế, CHẠM VIỆC giới thiệu đầy đủ các lĩnh vực Sư phạm, Y dược, Kỹ thuật, Báo chí, Nghệ thuật, Luật và Nông nghiệp công nghệ cao.'}
+            </p>
+          </div>
+          <button
+            onClick={onViewRecommendations}
+            className="self-start md:self-auto inline-flex items-center space-x-2 px-4 py-2.5 rounded-xl bg-teal-50 hover:bg-teal-100 text-teal-800 font-bold text-xs sm:text-sm transition-colors cursor-pointer"
+          >
+            <Search className="w-4 h-4" />
+            <span>
+              {isEn
+                ? `View All ${CAREERS_DATA.length} Careers`
+                : `Xem toàn bộ ${CAREERS_DATA.length} nghề`}
+            </span>
           </button>
         </div>
 
-        {/* Category Filter Tabs */}
-        <div className="flex items-center gap-1.5 overflow-x-auto pb-1 scrollbar-none">
-          {careerCategories.map((cat) => (
-            <button
-              key={cat.id}
-              onClick={() => setSelectedCareerCategory(cat.id)}
-              className={`px-3.5 py-1.5 rounded-xl text-xs font-semibold whitespace-nowrap transition-all ${
-                selectedCareerCategory === cat.id
-                  ? 'bg-teal-800 text-white shadow-xs'
-                  : 'bg-white text-slate-600 hover:bg-slate-100 border border-slate-200/80'
-              }`}
-            >
-              {cat.label}
-            </button>
-          ))}
+        {/* Category Filter Pills */}
+        <div className="flex flex-wrap gap-2">
+          {careerCategories.map((cat) => {
+            const active = selectedCategory === cat.id;
+            return (
+              <button
+                key={cat.id}
+                onClick={() => setSelectedCategory(cat.id)}
+                className={`flex items-center space-x-2 px-3.5 py-2 rounded-xl text-xs sm:text-sm font-semibold transition-all cursor-pointer ${
+                  active
+                    ? 'bg-teal-700 text-white shadow-sm'
+                    : 'bg-slate-100 hover:bg-slate-200 text-slate-700'
+                }`}
+              >
+                {cat.icon}
+                <span>{cat.name}</span>
+                <span
+                  className={`px-1.5 py-0.5 rounded-full text-[11px] ${
+                    active ? 'bg-teal-900 text-teal-100' : 'bg-white text-slate-600'
+                  }`}
+                >
+                  {cat.count}
+                </span>
+              </button>
+            );
+          })}
         </div>
 
-        {/* Career Grid with Real Photos */}
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
-          {filteredCareers.map((career) => (
+        {/* Career Cards Grid */}
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-5">
+          {displayedCareers.map((career) => (
             <div
               key={career.id}
-              className="bg-white rounded-3xl border border-slate-200/80 hover:border-teal-400 hover:shadow-xl transition-all duration-300 overflow-hidden flex flex-col justify-between group"
+              onClick={() => {
+                if (onSelectCategory) {
+                  onSelectCategory(career.category);
+                } else {
+                  onViewRecommendations();
+                }
+              }}
+              className="group rounded-2xl border border-slate-200 p-5 hover:border-teal-500 hover:shadow-md transition-all bg-slate-50/50 hover:bg-white flex flex-col justify-between cursor-pointer"
             >
-              <div>
-                {/* Photo Header */}
-                <div className="relative aspect-[16/10] overflow-hidden bg-slate-100">
-                  <img
-                    src={career.imageUrl || 'https://images.unsplash.com/photo-1522071820081-009f0129c71c?auto=format&fit=crop&w=800&q=80'}
-                    alt={career.imageAlt || career.title}
-                    className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500"
-                    loading="lazy"
-                    onError={(e) => {
-                      (e.target as HTMLImageElement).src = 'https://images.unsplash.com/photo-1522071820081-009f0129c71c?auto=format&fit=crop&w=800&q=80';
-                    }}
-                  />
-                  <div className="absolute inset-0 bg-gradient-to-t from-slate-950/70 via-transparent to-transparent pointer-events-none" />
-                  
-                  {/* Category Chip */}
-                  <div className="absolute top-3 left-3">
-                    <span className="px-2.5 py-1 rounded-lg bg-slate-900/80 backdrop-blur-md text-white text-[11px] font-semibold border border-white/20">
-                      {career.categoryLabel}
-                    </span>
-                  </div>
-
-                  {/* RIASEC Code */}
-                  <div className="absolute top-3 right-3">
-                    <span className="px-2 py-0.5 rounded-md bg-amber-400 text-slate-950 text-[10px] font-black uppercase">
-                      RIASEC: {career.riasecCodes.join('')}
-                    </span>
+              <div className="space-y-3">
+                <div className="flex items-center justify-between gap-2">
+                  <span className="px-2.5 py-0.5 rounded-md bg-teal-100/80 text-teal-800 text-[11px] font-bold truncate">
+                    {career.categoryLabel}
+                  </span>
+                  <div className="flex space-x-1 shrink-0">
+                    {career.riasecCodes.map((code) => (
+                      <span
+                        key={code}
+                        className="w-5 h-5 rounded-full bg-slate-800 text-white text-[10px] font-bold flex items-center justify-center"
+                        title={isEn ? `Holland Group ${code}` : `Nhóm Holland ${code}`}
+                      >
+                        {code}
+                      </span>
+                    ))}
                   </div>
                 </div>
 
-                {/* Content */}
-                <div className="p-5 space-y-2.5">
-                  <h3 className="font-bold text-slate-900 text-base group-hover:text-teal-700 transition-colors">
-                    {career.title}
-                  </h3>
-                  <p className="text-xs text-slate-600 line-clamp-2 leading-relaxed">
-                    {career.shortSummary}
-                  </p>
-                  
-                  <div className="pt-2 text-[11px] text-slate-500 border-t border-slate-100 flex items-center justify-between">
-                    <span>Môn gợi ý: {career.highSchoolSubjects.slice(0, 3).join(', ')}</span>
-                    <span className="text-emerald-700 font-semibold">Triển vọng tốt</span>
-                  </div>
-                </div>
+                <h3 className="font-bold text-slate-900 text-base group-hover:text-teal-700 transition-colors">
+                  {career.title}
+                </h3>
+
+                <p className="text-xs text-slate-600 line-clamp-3 leading-relaxed">
+                  {career.shortSummary}
+                </p>
               </div>
 
-              {/* Action Footer */}
-              <div className="p-5 pt-0">
-                <button
-                  onClick={() => setCurrentTab('recommendations')}
-                  className="w-full py-2.5 rounded-xl bg-teal-50 hover:bg-teal-600 text-teal-800 hover:text-white font-bold text-xs transition-colors flex items-center justify-center gap-1.5"
-                >
-                  <span>Tìm hiểu lộ trình đào tạo</span>
-                  <ArrowRight className="w-3.5 h-3.5" />
-                </button>
+              <div className="pt-4 mt-4 border-t border-slate-200/80 space-y-2">
+                <div className="text-[11px] text-slate-500">
+                  <strong className="text-slate-700">
+                    {isEn ? 'Suggested Subjects:' : 'Môn gợi ý:'}
+                  </strong>{' '}
+                  {career.highSchoolSubjects.slice(0, 3).join(', ')}
+                </div>
+                <div className="flex items-center justify-between text-xs font-bold text-teal-700">
+                  <span>{isEn ? 'Explore Training Roadmap' : 'Tìm hiểu lộ trình đào tạo'}</span>
+                  <ArrowRight className="w-3.5 h-3.5 group-hover:translate-x-1 transition-transform" />
+                </div>
               </div>
             </div>
           ))}
         </div>
       </section>
 
-      {/* 3. 3D AUTOMOTIVE LAB & 2026 ADMISSIONS BANNER (REAL PHOTOGRAPHY SPLIT) */}
+      {/* 4. NEW 2026 FEATURES: 3D AUTOMOTIVE SIMULATION & ADMISSIONS 2026 */}
       <section className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-        {/* Card 1: 3D Automotive Simulation */}
-        <div className="relative overflow-hidden rounded-3xl bg-slate-950 text-white border border-teal-500/40 shadow-xl flex flex-col justify-between">
-          <div className="relative h-44 sm:h-52 overflow-hidden">
-            <img
-              src="https://images.unsplash.com/photo-1580273916550-e323be2ae537?auto=format&fit=crop&w=1000&q=80"
-              alt="Xưởng dịch vụ kỹ thuật sửa chữa ô tô và khoang động cơ hiện đại"
-              className="w-full h-full object-cover opacity-75"
-              loading="lazy"
-            />
-            <div className="absolute inset-0 bg-gradient-to-t from-slate-950 via-slate-950/40 to-transparent" />
-            <div className="absolute top-4 left-4 flex items-center gap-2">
-              <span className="px-3 py-1 rounded-full bg-teal-400 text-slate-950 text-xs font-black uppercase">
-                THREE.JS 3D
+        {/* Card A: 3D Automotive Technician Simulation */}
+        <div
+          onClick={onExploreTasks}
+          className="relative overflow-hidden rounded-3xl bg-gradient-to-br from-slate-900 via-slate-800 to-teal-950 text-white p-7 sm:p-9 border border-teal-500/30 shadow-xl group cursor-pointer flex flex-col justify-between"
+        >
+          <div className="absolute -right-12 -bottom-12 w-64 h-64 rounded-full bg-teal-500/15 blur-2xl pointer-events-none" />
+          <div className="space-y-4 relative z-10">
+            <div className="inline-flex items-center gap-2 px-3.5 py-1 rounded-full bg-teal-500/20 border border-teal-400/30 text-teal-300 text-xs font-bold">
+              <Wrench className="w-3.5 h-3.5" />
+              <span>
+                {isEn
+                  ? '3D Interactive Career Lab (Three.js WebGL)'
+                  : 'Trạm Chạm Nghề 3D Tương Tác (Three.js WebGL)'}
               </span>
-              <span className="text-xs text-teal-200 font-medium">Mô phỏng chân thực</span>
             </div>
+            <h3 className="text-2xl sm:text-3xl font-extrabold leading-tight group-hover:text-amber-300 transition-colors">
+              {isEn
+                ? '3D Simulation: Automotive Diagnostic & Repair Technician'
+                : 'Mô Phỏng 3D: Kỹ Thuật Viên Chẩn Đoán & Sửa Chữa Ô Tô'}
+            </h3>
+            <p className="text-slate-300 text-xs sm:text-sm leading-relaxed">
+              {isEn
+                ? 'Rotate the 3D engine bay 360°, measure 12V battery voltage, inspect spark plugs, air filter, coolant, and lubricating oil, then test-start the engine right in your browser.'
+                : 'Xoay 360° khoang máy động cơ, đo kiểm ắc-quy 12V, kiểm tra cụm bugi đánh lửa, lọc gió, nước làm mát, dầu bôi trơn và đề nổ máy thực tế ngay trên trình duyệt.'}
+            </p>
           </div>
-
-          <div className="p-6 sm:p-7 pt-2 space-y-4">
-            <div>
-              <h3 className="text-xl sm:text-2xl font-black text-white tracking-tight">
-                Xưởng Mô Phỏng 3D: Kỹ Thuật Viên Sửa Chữa Ô Tô
-              </h3>
-              <p className="text-xs sm:text-sm text-slate-300 mt-2 leading-relaxed">
-                Mở nắp capo, xoay góc nhìn 360°, soi chi tiết bu-gi, kiểm tra điện áp ắc quy, thay lọc gió và nổ máy thử nghiệm 850 RPM ngay trong trình duyệt.
-              </p>
-            </div>
-
-            <div className="grid grid-cols-2 gap-2 text-xs text-teal-200">
-              <div className="p-2.5 rounded-xl bg-white/5 border border-white/10">
-                ✓ Kiểm tra đo điện ắc quy
-              </div>
-              <div className="p-2.5 rounded-xl bg-white/5 border border-white/10">
-                ✓ Khởi động máy rung âm thanh
-              </div>
-            </div>
-
-            <button
-              onClick={() => onOpenTask('task-o-to')}
-              className="w-full sm:w-auto px-5 py-3 rounded-2xl bg-teal-400 hover:bg-teal-300 text-slate-950 font-black text-xs sm:text-sm shadow-md transition-all flex items-center justify-center gap-2"
-            >
-              <Wrench className="w-4 h-4" />
-              <span>Vào Xưởng Ô Tô 3D Ngay</span>
+          <div className="pt-6 mt-6 border-t border-slate-700/80 flex items-center justify-between relative z-10">
+            <span className="text-xs text-teal-300 font-semibold">
+              {isEn
+                ? '✓ Includes Kolb Experiential Learning Reflection'
+                : '✓ Có hướng dẫn phản tư theo chu trình học tập trải nghiệm Kolb'}
+            </span>
+            <span className="inline-flex items-center gap-1.5 px-4 py-2 rounded-xl bg-amber-400 text-slate-950 font-extrabold text-xs group-hover:translate-x-1 transition-transform">
+              <span>{isEn ? 'Enter 3D Workshop' : 'Vào Xưởng 3D Ngay'}</span>
               <ArrowRight className="w-4 h-4" />
-            </button>
+            </span>
           </div>
         </div>
 
-        {/* Card 2: Admissions 2026 & EIE Education Gift */}
-        <div className="relative overflow-hidden rounded-3xl bg-slate-950 text-white border border-indigo-500/40 shadow-xl flex flex-col justify-between">
-          <div className="relative h-44 sm:h-52 overflow-hidden">
-            <img
-              src="https://images.unsplash.com/photo-1523050854058-8df90110c9f1?auto=format&fit=crop&w=1000&q=80"
-              alt="Giảng đường đại học và sinh viên tham gia kỳ thi tuyển sinh"
-              className="w-full h-full object-cover opacity-75"
-              loading="lazy"
-            />
-            <div className="absolute inset-0 bg-gradient-to-t from-slate-950 via-slate-950/40 to-transparent" />
-            <div className="absolute top-4 left-4 flex items-center gap-2">
-              <span className="px-3 py-1 rounded-full bg-amber-400 text-slate-950 text-xs font-black uppercase">
-                MỚI 2026
+        {/* Card B: Admissions 2026 & Aptitude Tests */}
+        <div
+          onClick={onViewAdmissions}
+          className="relative overflow-hidden rounded-3xl bg-gradient-to-br from-indigo-950 via-slate-900 to-teal-950 text-white p-7 sm:p-9 border border-indigo-500/30 shadow-xl group cursor-pointer flex flex-col justify-between"
+        >
+          <div className="absolute -right-12 -top-12 w-64 h-64 rounded-full bg-amber-500/15 blur-2xl pointer-events-none" />
+          <div className="space-y-4 relative z-10">
+            <div className="inline-flex items-center gap-2 px-3.5 py-1 rounded-full bg-amber-500/20 border border-amber-400/30 text-amber-300 text-xs font-bold">
+              <GraduationCap className="w-3.5 h-3.5" />
+              <span>
+                {isEn
+                  ? '2026 Admissions & Aptitude Exam Hub'
+                  : 'Cập nhật Quy chế Tuyển sinh 2026 & Thi ĐGNL'}
               </span>
-              <span className="text-xs text-amber-200 font-medium">Đồng hành cùng EIE Education</span>
             </div>
+            <h3 className="text-2xl sm:text-3xl font-extrabold leading-tight group-hover:text-amber-300 transition-colors">
+              {isEn
+                ? '2026 Admissions Center & Official Exam Repository (HSA, TSA, V-ACT, SPT)'
+                : 'Tâm Điểm Tuyển Sinh 2026 & Kho Đề HSA, TSA, V-ACT, SPT'}
+            </h3>
+            <p className="text-slate-300 text-xs sm:text-sm leading-relaxed">
+              {isEn
+                ? 'Track the 6 latest MOET 2026 regulation updates (max 15 preferences, 6-semester transcript rules), access official sample papers, and practice curated tests with instant grading.'
+                : 'Cập nhật 6 điểm mới Quy chế Bộ GD&ĐT 2026 (giới hạn 15 nguyện vọng, xét học bạ đủ 6 học kỳ), kho đề minh họa chính thức và phòng luyện đề tự chấm điểm.'}
+            </p>
           </div>
-
-          <div className="p-6 sm:p-7 pt-2 space-y-4">
-            <div>
-              <h3 className="text-xl sm:text-2xl font-black text-white tracking-tight">
-                Tuyển Sinh 2026 & Kho 100 Đề ĐGNL / ĐGTD Miễn Phí
-              </h3>
-              <p className="text-xs sm:text-sm text-slate-300 mt-2 leading-relaxed">
-                Quy chế thi tốt nghiệp THPT và tuyển sinh đại học mới nhất của Bộ GD&ĐT. Tặng trọn gói kho đề tham khảo ĐHQG, ĐHBK và tài khoản luyện Tiếng Anh EIE.
-              </p>
-            </div>
-
-            <div className="grid grid-cols-2 gap-2 text-xs text-indigo-200">
-              <div className="p-2.5 rounded-xl bg-white/5 border border-white/10">
-                ✓ 100 Đề ĐGNL có bấm giờ
-              </div>
-              <div className="p-2.5 rounded-xl bg-white/5 border border-white/10">
-                ✓ Cẩm nang tổ hợp môn mới
-              </div>
-            </div>
-
-            <button
-              onClick={() => setCurrentTab('admissions')}
-              className="w-full sm:w-auto px-5 py-3 rounded-2xl bg-amber-400 hover:bg-amber-300 text-slate-950 font-black text-xs sm:text-sm shadow-md transition-all flex items-center justify-center gap-2"
-            >
-              <Gift className="w-4 h-4" />
-              <span>Nhận Tài Khoản Luyện Đề EIE</span>
+          <div className="pt-6 mt-6 border-t border-slate-700/80 flex items-center justify-between relative z-10">
+            <span className="text-xs text-amber-300 font-semibold">
+              {isEn
+                ? '🎁 Includes 100% Free EIE IELTS & SAT Prep Scholarship'
+                : '🎁 Tặng tài khoản luyện IELTS & SAT miễn phí cùng EIE Education'}
+            </span>
+            <span className="inline-flex items-center gap-1.5 px-4 py-2 rounded-xl bg-teal-500 text-slate-950 font-extrabold text-xs group-hover:translate-x-1 transition-transform">
+              <span>{isEn ? 'Explore 2026 Hub' : 'Tra Cứu & Luyện Đề'}</span>
               <ArrowRight className="w-4 h-4" />
-            </button>
+            </span>
           </div>
         </div>
       </section>
 
-      {/* 4. ENTERPRISE TOURS SHOWCASE: Real photography of actual corporate workplaces */}
-      <section className="bg-gradient-to-br from-teal-950 via-slate-900 to-teal-900 text-white rounded-3xl p-6 sm:p-10 border border-teal-700/50 space-y-8 shadow-xl">
-        <div className="flex flex-col sm:flex-row sm:items-end justify-between gap-4">
-          <div>
-            <div className="inline-flex items-center gap-2 text-xs font-bold text-amber-300 bg-white/10 px-3 py-1 rounded-full border border-white/10">
-              <Building2 className="w-3.5 h-3.5 text-amber-400" />
-              <span>Chương trình Trải nghiệm Thực địa tại Doanh nghiệp</span>
+      {/* 5. ENTERPRISE EXPERIENCE SHOWCASE */}
+      {onViewEnterprise && (
+        <section className="bg-gradient-to-br from-teal-900 via-slate-900 to-teal-950 rounded-3xl p-6 sm:p-10 text-white shadow-xl border border-teal-700/60 space-y-8">
+          <div className="flex flex-col md:flex-row md:items-end justify-between gap-4">
+            <div className="space-y-2">
+              <div className="inline-flex items-center space-x-2 px-3 py-1 rounded-full bg-amber-400/20 border border-amber-400/40 text-amber-300 text-xs font-bold uppercase tracking-wider">
+                <Building2 className="w-3.5 h-3.5" />
+                <span>
+                  {isEn
+                    ? 'Connecting Schools & Partner Enterprises'
+                    : 'Kết nối nhà trường & Doanh nghiệp đối tác'}
+                </span>
+              </div>
+              <h2 className="text-2xl sm:text-3xl font-extrabold">
+                {isEn
+                  ? 'Register for Real-World Enterprise Career Tours'
+                  : 'Đăng Ký Trải Nghiệm Thực Tế Tại Doanh Nghiệp'}
+              </h2>
+              <p className="text-teal-100/80 text-sm sm:text-base max-w-2xl">
+                {isEn
+                  ? 'Go beyond online tests—register for Factory Tours, Studio Visits, and Half-Day Job Shadowing to observe professionals in action.'
+                  : 'Học sinh không chỉ làm trắc nghiệm trên máy mà còn có cơ hội đăng ký tham gia các đợt tham quan nhà máy (Factory Tour) và quan sát nghề nghiệp thực tế (Job Shadowing).'}
+              </p>
             </div>
-            <h2 className="text-2xl sm:text-3xl font-extrabold text-white tracking-tight mt-2">
-              Chạm vào doanh nghiệp hàng đầu
-            </h2>
-            <p className="text-xs sm:text-sm text-teal-200 mt-1 max-w-xl">
-              Tạo cơ hội cho học sinh THPT đến tận nơi tham quan cơ sở vật chất, quan sát môi trường làm việc thực và giao lưu cùng chuyên gia.
-            </p>
+            <button
+              onClick={onViewEnterprise}
+              className="self-start md:self-auto inline-flex items-center space-x-2 px-5 py-3 rounded-xl bg-amber-400 hover:bg-amber-300 text-slate-950 font-bold text-xs sm:text-sm shadow-md transition-all cursor-pointer shrink-0"
+            >
+              <span>
+                {isEn ? 'View All Open Batches' : 'Xem tất cả đợt đăng ký'}
+              </span>
+              <ArrowRight className="w-4 h-4" />
+            </button>
           </div>
 
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+            {featuredEnterprises.map((batch) => (
+              <div
+                key={batch.id}
+                onClick={onViewEnterprise}
+                className="bg-white/10 hover:bg-white/15 backdrop-blur-md border border-white/15 rounded-2xl p-5 flex flex-col justify-between space-y-4 transition-all cursor-pointer group"
+              >
+                <div className="space-y-3">
+                  <div className="flex items-center justify-between gap-2">
+                    <span className="px-2.5 py-1 rounded-md bg-teal-500/30 border border-teal-400/30 text-teal-200 text-xs font-semibold">
+                      {batch.badge}
+                    </span>
+                    <span className="text-xs font-bold text-amber-300 bg-amber-500/20 px-2.5 py-1 rounded-full">
+                      {isEn
+                        ? `${batch.slotsLeft}/${batch.totalSlots} slots left`
+                        : `Còn ${batch.slotsLeft}/${batch.totalSlots} suất`}
+                    </span>
+                  </div>
+
+                  <h3 className="font-bold text-base sm:text-lg text-white group-hover:text-amber-300 transition-colors leading-snug">
+                    {batch.name}
+                  </h3>
+
+                  <div className="space-y-1.5 text-xs text-teal-100/90">
+                    <div className="flex items-center gap-2">
+                      <Building2 className="w-3.5 h-3.5 text-teal-300 shrink-0" />
+                      <span className="truncate">{batch.partner}</span>
+                    </div>
+                    <div className="flex items-center gap-2">
+                      <MapPin className="w-3.5 h-3.5 text-teal-300 shrink-0" />
+                      <span>{batch.location}</span>
+                    </div>
+                    <div className="flex items-center gap-2">
+                      <Calendar className="w-3.5 h-3.5 text-teal-300 shrink-0" />
+                      <span>{batch.date}</span>
+                    </div>
+                  </div>
+                </div>
+
+                <div className="pt-3 border-t border-white/10 flex items-center justify-between text-xs font-bold text-amber-300">
+                  <span className="flex items-center gap-1.5">
+                    <Users className="w-3.5 h-3.5" />
+                    <span>
+                      {isEn
+                        ? '100% Sponsored for High School Students'
+                        : 'Miễn phí 100% cho học sinh THPT'}
+                    </span>
+                  </span>
+                  <ArrowRight className="w-4 h-4 group-hover:translate-x-1 transition-transform" />
+                </div>
+              </div>
+            ))}
+          </div>
+        </section>
+      )}
+
+      {/* 6. REAL STORIES PREVIEW */}
+      <section className="space-y-6">
+        <div className="flex flex-col md:flex-row md:items-end justify-between gap-4">
+          <div className="space-y-2">
+            <span className="text-xs font-bold uppercase tracking-wider text-amber-700 bg-amber-50 px-3 py-1 rounded-full border border-amber-200">
+              {isEn
+                ? 'Real People – Real Work – Real Perspectives'
+                : 'Người thật – Việc thật – Góc nhìn thật'}
+            </span>
+            <h2 className="text-2xl sm:text-3xl font-extrabold text-slate-900">
+              {isEn
+                ? 'Listen to Career Stories Across Vietnam'
+                : 'Lắng Nghe Câu Chuyện Nghề Nghiệp Thực Tế'}
+            </h2>
+            <p className="text-slate-600 text-sm sm:text-base max-w-2xl">
+              {isEn
+                ? 'Understand both the pride and the real unseen hardships behind every profession before making your choice.'
+                : 'Hiểu cả những niềm vui lẫn góc khuất vất vả của từng nghề qua chia sẻ từ người trong cuộc trước khi đưa ra quyết định.'}
+            </p>
+          </div>
           <button
-            onClick={() => setCurrentTab('enterprise')}
-            className="self-start sm:self-end px-5 py-2.5 rounded-xl bg-white text-slate-900 hover:bg-teal-50 font-bold text-xs shadow-md transition-all flex items-center gap-2"
+            onClick={onWatchStories}
+            className="self-start md:self-auto inline-flex items-center space-x-2 px-4 py-2.5 rounded-xl bg-amber-100 hover:bg-amber-200 text-amber-900 font-bold text-xs sm:text-sm transition-colors cursor-pointer"
           >
-            <span>Xem lịch trình & đăng ký suất</span>
-            <ArrowRight className="w-4 h-4" />
+            <PlayCircle className="w-4 h-4" />
+            <span>
+              {isEn
+                ? `Watch All ${VIDEO_STORIES_DATA.length} Videos`
+                : `Xem tất cả ${VIDEO_STORIES_DATA.length} video`}
+            </span>
           </button>
         </div>
 
         <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-          {featuredEnterprises.map((prog) => (
+          {featuredVideos.map((video) => (
             <div
-              key={prog.id}
-              onClick={() => setCurrentTab('enterprise')}
-              className="bg-white/10 backdrop-blur-md rounded-2xl border border-white/15 overflow-hidden hover:border-amber-400 hover:bg-white/15 cursor-pointer transition-all flex flex-col justify-between group"
+              key={video.id}
+              onClick={onWatchStories}
+              className="group bg-white rounded-2xl border border-slate-200 overflow-hidden shadow-xs hover:shadow-lg transition-all cursor-pointer flex flex-col justify-between"
             >
               <div>
-                <div className="relative aspect-[16/10] overflow-hidden bg-slate-900">
+                <div className="relative h-48 bg-slate-900 overflow-hidden">
                   <img
-                    src={prog.imageUrl}
-                    alt={prog.imageAlt}
-                    className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500"
-                    loading="lazy"
+                    src={`https://img.youtube.com/vi/${video.youtubeId}/hqdefault.jpg`}
+                    alt={video.title}
+                    className="w-full h-full object-cover opacity-90 group-hover:scale-105 transition-transform duration-500"
                   />
-                  <div className="absolute inset-0 bg-gradient-to-t from-slate-950/80 via-transparent to-transparent pointer-events-none" />
-                  <div className="absolute bottom-2.5 left-2.5 right-2.5 flex items-center justify-between text-[11px]">
-                    <span className="font-semibold text-teal-200 bg-slate-950/70 px-2 py-0.5 rounded backdrop-blur-xs">
-                      {prog.enterpriseName}
-                    </span>
-                    <span className="font-bold text-amber-300 bg-slate-950/70 px-2 py-0.5 rounded backdrop-blur-xs">
-                      Còn {prog.slotsLeft} chỗ
-                    </span>
-                  </div>
-                </div>
-
-                <div className="p-4 space-y-2">
-                  <h4 className="font-bold text-white text-sm line-clamp-2 group-hover:text-amber-300 transition-colors">
-                    {prog.programName}
-                  </h4>
-                  <div className="flex items-center gap-4 text-[11px] text-teal-200">
-                    <span className="flex items-center gap-1">
-                      <Calendar className="w-3.5 h-3.5 text-amber-400" />
-                      {prog.date}
-                    </span>
-                    <span className="flex items-center gap-1">
-                      <MapPin className="w-3.5 h-3.5 text-teal-400" />
-                      {prog.location}
-                    </span>
-                  </div>
-                </div>
-              </div>
-
-              <div className="p-4 pt-0">
-                <div className="text-[11px] text-amber-300 font-bold flex items-center justify-between">
-                  <span>Tài trợ 100% chi phí</span>
-                  <span className="group-hover:translate-x-1 transition-transform">Đăng ký ngay →</span>
-                </div>
-              </div>
-            </div>
-          ))}
-        </div>
-      </section>
-
-      {/* 5. REAL STORIES PREVIEW: Real YouTube Thumbnails with speaker and play icon */}
-      <section className="bg-white rounded-3xl p-6 sm:p-10 border border-slate-200/80 space-y-6 shadow-xs">
-        <div className="flex flex-col sm:flex-row sm:items-end justify-between gap-4">
-          <div>
-            <div className="inline-flex items-center gap-2 text-xs font-bold text-amber-800 bg-amber-50 px-3 py-1 rounded-full border border-amber-200">
-              <BookOpen className="w-3.5 h-3.5 text-amber-600" />
-              <span>Người thật – Chuyện nghề thật (YouTube đã xác thực)</span>
-            </div>
-            <h2 className="text-2xl sm:text-3xl font-extrabold text-slate-900 tracking-tight mt-2">
-              Lắng nghe người trong nghề chia sẻ thực tế
-            </h2>
-            <p className="text-xs sm:text-sm text-slate-600 mt-1">
-              Không tô hồng màu mè; lắng nghe những khó khăn, đánh đổi và kỹ năng thực tế cần chuẩn bị.
-            </p>
-          </div>
-
-          <button
-            onClick={() => setCurrentTab('videos')}
-            className="self-start sm:self-end px-5 py-2.5 rounded-xl bg-teal-800 hover:bg-teal-700 text-white font-bold text-xs shadow-xs transition-colors flex items-center gap-2"
-          >
-            <span>Khám phá toàn bộ video</span>
-            <ArrowRight className="w-4 h-4" />
-          </button>
-        </div>
-
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
-          {VIDEO_STORIES_DATA.slice(0, 3).map((v) => (
-            <div
-              key={v.id}
-              onClick={() => setCurrentTab('videos')}
-              className="bg-white rounded-2xl border border-slate-200/80 hover:border-amber-400 hover:shadow-lg cursor-pointer transition-all overflow-hidden flex flex-col justify-between group"
-            >
-              <div>
-                {/* YouTube Video Thumbnail with Play Button */}
-                <div className="relative aspect-video bg-slate-900 overflow-hidden">
-                  <img
-                    src={`https://img.youtube.com/vi/${v.youtubeId}/hqdefault.jpg`}
-                    alt={v.title}
-                    className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500"
-                    loading="lazy"
-                  />
-                  <div className="absolute inset-0 bg-gradient-to-t from-slate-950/75 via-transparent to-transparent pointer-events-none" />
-
-                  {/* Play Button Overlay */}
-                  <div className="absolute inset-0 flex items-center justify-center">
-                    <div className="w-11 h-11 rounded-full bg-amber-400/90 group-hover:bg-amber-300 text-slate-950 flex items-center justify-center shadow-lg group-hover:scale-110 transition-all">
-                      <PlayCircle className="w-6 h-6 ml-0.5" />
+                  <div className="absolute inset-0 bg-gradient-to-t from-slate-950/80 via-slate-950/20 to-transparent flex items-center justify-center">
+                    <div className="w-12 h-12 rounded-full bg-amber-400/95 text-slate-950 flex items-center justify-center shadow-lg group-hover:scale-110 transition-transform">
+                      <PlayCircle className="w-7 h-7" />
                     </div>
                   </div>
-
-                  <div className="absolute bottom-2.5 left-2.5 right-2.5 flex items-center justify-between text-[11px] text-white">
-                    <span className="font-semibold bg-slate-900/80 px-2 py-0.5 rounded backdrop-blur-xs">
-                      {v.channelName}
+                  <div className="absolute bottom-3 left-3 right-3 flex items-center justify-between text-white text-xs">
+                    <span className="px-2.5 py-0.5 rounded-md bg-teal-700/90 font-semibold">
+                      {video.careerTitle}
                     </span>
-                    <span className="bg-slate-900/80 px-2 py-0.5 rounded font-mono">
-                      {v.duration || '12-15 phút'}
-                    </span>
+                    <span className="text-slate-200 text-[11px]">{video.channelName}</span>
                   </div>
                 </div>
 
-                {/* Details */}
-                <div className="p-4 space-y-2">
-                  <div className="flex items-center justify-between text-xs">
-                    <span className="font-bold text-amber-800 bg-amber-50 px-2.5 py-0.5 rounded-md">
-                      {v.careerTitle}
-                    </span>
-                    <span className="text-[11px] text-slate-500">
-                      Khách mời: {v.characterName}
-                    </span>
-                  </div>
-
-                  <h3 className="font-bold text-slate-900 text-sm group-hover:text-teal-800 transition-colors line-clamp-2">
-                    {v.title}
+                <div className="p-5 space-y-2.5">
+                  <h3 className="font-bold text-slate-900 text-base group-hover:text-teal-700 transition-colors line-clamp-2">
+                    {video.title}
                   </h3>
-                  
+                  <p className="text-xs text-slate-500 font-medium">
+                    {isEn ? 'Featured Guest:' : 'Khách mời:'} {video.characterName} (
+                    {video.organization})
+                  </p>
                   <p className="text-xs text-slate-600 line-clamp-2 leading-relaxed">
-                    {v.summary}
+                    {video.summary}
                   </p>
                 </div>
               </div>
 
-              <div className="p-4 pt-0 border-t border-slate-100 flex items-center justify-between text-xs text-teal-700 font-semibold">
-                <span>Xem & Trả lời 5 câu hỏi phản tư</span>
+              <div className="px-5 py-3 bg-slate-50 border-t border-slate-100 flex items-center justify-between text-xs font-semibold text-teal-700">
+                <span>
+                  {isEn
+                    ? 'Watch & Answer Reflection Questions'
+                    : 'Xem & Trả lời câu hỏi phản tư'}
+                </span>
                 <ArrowRight className="w-3.5 h-3.5 group-hover:translate-x-1 transition-transform" />
               </div>
             </div>
@@ -645,31 +854,22 @@ export const HomeView: React.FC<HomeViewProps> = ({
         </div>
       </section>
 
-      {/* 6. ETHICAL GUIDELINES & DISCLAIMERS */}
-      <section className="bg-slate-950 text-slate-300 rounded-3xl p-6 sm:p-8 space-y-4 border border-slate-800">
-        <div className="flex items-center gap-2 text-teal-400 font-bold text-xs uppercase tracking-wider">
-          <ShieldAlert className="w-4 h-4" />
-          <span>Cam kết minh bạch & Trách nhiệm xã hội</span>
-        </div>
-        <h3 className="text-lg font-bold text-white">
-          Nguyên tắc xây dựng vì học sinh Việt Nam
-        </h3>
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-4 text-xs leading-relaxed text-slate-400">
-          <div className="p-4 rounded-xl bg-slate-900/80 border border-slate-800">
-            <h4 className="font-bold text-slate-200 mb-1">Không hứa hẹn viển vông</h4>
-            <p>CHẠM VIỆC không hứa bảo đảm 100% đỗ đại học hay cam kết mức thu nhập cụ thể. Điểm chuẩn 3 năm chỉ dùng để tham khảo xu hướng; học sinh luôn cần đối chiếu thông báo tuyển sinh năm hiện tại.</p>
+      {/* 7. ETHICAL & PEDAGOGICAL GUIDELINES */}
+      <section className="rounded-2xl bg-teal-50/80 border border-teal-200 p-6 sm:p-8">
+        <div className="max-w-4xl mx-auto flex flex-col sm:flex-row items-start sm:items-center gap-5">
+          <div className="w-12 h-12 rounded-2xl bg-teal-700 text-white flex items-center justify-center shrink-0 shadow-md">
+            <ShieldCheck className="w-6 h-6" />
           </div>
-          <div className="p-4 rounded-xl bg-slate-900/80 border border-slate-800">
-            <h4 className="font-bold text-slate-200 mb-1">Bình đẳng cơ hội</h4>
-            <p>Không dùng giới tính, dân tộc hay hoàn cảnh kinh tế để hạn chế nghề được khám phá. Dữ liệu ngân sách dùng để gợi ý học bổng, chính sách miễn giảm học phí và các phương án đào tạo khả thi.</p>
-          </div>
-          <div className="p-4 rounded-xl bg-slate-900/80 border border-slate-800">
-            <h4 className="font-bold text-slate-200 mb-1">Bảo vệ quyền riêng tư</h4>
-            <p>Không yêu cầu CCCD, số điện thoại hay thông tin gia đình nhạy cảm. Toàn bộ hồ sơ nháp lưu trên thiết bị của em, em hoàn toàn chủ động xuất dữ liệu hoặc xóa trắng bất kỳ lúc nào.</p>
+          <div className="space-y-1.5">
+            <h3 className="text-base sm:text-lg font-bold text-teal-950">
+              {t.home.ethicsTitle}
+            </h3>
+            <p className="text-xs sm:text-sm text-teal-900/80 leading-relaxed">
+              {t.home.ethicsDesc}
+            </p>
           </div>
         </div>
       </section>
     </div>
   );
 };
-

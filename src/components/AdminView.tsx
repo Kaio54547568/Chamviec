@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useMemo } from 'react';
 import { 
   Sliders, 
   ShieldCheck, 
@@ -18,19 +18,24 @@ import { ADMISSION_RECORDS } from '../data/admissions';
 import { CAREERS_DATA } from '../data/careers';
 import { VIDEO_STORIES_DATA } from '../data/videoStories';
 import { useLanguage } from '../i18n/LanguageContext';
+import { localizeAdmissionRecord } from '../utils/i18nData';
 
 export const AdminView: React.FC = () => {
   const { t, language } = useLanguage();
   const [admissions, setAdmissions] = useState<AdmissionRecord[]>(ADMISSION_RECORDS);
   const [searchTerm, setSearchTerm] = useState('');
   const [filterStatus, setFilterStatus] = useState<'all' | 'verified' | 'demo'>('all');
-  const [showAddModal, setShowAddModal] = useState(false);
+  const [importNotice, setImportNotice] = useState<{ type: 'success' | 'error'; text: string } | null>(null);
+
+  const localizedAdmissions = useMemo(
+    () => admissions.map((a) => localizeAdmissionRecord(a, language)),
+    [admissions, language]
+  );
 
   // Stats
-  const totalVerified = admissions.filter((a) => a.isVerifiedOfficial).length;
-  const totalDemo = admissions.filter((a) => a.isDemoData).length;
+  const totalVerified = localizedAdmissions.filter((a) => a.isVerifiedOfficial).length;
 
-  const filteredAdmissions = admissions.filter((a) => {
+  const filteredAdmissions = localizedAdmissions.filter((a) => {
     const matchTerm =
       a.universityName.toLowerCase().includes(searchTerm.toLowerCase()) ||
       a.majorName.toLowerCase().includes(searchTerm.toLowerCase()) ||
@@ -65,10 +70,18 @@ export const AdminView: React.FC = () => {
           const parsed = JSON.parse(event.target?.result as string);
           if (Array.isArray(parsed)) {
             setAdmissions(parsed);
-            alert(`Đã nhập thành công ${parsed.length} bản ghi tuyển sinh!`);
+            setImportNotice({
+              type: 'success',
+              text: language === 'vi'
+                ? `Đã nhập thành công ${parsed.length} bản ghi tuyển sinh!`
+                : `Successfully imported ${parsed.length} admission records!`
+            });
           }
         } catch (err) {
-          alert('Tệp JSON không đúng định dạng!');
+          setImportNotice({
+            type: 'error',
+            text: language === 'vi' ? 'Tệp JSON không đúng định dạng!' : 'Invalid JSON file format!'
+          });
         }
       };
     }
@@ -91,6 +104,12 @@ export const AdminView: React.FC = () => {
           {language === 'vi' ? 'Tuân thủ nguyên tắc: AI không được phép tự động phát sinh hay công bố điểm chuẩn. Mọi số liệu bắt buộc phải đối chiếu với đề án tuyển sinh chính thức từ cổng thông tin của trường hoặc Bộ GD&ĐT.' : 'Strict policy: AI is strictly prohibited from inventing or hallucinating cutoff scores. All figures must link directly to official university schemes or MOET registries.'}
         </p>
 
+        {importNotice && (
+          <div className={`p-3 rounded-xl border text-xs font-semibold ${importNotice.type === 'success' ? 'bg-emerald-50 border-emerald-200 text-emerald-800' : 'bg-rose-50 border-rose-200 text-rose-800'}`}>
+            {importNotice.text}
+          </div>
+        )}
+
         {/* Audit metrics */}
         <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 pt-2">
           <div className="p-4 rounded-2xl bg-emerald-50 border border-emerald-200">
@@ -98,10 +117,10 @@ export const AdminView: React.FC = () => {
               {language === 'vi' ? 'Bản ghi tuyển sinh chính thức' : 'Official Admissions Records'}
             </div>
             <div className="text-2xl font-black text-emerald-700 mt-1">
-              {totalVerified} <span className="text-xs font-normal text-emerald-600">bản ghi</span>
+              {totalVerified} <span className="text-xs font-normal text-emerald-600">{language === 'vi' ? 'bản ghi' : 'records'}</span>
             </div>
             <div className="text-[11px] text-emerald-600 mt-0.5">
-              100% có URL đề án và số hiệu văn bản
+              {language === 'vi' ? '100% có URL đề án và số hiệu văn bản' : '100% linked to official scheme URLs & document IDs'}
             </div>
           </div>
 
@@ -110,10 +129,10 @@ export const AdminView: React.FC = () => {
               {language === 'vi' ? 'Hồ sơ nghề & Video biên tập' : 'Career Dossiers & Curated Videos'}
             </div>
             <div className="text-2xl font-black text-blue-700 mt-1">
-              {CAREERS_DATA.length} nghề / {VIDEO_STORIES_DATA.length} video
+              {CAREERS_DATA.length} {language === 'vi' ? 'nghề' : 'careers'} / {VIDEO_STORIES_DATA.length} {language === 'vi' ? 'video' : 'videos'}
             </div>
             <div className="text-[11px] text-blue-600 mt-0.5">
-              Đã thẩm định bối cảnh & mốc thời gian
+              {language === 'vi' ? 'Đã thẩm định bối cảnh & mốc thời gian' : 'Verified occupational context & timestamps'}
             </div>
           </div>
 
@@ -126,10 +145,10 @@ export const AdminView: React.FC = () => {
                 onClick={handleExportJson}
                 className="px-3 py-1.5 rounded-xl bg-slate-900 text-white text-xs font-semibold hover:bg-slate-800 flex items-center gap-1"
               >
-                <Download className="w-3.5 h-3.5" /> Xuất JSON
+                <Download className="w-3.5 h-3.5" /> {language === 'vi' ? 'Xuất JSON' : 'Export JSON'}
               </button>
               <label className="px-3 py-1.5 rounded-xl bg-white border border-slate-300 text-slate-700 text-xs font-semibold hover:bg-slate-50 cursor-pointer flex items-center gap-1">
-                <Upload className="w-3.5 h-3.5" /> Nhập JSON
+                <Upload className="w-3.5 h-3.5" /> {language === 'vi' ? 'Nhập JSON' : 'Import JSON'}
                 <input type="file" accept=".json" onChange={handleImportJson} className="hidden" />
               </label>
             </div>
@@ -146,7 +165,7 @@ export const AdminView: React.FC = () => {
               type="text"
               value={searchTerm}
               onChange={(e) => setSearchTerm(e.target.value)}
-              placeholder="Tìm kiểm tra trường, ngành hoặc mã ngành..."
+              placeholder={language === 'vi' ? 'Tìm kiểm tra trường, ngành hoặc mã ngành...' : 'Search by university, major, or code...'}
               className="w-full pl-10 pr-4 py-2 rounded-xl border border-slate-300 text-xs focus:ring-2 focus:ring-teal-500 focus:outline-none"
             />
           </div>
@@ -160,7 +179,7 @@ export const AdminView: React.FC = () => {
                   : 'bg-slate-100 text-slate-600 hover:bg-slate-200'
               }`}
             >
-              Tất cả ({admissions.length})
+              {language === 'vi' ? `Tất cả (${localizedAdmissions.length})` : `All (${localizedAdmissions.length})`}
             </button>
             <button
               onClick={() => setFilterStatus('verified')}
@@ -170,7 +189,7 @@ export const AdminView: React.FC = () => {
                   : 'bg-emerald-50 text-emerald-800 hover:bg-emerald-100'
               }`}
             >
-              Đã duyệt nguồn ({totalVerified})
+              {language === 'vi' ? `Đã duyệt nguồn (${totalVerified})` : `Verified Sources (${totalVerified})`}
             </button>
           </div>
         </div>
@@ -180,15 +199,15 @@ export const AdminView: React.FC = () => {
           <table className="w-full text-left text-xs border-collapse">
             <thead>
               <tr className="bg-slate-100 text-slate-700 font-bold border-b border-slate-200">
-                <th className="p-3">Trạng thái kiểm duyệt</th>
-                <th className="p-3">Trường đại học</th>
-                <th className="p-3">Ngành & Mã ngành</th>
-                <th className="p-3">Năm</th>
-                <th className="p-3">Phương thức</th>
-                <th className="p-3">Điểm chuẩn</th>
-                <th className="p-3">Thang điểm</th>
-                <th className="p-3">Văn bản / Đề án nguồn</th>
-                <th className="p-3">Ngày kiểm tra</th>
+                <th className="p-3">{language === 'vi' ? 'Trạng thái kiểm duyệt' : 'Verification Status'}</th>
+                <th className="p-3">{language === 'vi' ? 'Trường đại học' : 'University'}</th>
+                <th className="p-3">{language === 'vi' ? 'Ngành & Mã ngành' : 'Major & Code'}</th>
+                <th className="p-3">{language === 'vi' ? 'Năm' : 'Year'}</th>
+                <th className="p-3">{language === 'vi' ? 'Phương thức' : 'Method'}</th>
+                <th className="p-3">{language === 'vi' ? 'Điểm chuẩn' : 'Cutoff Score'}</th>
+                <th className="p-3">{language === 'vi' ? 'Thang điểm' : 'Scale'}</th>
+                <th className="p-3">{language === 'vi' ? 'Văn bản / Đề án nguồn' : 'Source Document'}</th>
+                <th className="p-3">{language === 'vi' ? 'Ngày kiểm tra' : 'Verified Date'}</th>
               </tr>
             </thead>
             <tbody className="divide-y divide-slate-200">
@@ -198,12 +217,12 @@ export const AdminView: React.FC = () => {
                     {adm.isVerifiedOfficial ? (
                       <span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full bg-emerald-100 text-emerald-800 font-semibold text-[11px]">
                         <CheckCircle2 className="w-3.5 h-3.5 text-emerald-600" />
-                        Chính thức
+                        {language === 'vi' ? 'Chính thức' : 'Official'}
                       </span>
                     ) : (
                       <span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full bg-amber-100 text-amber-900 font-semibold text-[11px]">
                         <AlertTriangle className="w-3.5 h-3.5 text-amber-700" />
-                        Dữ liệu demo
+                        {language === 'vi' ? 'Dữ liệu demo' : 'Demo Data'}
                       </span>
                     )}
                   </td>

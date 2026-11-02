@@ -1,196 +1,337 @@
-import { ActionPlanItem, Career, MatchScoreBreakdown, RecommendationSnapshot, StudentProfile } from '../types';
+import { StudentProfile, RecommendationSnapshot, RiasecCode, ActionPlanItem } from '../types';
 import { CAREERS_DATA } from '../data/careers';
 import { MAJORS_DATA } from '../data/majors';
 import { SIMULATION_TASKS } from '../data/tasks';
+import { RIASEC_INFO } from '../data/riasecQuestions';
+import { localizeCareer, localizeMajor, localizeTask, localizeSubject } from './i18nData';
 
-export function calculateCareerMatchBreakdown(career: Career, profile: StudentProfile): { total: number; breakdown: MatchScoreBreakdown; hollandReason: string; evidence: string[] } {
+export const RULE_ENGINE_VERSION = '2.4.0-transparent-2026';
+
+// Map each task ID to the RIASEC codes of its associated career for fast, crash-safe lookup
+const TASK_RIASEC_MAP: Record<string, RiasecCode[]> = (() => {
+  const map: Record<string, RiasecCode[]> = {};
+  for (const task of SIMULATION_TASKS) {
+    const taskAny = task as unknown as { riasecCodes?: RiasecCode[] };
+    if (Array.isArray(taskAny.riasecCodes) && taskAny.riasecCodes.length > 0) {
+      map[task.id] = taskAny.riasecCodes;
+    } else {
+      const linkedCareer = CAREERS_DATA.find((c) => c.id === task.careerId);
+      map[task.id] = linkedCareer?.riasecCodes || ['I', 'E', 'C'];
+    }
+  }
+  return map;
+})();
+
+export function generateRecommendations(
+  profile: StudentProfile,
+  lang: 'vi' | 'en' = 'vi'
+): RecommendationSnapshot {
   const scores = profile.riasecScores || { R: 0, I: 0, A: 0, S: 0, E: 0, C: 0 };
-  const sortedDimensions = (Object.keys(scores) as (keyof typeof scores)[]).sort(
-    (a, b) => scores[b] - scores[a]
+  const favoriteSubjects = profile.favoriteSubjects || [];
+  const academicStrengths = profile.academicStrengths || [];
+  const completedTasks = profile.completedTasks || [];
+  const priorityValues = profile.priorityValues || [];
+
+  const sortedCodes = (Object.keys(scores) as RiasecCode[]).sort(
+    (a, b) => (scores[b] || 0) - (scores[a] || 0)
   );
-  const top2Codes = sortedDimensions.slice(0, 2);
+  const top1 = sortedCodes[0] || 'I';
+  const top2 = sortedCodes[1] || 'R';
+  const top3 = sortedCodes[2] || 'S';
+  const maxRiasecPossible = 50;
 
-  // 1. Sở thích nghề nghiệp RIASEC (Max 30)
-  let riasecScore = 12; // Baseline
-  let hollandReason = '';
-  const hasTop1 = career.riasecCodes.includes(top2Codes[0]);
-  const hasTop2 = career.riasecCodes.includes(top2Codes[1]);
+  const localizedSubjects = favoriteSubjects.map((s) => localizeSubject(s, lang));
+  const localizedStrengths = academicStrengths.map((s) => localizeSubject(s, lang));
 
-  if (hasTop1 && hasTop2) {
-    riasecScore = 28;
-    hollandReason = `Hồ sơ của bạn cho thấy sở thích nổi bật trùng khớp với 2 nhóm ${top2Codes[0]} và ${top2Codes[1]} của nghề này.`;
-  } else if (hasTop1 || hasTop2) {
-    riasecScore = 22;
-    const matched = hasTop1 ? top2Codes[0] : top2Codes[1];
-    hollandReason = `Hồ sơ của bạn có điểm số tốt ở nhóm sở thích ${matched}, tương thích một phần với đặc thù nghề.`;
-  } else {
-    riasecScore = 15;
-    hollandReason = `Đây là hướng đi mở rộng giúp bạn khám phá ngoài vùng an toàn hiện tại.`;
-  }
+  // Step 1: Lightweight scoring across all 200 careers (no expensive localization inside the 200-item loop)
+  const preliminaryScored = CAREERS_DATA.map((rawCareer) => {
+    let riasecPoints = 0;
+    const careerCodes = rawCareer.riasecCodes || [];
 
-  // 2. Năng lực & Bằng chứng môn học (Max 25)
-  let competencyScore = 12;
-  const evidence: string[] = [];
-  const subjectMatches = profile.favoriteSubjects.filter((s) =>
-    career.highSchoolSubjects ? career.highSchoolSubjects.some((cs) => s.includes(cs) || cs.includes(s)) : false
-  );
-
-  if (subjectMatches.length >= 2) {
-    competencyScore = 24;
-    evidence.push(`Thế mạnh các môn học liên quan: ${subjectMatches.join(', ')}.`);
-  } else if (subjectMatches.length === 1) {
-    competencyScore = 18;
-    evidence.push(`Có nền tảng môn học: ${subjectMatches[0]}.`);
-  } else {
-    competencyScore = 14;
-    evidence.push('Chưa ghi nhận môn học sở trường tương ứng trực tiếp.');
-  }
-
-  // 3. Giá trị nghề nghiệp (Max 20)
-  let valuesScore = 12;
-  if (profile.priorityValues && profile.priorityValues.length > 0) {
-    if (career.category === 'CongNghe' && profile.priorityValues.includes('sang-tao')) valuesScore += 6;
-    if (career.category === 'GiaoDuc' && profile.priorityValues.includes('cong-dong')) valuesScore += 6;
-    if (career.category === 'YTe' && profile.priorityValues.includes('cong-dong')) valuesScore += 6;
-    if (career.category === 'KinhDoanh' && profile.priorityValues.includes('thu-nhap')) valuesScore += 6;
-    if (profile.priorityValues.includes('on-dinh')) valuesScore += 2;
-  }
-  valuesScore = Math.min(valuesScore, 20);
-
-  // 4. Hoạt động & Môn học THPT (Max 15)
-  let subjectsScore = 10;
-  if (profile.academicStrengths && profile.academicStrengths.length > 0) {
-    subjectsScore += 4;
-  }
-  subjectsScore = Math.min(subjectsScore, 15);
-
-  // 5. Môi trường làm việc & Thử nghiệm thực tế (Max 10)
-  let environmentScore = 6;
-  const taskDone = profile.completedTasks.includes(career.simulationTaskId || '');
-  if (taskDone) {
-    environmentScore = 10;
-    evidence.push('Bạn đã trực tiếp làm bài thử vai mô phỏng và lưu lại phản tư cảm nhận.');
-  }
-
-  const total = riasecScore + competencyScore + valuesScore + subjectsScore + environmentScore;
-
-  const breakdown: MatchScoreBreakdown = {
-    riasecScore,
-    competencyScore,
-    valuesScore,
-    subjectsScore,
-    environmentScore,
-    total,
-    explanation: `Điểm số ${total}/100 là chỉ số tham khảo tổng hợp từ 5 thành tố minh bạch: Sở thích RIASEC (${riasecScore}/30), Năng lực & Môn học (${competencyScore}/25), Giá trị nghề nghiệp (${valuesScore}/20), Hoạt động trải nghiệm (${subjectsScore}/15) và Môi trường làm việc (${environmentScore}/10). Không đại diện cho xác suất đỗ đại học hay bảo đảm việc làm.`
-  };
-
-  return { total, breakdown, hollandReason, evidence };
-}
-
-export function generateRecommendations(profile: StudentProfile): RecommendationSnapshot {
-  const scoredCareers = CAREERS_DATA.map((career) => {
-    const { total, breakdown, hollandReason, evidence } = calculateCareerMatchBreakdown(career, profile);
-    const tradeoffs = [...career.difficultiesAndTradeoffs];
-    const missing: string[] = [];
-
-    if (!profile.budgetRange) {
-      missing.push('Chưa xác định mức ngân sách học phí mong muốn.');
+    if (careerCodes.includes(top1)) {
+      const ratio = Math.min(1, Math.max(0.4, (scores[top1] || 0) / maxRiasecPossible));
+      riasecPoints += Math.round(25 * ratio);
     }
-    if (!profile.preferredRegions || profile.preferredRegions.length === 0) {
-      missing.push('Chưa chọn khu vực địa lý ưu tiên học tập.');
+    if (careerCodes.includes(top2)) {
+      const ratio = Math.min(1, Math.max(0.4, (scores[top2] || 0) / maxRiasecPossible));
+      riasecPoints += Math.round(15 * ratio);
     }
-    if (!profile.completedTasks.includes(career.simulationTaskId || '')) {
-      missing.push('Chưa thử nhiệm vụ mô phỏng thực tế của nghề này để kiểm chứng cảm nhận.');
+    if (careerCodes.includes(top3)) {
+      const ratio = Math.min(1, Math.max(0.4, (scores[top3] || 0) / maxRiasecPossible));
+      riasecPoints += Math.round(5 * ratio);
     }
 
-    const linkedMajors = MAJORS_DATA.filter((m) => (career.linkedMajorIds || []).includes(m.id));
-    const taskObj = SIMULATION_TASKS.find((t) => t.id === career.simulationTaskId);
-    const suggestedTask = taskObj
-      ? { id: taskObj.id, title: taskObj.title }
-      : { id: 'task-lap-trinh', title: 'Thử thách trải nghiệm mô phỏng' };
+    let subjectPoints = 0;
+    const careerSubjects = rawCareer.highSchoolSubjects || [];
+    const matchingSubjects = careerSubjects.filter(
+      (s) =>
+        favoriteSubjects.includes(s) ||
+        academicStrengths.includes(s) ||
+        localizedSubjects.includes(localizeSubject(s, lang)) ||
+        localizedStrengths.includes(localizeSubject(s, lang))
+    );
+
+    if (matchingSubjects.length >= 2) subjectPoints = 20;
+    else if (matchingSubjects.length === 1) subjectPoints = 12;
+    else if (favoriteSubjects.length === 0) subjectPoints = 8;
+
+    let competencyPoints = 10;
+    const completedCareerTasks = SIMULATION_TASKS.filter((t) => {
+      if (!completedTasks.includes(t.id)) return false;
+      if (t.careerId === rawCareer.id) return true;
+      const taskCodes = TASK_RIASEC_MAP[t.id] || [];
+      return taskCodes.some((c) => careerCodes.includes(c));
+    });
+
+    if (completedCareerTasks.length > 0) {
+      competencyPoints = Math.min(20, 12 + completedCareerTasks.length * 4);
+    }
+
+    const valuesPoints = priorityValues.length > 0 ? 8 : 6;
+    const environmentPoints = 5;
+    const totalScore = Math.min(
+      98,
+      Math.max(42, riasecPoints + subjectPoints + competencyPoints + valuesPoints + environmentPoints)
+    );
 
     return {
-      career,
-      matchScore: total,
-      breakdown,
-      hollandFitReason: hollandReason,
-      evidenceFromProfile: evidence.length > 0 ? evidence : ['Chưa có nhiều bằng chứng học tập cụ thể trong hồ sơ.'],
-      valuesTradeoffs: tradeoffs,
-      skillsToCultivate: career.coreSkills,
-      missingInformation: missing,
-      suggestedTask,
-      linkedMajors
+      rawCareer,
+      careerCodes,
+      riasecPoints,
+      subjectPoints,
+      competencyPoints,
+      valuesPoints,
+      environmentPoints,
+      totalScore,
+      matchingSubjects,
+      completedCareerTasks,
     };
   });
 
-  // Sort descending by matchScore
-  scoredCareers.sort((a, b) => b.matchScore - a.matchScore);
-  const topRecommendations = scoredCareers.slice(0, 5);
+  // Sort and take only top 8 before running full localization
+  preliminaryScored.sort((a, b) => b.totalScore - a.totalScore);
+  const top8Scored = preliminaryScored.slice(0, 8);
+
+  const top1Info = RIASEC_INFO[top1];
+  const top2Info = RIASEC_INFO[top2];
+  const top1Name = lang === 'en' ? (top1Info?.title.en || top1) : (top1Info?.title.vi || top1);
+  const top2Name = lang === 'en' ? (top2Info?.title.en || top2) : (top2Info?.title.vi || top2);
+
+  // Step 2: Localize only the top 8 recommended careers
+  const recommendations = top8Scored.map((item) => {
+    const {
+      rawCareer,
+      careerCodes,
+      riasecPoints,
+      subjectPoints,
+      competencyPoints,
+      valuesPoints,
+      environmentPoints,
+      totalScore,
+      matchingSubjects,
+      completedCareerTasks,
+    } = item;
+
+    const career = localizeCareer(rawCareer, lang);
+    const localizedMatchingSubjects = matchingSubjects.map((s) => localizeSubject(s, lang));
+
+    const hollandFitReason =
+      lang === 'en'
+        ? `Your dominant Holland codes (${top1} - ${top1Name} & ${top2} - ${top2Name}) align closely with the core work activities of ${career.title} (Group ${careerCodes.join('-')}).`
+        : `Tổ hợp mã Holland nổi trội của bạn (${top1} - ${top1Name} & ${top2} - ${top2Name}) tương thích trực tiếp với đặc thù công việc của nghề ${career.title} (Nhóm ${careerCodes.join('-')}).`;
+
+    const explanation =
+      lang === 'en'
+        ? `Match score ${totalScore}% = Holland RIASEC (${riasecPoints}/45) + Subjects (${subjectPoints}/20) + Simulation Tasks (${competencyPoints}/20) + Values & Environment (${valuesPoints + environmentPoints}/15).`
+        : `Điểm tương thích ${totalScore}% = Holland RIASEC (${riasecPoints}/45) + Môn học (${subjectPoints}/20) + Thực hành mô phỏng (${competencyPoints}/20) + Giá trị & Môi trường (${valuesPoints + environmentPoints}/15).`;
+
+    const evidenceFromProfile: string[] = [];
+    if (careerCodes.includes(top1)) {
+      evidenceFromProfile.push(
+        lang === 'en'
+          ? `Strong alignment with your #1 RIASEC trait (${top1} - ${scores[top1] || 0} pts)`
+          : `Trùng khớp với nhóm sở thích số 1 của bạn (${top1} - ${scores[top1] || 0} điểm)`
+      );
+    }
+    if (localizedMatchingSubjects.length > 0) {
+      evidenceFromProfile.push(
+        lang === 'en'
+          ? `Matches your favorite/strong subjects: ${localizedMatchingSubjects.join(', ')}`
+          : `Phù hợp với môn học yêu thích/thế mạnh: ${localizedMatchingSubjects.join(', ')}`
+      );
+    }
+    if (completedCareerTasks.length > 0) {
+      evidenceFromProfile.push(
+        lang === 'en'
+          ? `Verified through ${completedCareerTasks.length} hands-on simulation task(s)`
+          : `Đã kiểm chứng qua ${completedCareerTasks.length} bài tập mô phỏng thực tế`
+      );
+    }
+    if (evidenceFromProfile.length === 0) {
+      evidenceFromProfile.push(
+        lang === 'en'
+          ? `Potential exploratory pathway based on your overall RIASEC profile (${top1}${top2}${top3})`
+          : `Hướng khám phá mở rộng dựa trên cấu trúc RIASEC tổng thể (${top1}${top2}${top3})`
+      );
+    }
+
+    const missingInformation: string[] = [];
+    if (favoriteSubjects.length === 0) {
+      missingInformation.push(
+        lang === 'en'
+          ? 'Add your favorite high school subjects in your Profile for more accurate academic matching.'
+          : 'Chưa cập nhật môn học yêu thích ở THPT trong Hồ sơ cá nhân.'
+      );
+    }
+    if (completedCareerTasks.length === 0) {
+      missingInformation.push(
+        lang === 'en'
+          ? 'Complete at least 1 Career Simulation Task in this field to verify your practical interest.'
+          : 'Chưa hoàn thành bài tập mô phỏng thực tế thuộc nhóm ngành này để kiểm chứng cảm nhận.'
+      );
+    }
+
+    const rawTask =
+      SIMULATION_TASKS.find((t) => t.careerId === career.id) ||
+      SIMULATION_TASKS.find((t) => (TASK_RIASEC_MAP[t.id] || []).some((c) => careerCodes.includes(c))) ||
+      SIMULATION_TASKS[0];
+    const localizedSuggestedTask = localizeTask(rawTask, lang);
+
+    const linkedMajors = MAJORS_DATA.filter(
+      (m) =>
+        (m.linkedCareerIds || []).includes(career.id) ||
+        (career.linkedMajorIds || []).includes(m.id)
+    ).map((m) => localizeMajor(m, lang));
+
+    return {
+      career,
+      matchScore: totalScore,
+      breakdown: {
+        riasecScore: riasecPoints,
+        competencyScore: competencyPoints,
+        valuesScore: valuesPoints,
+        subjectsScore: subjectPoints,
+        environmentScore: environmentPoints,
+        total: totalScore,
+        explanation,
+      },
+      hollandFitReason,
+      evidenceFromProfile,
+      valuesTradeoffs: (career.difficultiesAndTradeoffs || []).slice(0, 3),
+      skillsToCultivate: career.coreSkills || [],
+      missingInformation,
+      suggestedTask: {
+        id: localizedSuggestedTask.id,
+        title: localizedSuggestedTask.title,
+      },
+      linkedMajors,
+    };
+  });
 
   return {
-    ruleVersion: '2.0.0 (Thuật toán Minh bạch – Có phân rã thành tố)',
-    generatedDate: new Date().toISOString(),
-    recommendations: topRecommendations
+    ruleVersion: RULE_ENGINE_VERSION,
+    generatedDate: new Date().toLocaleDateString(lang === 'en' ? 'en-US' : 'vi-VN'),
+    recommendations,
   };
 }
 
-export function generateActionPlan(profile: StudentProfile): ActionPlanItem[] {
-  const grade = profile.grade;
-  const gradeText =
-    grade === 'lop_10'
-      ? 'Khối 10 (Giai đoạn xây nền & Khám phá rộng)'
-      : grade === 'lop_11'
-      ? 'Khối 11 (Giai đoạn củng cố & Thử thách sâu)'
-      : 'Khối 12 (Giai đoạn nước rút & Khớp nối tuyển sinh)';
+export function generateActionPlan(
+  profile: StudentProfile,
+  lang: 'vi' | 'en' = 'vi',
+  existingSnapshot?: RecommendationSnapshot
+): ActionPlanItem[] {
+  const snapshot = existingSnapshot || generateRecommendations(profile, lang);
+  const topRec = snapshot.recommendations[0];
+  const topCareerTitle = topRec?.career.title || (lang === 'en' ? 'target career' : 'nghề nghiệp mục tiêu');
+  const suggestedTaskTitle = topRec?.suggestedTask.title || (lang === 'en' ? 'Career Simulation' : 'Mô phỏng nghề nghiệp');
+  const completedTasks = profile.completedTasks || [];
+  const savedAdmissions = profile.savedAdmissions || [];
+
+  if (lang === 'en') {
+    return [
+      {
+        id: 'act-1',
+        timeframe: '30_days',
+        title: `Complete Simulation: "${suggestedTaskTitle}"`,
+        description: `Experience a realistic work task for ${topCareerTitle} and record your Kolb reflection.`,
+        status: completedTasks.length > 0 ? 'completed' : 'in_progress',
+        category: 'explore',
+      },
+      {
+        id: 'act-2',
+        timeframe: '30_days',
+        title: 'Watch 2 Real Career Stories & Compare Trade-offs',
+        description: `Review the daily tasks and challenges of ${topCareerTitle} to verify if the work environment fits you.`,
+        status: 'pending',
+        category: 'explore',
+      },
+      {
+        id: 'act-3',
+        timeframe: '60_days',
+        title: 'Shortlist 3 Universities & Check 2025–2026 Cutoffs',
+        description: 'Compare historical cutoff scores, tuition ranges, and 2026 subject combinations in the Admissions tab.',
+        status: savedAdmissions.length >= 3 ? 'completed' : 'pending',
+        category: 'admission',
+      },
+      {
+        id: 'act-4',
+        timeframe: '60_days',
+        title: 'Build Core Skills & Academic Foundation',
+        description: `Focus on core subjects (${topRec?.career.highSchoolSubjects.slice(0, 3).join(', ') || 'Math, English'}) and practice 2026 competency tests.`,
+        status: 'pending',
+        category: 'skill',
+      },
+      {
+        id: 'act-5',
+        timeframe: '90_days',
+        title: 'Export Career Report & Discuss with Parents/Teachers',
+        description: 'Download your personalized Career Report and review your Safe / Target / Reach university list with your family.',
+        status: 'pending',
+        category: 'consult',
+      },
+    ];
+  }
 
   return [
     {
-      id: 'plan-30-1',
+      id: 'act-1',
       timeframe: '30_days',
-      title: 'Trải nghiệm 2 nhiệm vụ mô phỏng và xem chuyện nghề thật',
-      description: `Dành 15 phút mỗi tuần để thử sức với 2 nhiệm vụ Chạm Nghề và xem video câu chuyện nghề nghiệp thật để quan sát khó khăn thực tế.`,
-      status: profile.completedTasks.length > 0 ? 'completed' : 'in_progress',
-      category: 'explore'
+      title: `Hoàn thành bài tập thử việc: "${suggestedTaskTitle}"`,
+      description: `Trải nghiệm tình huống thực tế của nghề ${topCareerTitle} và ghi lại nhật ký phản tư theo chu trình Kolb.`,
+      status: completedTasks.length > 0 ? 'completed' : 'in_progress',
+      category: 'explore',
     },
     {
-      id: 'plan-30-2',
+      id: 'act-2',
       timeframe: '30_days',
-      title: 'Phỏng vấn nhanh 1 người đang làm trong nghề em quan tâm',
-      description: `Hỏi một anh chị hoặc thầy cô về: "Một ngày làm việc điển hình trông như thế nào?" và "Điều vất vả nhất trong nghề là gì?".`,
+      title: 'Xem 2 câu chuyện người thật việc thật & đối chiếu góc khuất',
+      description: `Tìm hiểu kỹ công việc hàng ngày và sự đánh đổi của nghề ${topCareerTitle} để tránh ngộ nhận.`,
       status: 'pending',
-      category: 'consult'
+      category: 'explore',
     },
     {
-      id: 'plan-60-1',
+      id: 'act-3',
       timeframe: '60_days',
-      title: 'Thực hiện 1 sản phẩm học tập hoặc dự án mini',
-      description: `Tạo một sản phẩm thực tế nhỏ: viết 1 bài phóng sự ngắn, giải 1 chuỗi bài thuật toán, làm 1 phân tích số liệu hoặc thuyết trình STEM.`,
-      status: 'pending',
-      category: 'skill'
+      title: 'Lưu tối thiểu 3 trường Đại học/Cao đẳng vào danh sách so sánh',
+      description: 'Đối chiếu điểm chuẩn 2023-2025, học phí và tổ hợp môn xét tuyển 2026 tại mục Tuyển sinh.',
+      status: savedAdmissions.length >= 3 ? 'completed' : 'pending',
+      category: 'admission',
     },
     {
-      id: 'plan-60-2',
+      id: 'act-4',
       timeframe: '60_days',
-      title: 'Đối chiếu phương thức tuyển sinh và học phí chính thức',
-      description: `Tra cứu đề án tuyển sinh chính thức của 2-3 trường đại học đào tạo ngành em quan tâm, lưu lại bảng điểm chuẩn 3 năm gần nhất.`,
-      status: profile.savedAdmissions.length >= 2 ? 'completed' : 'pending',
-      category: 'admission'
+      title: 'Rèn luyện môn học nền tảng & Làm đề thi thử 2026',
+      description: `Tập trung các môn cốt lõi (${topRec?.career.highSchoolSubjects.slice(0, 3).join(', ') || 'Toán, Tiếng Anh'}) và luyện đề ĐGNL tại Tâm điểm 2026.`,
+      status: 'pending',
+      category: 'skill',
     },
     {
-      id: 'plan-90-1',
+      id: 'act-5',
       timeframe: '90_days',
-      title: 'Đánh giá lại hồ sơ & Trao đổi cùng gia đình / Giáo viên chủ nhiệm',
-      description: `Xuất bản báo cáo hướng nghiệp CHẠM VIỆC và ngồi lại cùng phụ huynh/thầy cô để lắng nghe góp ý và thống nhất mục tiêu (${gradeText}).`,
+      title: 'Xuất Báo cáo hướng nghiệp & Thảo luận cùng Gia đình/Thầy cô',
+      description: 'In báo cáo tổng hợp và thống nhất phương án nguyện vọng An toàn - Vừa sức - Thử thách cùng bố mẹ.',
       status: 'pending',
-      category: 'consult'
+      category: 'consult',
     },
-    {
-      id: 'plan-90-2',
-      timeframe: '90_days',
-      title: 'Kiểm tra sức khỏe thể chất và điều kiện đặc thù ngành',
-      description: `Tìm hiểu các yêu cầu thị lực, thể lực hoặc tiêu chuẩn hành nghề (như ngành Y, Sư phạm, Kỹ thuật hiện trường) để có kế hoạch rèn luyện sớm.`,
-      status: 'pending',
-      category: 'skill'
-    }
   ];
 }

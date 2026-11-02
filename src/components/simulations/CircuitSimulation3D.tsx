@@ -363,7 +363,7 @@ export const CircuitSimulation3D: React.FC<CircuitSimulation3DProps> = ({ onClos
               title={is2DMode ? t.simulation.toggle3D : t.simulation.toggle2DFallback}
             >
               <Layers className="w-3.5 h-3.5 text-cyan-400" />
-              <span className="hidden sm:inline">{is2DMode ? 'Chế độ 3D' : 'Chế độ 2D'}</span>
+              <span className="hidden sm:inline">{is2DMode ? (language === 'vi' ? 'Chế độ 3D' : '3D Mode') : (language === 'vi' ? 'Chế độ 2D' : '2D Mode')}</span>
             </button>
 
             {/* Explicit Close Button */}
@@ -382,12 +382,16 @@ export const CircuitSimulation3D: React.FC<CircuitSimulation3DProps> = ({ onClos
           <div className="space-y-0.5">
             <div className="font-bold text-cyan-300 flex items-center gap-1.5">
               <Sparkles className="w-4 h-4 text-cyan-400" />
-              <span>{t.simulation.missionGoal}: Đóng mạch kín và nâng điện áp nguồn lên 12V để thắp sáng bóng đèn nhà xưởng</span>
+              <span>
+                {language === 'vi'
+                  ? `${t.simulation.missionGoal}: Đóng mạch kín và nâng điện áp nguồn lên 12V để thắp sáng bóng đèn nhà xưởng`
+                  : `${t.simulation.missionGoal}: Close the circuit and raise DC supply voltage to 12V to illuminate the industrial lamp`}
+              </span>
             </div>
             <p className="text-slate-400">
               {language === 'vi'
                 ? 'Thao tác: Bấm nút "Đóng / Ngắt cầu dao" hoặc kéo thanh trượt điện áp bên dưới.'
-                : 'Action: Click "Toggle Switch" or slide voltage controls to observe circuit behavior.'}
+                : 'Action: Click "Close / Open Circuit" or select DC voltage levels below to observe circuit behavior.'}
             </p>
           </div>
 
@@ -411,7 +415,7 @@ export const CircuitSimulation3D: React.FC<CircuitSimulation3DProps> = ({ onClos
                 {/* Battery */}
                 <div className="flex flex-col items-center p-3 rounded-xl bg-sky-950 border border-sky-600">
                   <span className="font-mono font-bold text-sky-400 text-sm">+{voltage}V</span>
-                  <span className="text-[10px] text-slate-400">Nguồn Pin</span>
+                  <span className="text-[10px] text-slate-400">{language === 'vi' ? 'Nguồn Pin' : 'DC Source'}</span>
                 </div>
 
                 {/* Switch */}
@@ -421,7 +425,9 @@ export const CircuitSimulation3D: React.FC<CircuitSimulation3DProps> = ({ onClos
                     isSwitchClosed ? 'bg-emerald-950 border-emerald-500 text-emerald-300' : 'bg-rose-950 border-rose-500 text-rose-300'
                   }`}
                 >
-                  {isSwitchClosed ? 'Cầu dao: ĐÓNG' : 'Cầu dao: MỞ'}
+                  {isSwitchClosed
+                    ? (language === 'vi' ? 'Cầu dao: ĐÓNG' : 'Switch: CLOSED')
+                    : (language === 'vi' ? 'Cầu dao: MỞ' : 'Switch: OPEN')}
                 </button>
 
                 {/* Bulb */}
@@ -431,7 +437,9 @@ export const CircuitSimulation3D: React.FC<CircuitSimulation3DProps> = ({ onClos
                   <Zap className={`w-6 h-6 ${isLit ? 'text-amber-950 fill-current' : 'text-slate-500'}`} />
                 </div>
               </div>
-              <p className="text-xs text-slate-400">Chế độ 2D sơ đồ mạch điện nguyên lý</p>
+              <p className="text-xs text-slate-400">
+                {language === 'vi' ? 'Chế độ 2D sơ đồ mạch điện nguyên lý' : '2D Electrical Schematic View'}
+              </p>
             </div>
           ) : (
             <>
@@ -460,7 +468,9 @@ export const CircuitSimulation3D: React.FC<CircuitSimulation3DProps> = ({ onClos
         <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 p-4 rounded-2xl bg-slate-800/60 border border-slate-700/60 text-xs">
           {/* Switch Toggle */}
           <div className="flex flex-col justify-center space-y-1.5">
-            <span className="font-bold text-slate-300">1. Cầu dao điều khiển (Switch):</span>
+            <span className="font-bold text-slate-300">
+              {language === 'vi' ? '1. Cầu dao điều khiển (Switch):' : '1. Knife Switch Control:'}
+            </span>
             <button
               onClick={handleToggleSwitch}
               className={`py-2 px-4 rounded-xl font-bold transition-all shadow-md flex items-center justify-center gap-2 ${
@@ -477,7 +487,9 @@ export const CircuitSimulation3D: React.FC<CircuitSimulation3DProps> = ({ onClos
           {/* Voltage Selector */}
           <div className="flex flex-col justify-center space-y-1.5">
             <div className="flex items-center justify-between">
-              <span className="font-bold text-slate-300">2. Điện áp nguồn DC:</span>
+              <span className="font-bold text-slate-300">
+                {language === 'vi' ? '2. Điện áp nguồn DC:' : '2. DC Supply Voltage:'}
+              </span>
               <span className="font-mono font-bold text-cyan-400">{voltage} V</span>
             </div>
             <div className="flex items-center gap-2">
@@ -499,10 +511,18 @@ export const CircuitSimulation3D: React.FC<CircuitSimulation3DProps> = ({ onClos
 
           {/* Circuit Health Indicator */}
           <div className="flex flex-col justify-center space-y-1">
-            <span className="font-bold text-slate-300">3. Thông số kỹ thuật mạch:</span>
+            <span className="font-bold text-slate-300">
+              {language === 'vi' ? '3. Thông số kỹ thuật mạch:' : '3. Live Circuit Telemetry:'}
+            </span>
             <div className="text-[11px] text-slate-400 space-y-0.5">
-              <div>Dòng điện dự tính: <strong className="text-white font-mono">{isLit ? (voltage / 6).toFixed(1) + ' A' : '0.0 A'}</strong></div>
-              <div>Công suất tiêu thụ: <strong className="text-white font-mono">{isLit ? ((voltage * voltage) / 6).toFixed(0) + ' W' : '0 W'}</strong></div>
+              <div>
+                {language === 'vi' ? 'Dòng điện dự tính:' : 'Estimated Current:'}{' '}
+                <strong className="text-white font-mono">{isLit ? (voltage / 6).toFixed(1) + ' A' : '0.0 A'}</strong>
+              </div>
+              <div>
+                {language === 'vi' ? 'Công suất tiêu thụ:' : 'Power Consumption:'}{' '}
+                <strong className="text-white font-mono">{isLit ? ((voltage * voltage) / 6).toFixed(0) + ' W' : '0 W'}</strong>
+              </div>
             </div>
           </div>
         </div>
@@ -514,28 +534,44 @@ export const CircuitSimulation3D: React.FC<CircuitSimulation3DProps> = ({ onClos
             <span>{t.simulation.kolbTitle}</span>
           </h4>
 
-          <ol className="list-decimal list-inside space-y-1 text-slate-300 leading-relaxed">
-            <li><strong>Trải nghiệm (Experience):</strong> Khi đóng cầu dao và tăng điện áp từ 6V lên 24V, bóng đèn và dòng điện thay đổi thế nào?</li>
-            <li><strong>Quan sát (Reflect):</strong> Tại sao nếu hở bất kỳ đoạn dây nào thì toàn bộ hệ thống không thể hoạt động?</li>
-            <li><strong>Khái niệm hóa (Think):</strong> Định luật Ohm (I = U / R) và an toàn lao động điện trong nhà máy công nghiệp.</li>
-            <li><strong>Thử nghiệm (Apply):</strong> Trong nhà máy sản xuất tự động, kỹ sư điện sử dụng rơ-le và cảm biến để tự ngắt mạch khi quá tải ra sao?</li>
-          </ol>
+          {language === 'vi' ? (
+            <ol className="list-decimal list-inside space-y-1 text-slate-300 leading-relaxed">
+              <li><strong>Trải nghiệm (Experience):</strong> Khi đóng cầu dao và tăng điện áp từ 6V lên 24V, bóng đèn và dòng điện thay đổi thế nào?</li>
+              <li><strong>Quan sát (Reflect):</strong> Tại sao nếu hở bất kỳ đoạn dây nào thì toàn bộ hệ thống không thể hoạt động?</li>
+              <li><strong>Khái niệm hóa (Think):</strong> Định luật Ohm (I = U / R) và an toàn lao động điện trong nhà máy công nghiệp.</li>
+              <li><strong>Thử nghiệm (Apply):</strong> Trong nhà máy sản xuất tự động, kỹ sư điện sử dụng rơ-le và cảm biến để tự ngắt mạch khi quá tải ra sao?</li>
+            </ol>
+          ) : (
+            <ol className="list-decimal list-inside space-y-1 text-slate-300 leading-relaxed">
+              <li><strong>Experience:</strong> When closing the switch and raising voltage from 6V to 24V, how do bulb brightness and current change?</li>
+              <li><strong>Reflect:</strong> Why does any break along the conductor loop stop the entire electrical circuit from operating?</li>
+              <li><strong>Conceptualize:</strong> Review Ohm&apos;s Law (I = V / R) and electrical safety protocols in industrial plants.</li>
+              <li><strong>Apply:</strong> In automated factories, how do electrical engineers use relays and circuit breakers to trip on overload?</li>
+            </ol>
+          )}
 
           <form onSubmit={handleSaveReflection} className="space-y-2 pt-1">
             <textarea
               value={reflectionAnswer}
               onChange={(e) => setReflectionAnswer(e.target.value)}
-              placeholder="Ghi lại bài học hoặc cảm nhận của em sau khi hoàn thành phòng thí nghiệm mạch điện..."
+              placeholder={
+                language === 'vi'
+                  ? 'Ghi lại bài học hoặc cảm nhận của em sau khi hoàn thành phòng thí nghiệm mạch điện...'
+                  : 'Record your takeaways or impressions after completing the electrical circuit lab...'
+              }
               className="w-full h-16 p-2.5 rounded-xl bg-slate-900 border border-slate-700 text-slate-200 text-xs focus:ring-2 focus:ring-cyan-500 focus:outline-none"
             />
             <div className="flex items-center justify-between">
               {reflectionSaved ? (
                 <span className="text-xs text-emerald-400 font-bold flex items-center gap-1">
-                  <CheckCircle2 className="w-4 h-4" /> Đã lưu phản tư vào báo cáo!
+                  <CheckCircle2 className="w-4 h-4" />
+                  {language === 'vi' ? 'Đã lưu phản tư vào báo cáo!' : 'Saved reflection to your career report!'}
                 </span>
               ) : (
                 <span className="text-[11px] text-slate-500">
-                  Hoàn thành chu trình Kolb giúp em đánh giá độ phù hợp với nhóm nghề Kỹ thuật (R - Realistic).
+                  {language === 'vi'
+                    ? 'Hoàn thành chu trình Kolb giúp em đánh giá độ phù hợp với nhóm nghề Kỹ thuật (R - Realistic).'
+                    : 'Completing the Kolb cycle helps evaluate your fit with Engineering & Technical careers (R - Realistic).'}
                 </span>
               )}
               <div className="flex items-center gap-2">
@@ -550,7 +586,7 @@ export const CircuitSimulation3D: React.FC<CircuitSimulation3DProps> = ({ onClos
                   type="submit"
                   className="px-4 py-1.5 rounded-xl bg-cyan-600 hover:bg-cyan-500 text-white font-bold text-xs"
                 >
-                  Lưu phản tư
+                  {language === 'vi' ? 'Lưu phản tư' : 'Save Reflection'}
                 </button>
               </div>
             </div>

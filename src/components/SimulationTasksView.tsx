@@ -29,6 +29,7 @@ import { ArchitectureSimulation3D } from './simulations/ArchitectureSimulation3D
 import { AgricultureSimulation3D } from './simulations/AgricultureSimulation3D';
 import { AutomotiveTechnicianSimulation } from './simulations/AutomotiveTechnicianSimulation';
 import { useLanguage } from '../i18n/LanguageContext';
+import { localizeTask } from '../utils/i18nData';
 
 export const SimulationTasksView: React.FC<SimulationTasksViewProps> = ({
   selectedTaskId,
@@ -37,7 +38,8 @@ export const SimulationTasksView: React.FC<SimulationTasksViewProps> = ({
   setProfile
 }) => {
   const { t, language } = useLanguage();
-  const currentTask = SIMULATION_TASKS.find((t) => t.id === selectedTaskId) || null;
+  const localizedTasks = React.useMemo(() => SIMULATION_TASKS.map(task => localizeTask(task, language)), [language]);
+  const currentTask = localizedTasks.find((task) => task.id === selectedTaskId) || null;
 
   // Active 3D simulation modal state
   const [active3DModal, setActive3DModal] = useState<'semiconductor' | 'circuit' | 'architecture' | 'agriculture' | 'automotive' | null>(null);
@@ -96,11 +98,11 @@ export const SimulationTasksView: React.FC<SimulationTasksViewProps> = ({
       id: 'ref_' + Date.now(),
       taskId: currentTask.id,
       date: new Date().toISOString().slice(0, 10),
-      title: `Phản tư: ${currentTask.title}`,
-      keyInsights: reflectionFeelings || 'Đã hoàn thành các giai đoạn thử thách mô phỏng.',
-      readinessForChallenges: reflectionHardships || 'Cần tìm hiểu thêm về áp lực thực tế của nghề này.',
+      title: language === 'vi' ? `Phản tư: ${currentTask.title}` : `Reflection: ${currentTask.title}`,
+      keyInsights: reflectionFeelings || (language === 'vi' ? 'Đã hoàn thành các giai đoạn thử thách mô phỏng.' : 'Completed the career simulation stages.'),
+      readinessForChallenges: reflectionHardships || (language === 'vi' ? 'Cần tìm hiểu thêm về áp lực thực tế của nghề này.' : 'Need to explore more about the real-world demands of this career.'),
       differencesNoticed: '',
-      nextMicroAction: reflectionNextStep || 'Thử một nhiệm vụ khác trong tuần tới.'
+      nextMicroAction: reflectionNextStep || (language === 'vi' ? 'Thử một nhiệm vụ khác trong tuần tới.' : 'Try another career simulation task next week.')
     };
 
     const updatedProfile = {
@@ -315,7 +317,7 @@ export const SimulationTasksView: React.FC<SimulationTasksViewProps> = ({
       {/* Main Task List or Active Task Player */}
       {!currentTask ? (
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-5">
-          {SIMULATION_TASKS.map((task) => {
+          {localizedTasks.map((task) => {
             const isDone = profile.completedTasks.includes(task.id);
             return (
               <div
@@ -584,7 +586,7 @@ export const SimulationTasksView: React.FC<SimulationTasksViewProps> = ({
                       required
                       value={reflectionFeelings}
                       onChange={(e) => setReflectionFeelings(e.target.value)}
-                      placeholder="Ví dụ: Em thấy rất hào hứng khi tìm ra nguyên nhân của lỗi/cách giải thích, nhưng hơi bối rối khi gặp tình huống bất ngờ..."
+                      placeholder={language === 'vi' ? 'Ví dụ: Em thấy rất hào hứng khi tìm ra nguyên nhân của lỗi/cách giải thích, nhưng hơi bối rối khi gặp tình huống bất ngờ...' : 'E.g., I felt engaged during diagnostic tracing, but slightly uncertain when unexpected hurdles emerged...'}
                       className="w-full h-20 p-3 rounded-xl border border-slate-300 text-xs focus:ring-2 focus:ring-teal-500 focus:outline-none"
                     />
                   </div>
@@ -597,7 +599,7 @@ export const SimulationTasksView: React.FC<SimulationTasksViewProps> = ({
                       required
                       value={reflectionHardships}
                       onChange={(e) => setReflectionHardships(e.target.value)}
-                      placeholder="Ví dụ: Em sẵn sàng ngồi suy nghĩ kiên nhẫn để tìm lỗi, nhưng cần rèn luyện thêm kỹ năng giao tiếp với mọi người..."
+                      placeholder={language === 'vi' ? 'Ví dụ: Em sẵn sàng ngồi suy nghĩ kiên nhẫn để tìm lỗi, nhưng cần rèn luyện thêm kỹ năng giao tiếp với mọi người...' : 'E.g., I am willing to build analytical patience and actively develop interpersonal communication skills...'}
                       className="w-full h-20 p-3 rounded-xl border border-slate-300 text-xs focus:ring-2 focus:ring-teal-500 focus:outline-none"
                     />
                   </div>
@@ -611,7 +613,7 @@ export const SimulationTasksView: React.FC<SimulationTasksViewProps> = ({
                       required
                       value={reflectionNextStep}
                       onChange={(e) => setReflectionNextStep(e.target.value)}
-                      placeholder="Ví dụ: Tuần này em sẽ xem video câu chuyện nghề thật và hỏi thêm thầy cô dạy môn Tin/Lý/Văn..."
+                      placeholder={language === 'vi' ? 'Ví dụ: Tuần này em sẽ xem video câu chuyện nghề thật và hỏi thêm thầy cô dạy môn Tin/Lý/Văn...' : 'E.g., This week I will watch workplace documentary videos and discuss with teachers...'}
                       className="w-full p-3 rounded-xl border border-slate-300 text-xs focus:ring-2 focus:ring-teal-500 focus:outline-none"
                     />
                   </div>

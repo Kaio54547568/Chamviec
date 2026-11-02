@@ -430,7 +430,12 @@ export const SemiconductorSimulation3D: React.FC<SemiconductorSimulation3DProps>
   // Handlers for student tasks
   const handleRotateChip = () => {
     if (isChipPlaced) {
-      alert('Em hãy nhấc chip ra khỏi socket trước khi xoay chiều!');
+      setDiagnosticState('failed');
+      setDiagnosticMessage(
+        language === 'vi'
+          ? 'Em hãy nhấc chip ra khỏi socket trước khi xoay chiều!'
+          : 'Please lift the chip out of the socket before rotating it!'
+      );
       return;
     }
     setChipRotationDeg((prev) => (prev + 90) % 360);
@@ -446,7 +451,12 @@ export const SemiconductorSimulation3D: React.FC<SemiconductorSimulation3DProps>
 
   const handleToggleProbes = () => {
     if (!isChipPlaced) {
-      alert('Vui lòng gắn chip vào socket trước khi kết nối đầu dò kiểm thử!');
+      setDiagnosticState('failed');
+      setDiagnosticMessage(
+        language === 'vi'
+          ? 'Vui lòng gắn chip vào socket trước khi kết nối đầu dò kiểm thử!'
+          : 'Please place the chip into the socket before connecting the ATE test probes!'
+      );
       return;
     }
     setProbesConnected((prev) => !prev);
@@ -457,28 +467,48 @@ export const SemiconductorSimulation3D: React.FC<SemiconductorSimulation3DProps>
   const handleRunDiagnostic = () => {
     if (!isChipPlaced) {
       setDiagnosticState('failed');
-      setDiagnosticMessage('LỖI KIỂM THỬ: Chưa gắn chip vào socket thử nghiệm.');
+      setDiagnosticMessage(
+        language === 'vi'
+          ? 'LỖI KIỂM THỬ: Chưa gắn chip vào socket thử nghiệm.'
+          : 'TEST ERROR: The IC package has not been seated into the test socket.'
+      );
       return;
     }
 
     if (!probesConnected) {
       setDiagnosticState('failed');
-      setDiagnosticMessage('LỖI TÍN HIỆU: Đầu dò kiểm thử ATE chưa kết nối vào các điểm đo test pads.');
+      setDiagnosticMessage(
+        language === 'vi'
+          ? 'LỖI TÍN HIỆU: Đầu dò kiểm thử ATE chưa kết nối vào các điểm đo test pads.'
+          : 'SIGNAL ERROR: ATE test probes are not connected to the test pads.'
+      );
       return;
     }
 
     setDiagnosticState('running');
-    setDiagnosticMessage('Đang chạy chu trình quét kiểm thử ATE scan test (100.000 patterns)...');
+    setDiagnosticMessage(
+      language === 'vi'
+        ? 'Đang chạy chu trình quét kiểm thử ATE scan test (100.000 patterns)...'
+        : 'Running ATE scan test pattern sequence (100,000 test vectors)...'
+    );
 
     setTimeout(() => {
       // Pin 1 notch must be at 0 degrees to align with top-left socket notch!
       if (chipRotationDeg === 0) {
         setDiagnosticState('success');
-        setDiagnosticMessage('ATE TEST PASSED: Chip hoạt động hoàn hảo! Tần số xung nhịp: 3.2 GHz | Điện áp lõi: 1.05V | Công suất tiêu thụ: 12.4W | Nhiệt độ vận hành: 42°C.');
+        setDiagnosticMessage(
+          language === 'vi'
+            ? 'ATE TEST PASSED: Chip hoạt động hoàn hảo! Tần số xung nhịp: 3.2 GHz | Điện áp lõi: 1.05V | Công suất tiêu thụ: 12.4W | Nhiệt độ vận hành: 42°C.'
+            : 'ATE TEST PASSED: IC operates within specification! Clock Frequency: 3.2 GHz | Core Voltage: 1.05V | Thermal Power: 12.4W | Operating Temp: 42°C.'
+        );
         if (onComplete) onComplete();
       } else {
         setDiagnosticState('failed');
-        setDiagnosticMessage(`LỖI CHẬP NGUỒN: Góc đặt lệch ${chipRotationDeg}°. Điểm khuyết Pin 1 bị ngược chiều với socket! Hệ thống tự động ngắt nguồn bảo vệ chip.`);
+        setDiagnosticMessage(
+          language === 'vi'
+            ? `LỖI CHẬP NGUỒN: Góc đặt lệch ${chipRotationDeg}°. Điểm khuyết Pin 1 bị ngược chiều với socket! Hệ thống tự động ngắt nguồn bảo vệ chip.`
+            : `POWER SHORT FAULT: Chip misaligned by ${chipRotationDeg}°. Pin 1 notch does not match the socket index! Over-current protection tripped automatically.`
+        );
       }
     }, 1500);
   };
@@ -500,19 +530,23 @@ export const SemiconductorSimulation3D: React.FC<SemiconductorSimulation3DProps>
             <div>
               <div className="flex items-center gap-2">
                 <span className="text-xs font-semibold px-2.5 py-0.5 rounded-full bg-cyan-500/10 text-cyan-400 border border-cyan-500/20">
-                  MÔ PHỎNG 3D TƯƠNG TÁC
+                  {language === 'vi' ? 'MÔ PHỎNG 3D TƯƠNG TÁC' : '3D INTERACTIVE SIMULATION'}
                 </span>
-                <span className="text-xs text-slate-400">Trạm 2 • Kỹ thuật Bán dẫn & Vi mạch</span>
+                <span className="text-xs text-slate-400">
+                  {language === 'vi' ? 'Trạm 2 • Kỹ thuật Bán dẫn & Vi mạch' : 'Station 2 • Semiconductor & IC Engineering'}
+                </span>
               </div>
               <h2 className="text-lg font-bold text-white">
-                Phòng Lab Đo kiểm & Đóng gói Chip Bán dẫn (ATE Testing Lab)
+                {language === 'vi'
+                  ? 'Phòng Lab Đo kiểm & Đóng gói Chip Bán dẫn (ATE Testing Lab)'
+                  : 'Semiconductor Packaging & Automated Test Equipment (ATE) Lab'}
               </h2>
             </div>
           </div>
           <button
             onClick={onClose}
             className="p-2 text-slate-400 hover:text-white rounded-lg hover:bg-slate-800 transition"
-            title="Đóng mô phỏng"
+            title={language === 'vi' ? 'Đóng mô phỏng' : 'Close simulation'}
           >
             <X className="w-6 h-6" />
           </button>
@@ -528,7 +562,7 @@ export const SemiconductorSimulation3D: React.FC<SemiconductorSimulation3DProps>
                 : 'border-transparent text-slate-400 hover:text-slate-200'
             }`}
           >
-            1. Thiết kế (Design - RTL)
+            {language === 'vi' ? '1. Thiết kế (Design - RTL)' : '1. IC Design (RTL)'}
           </button>
           <button
             onClick={() => { setSelectedPhase('fab'); setActiveViewMode('wafer'); }}
@@ -538,7 +572,7 @@ export const SemiconductorSimulation3D: React.FC<SemiconductorSimulation3DProps>
                 : 'border-transparent text-slate-400 hover:text-slate-200'
             }`}
           >
-            2. Chế tạo phiến (Fab - Wafer)
+            {language === 'vi' ? '2. Chế tạo phiến (Fab - Wafer)' : '2. Wafer Fab (300mm)'}
           </button>
           <button
             onClick={() => { setSelectedPhase('packaging'); setActiveViewMode('testbed'); }}
@@ -548,7 +582,7 @@ export const SemiconductorSimulation3D: React.FC<SemiconductorSimulation3DProps>
                 : 'border-transparent text-slate-400 hover:text-slate-200'
             }`}
           >
-            3. Đóng gói (Packaging - BGA)
+            {language === 'vi' ? '3. Đóng gói (Packaging - BGA)' : '3. BGA Packaging (ATP)'}
           </button>
           <button
             onClick={() => { setSelectedPhase('testing'); setActiveViewMode('testbed'); }}
@@ -558,7 +592,7 @@ export const SemiconductorSimulation3D: React.FC<SemiconductorSimulation3DProps>
                 : 'border-transparent text-slate-400 hover:text-slate-200'
             }`}
           >
-            4. Đo kiểm (ATE Testing)
+            {language === 'vi' ? '4. Đo kiểm (ATE Testing)' : '4. ATE Electrical Testing'}
           </button>
         </div>
 
@@ -571,12 +605,23 @@ export const SemiconductorSimulation3D: React.FC<SemiconductorSimulation3DProps>
             {/* In-canvas Guidance Overlay */}
             <div className="absolute top-4 left-4 bg-slate-900/90 backdrop-blur-md border border-slate-700/60 p-3 rounded-xl max-w-sm text-xs text-slate-300 pointer-events-none">
               <div className="flex items-center gap-2 font-semibold text-cyan-400 mb-1">
-                <Info className="w-4 h-4" /> Hướng dẫn thao tác 3D:
+                <Info className="w-4 h-4" /> {language === 'vi' ? 'Hướng dẫn thao tác 3D:' : '3D Controls & Alignment Guide:'}
               </div>
-              <p>• Kéo chuột để xoay 360° quan sát chân tiếp xúc.</p>
-              <p>• Lăn chuột để phóng to / thu nhỏ linh kiện.</p>
-              <p>• 🔴 Góc đỏ trên socket: Vị trí chân số 1 chuẩn.</p>
-              <p>• 🟡 Chấm vàng trên chip: Điểm khuyết Pin 1 của chip.</p>
+              {language === 'vi' ? (
+                <>
+                  <p>• Kéo chuột để xoay 360° quan sát chân tiếp xúc.</p>
+                  <p>• Lăn chuột để phóng to / thu nhỏ linh kiện.</p>
+                  <p>• 🔴 Góc đỏ trên socket: Vị trí chân số 1 chuẩn.</p>
+                  <p>• 🟡 Chấm vàng trên chip: Điểm khuyết Pin 1 của chip.</p>
+                </>
+              ) : (
+                <>
+                  <p>• Drag to orbit 360° around the contact pins.</p>
+                  <p>• Scroll wheel to zoom in/out on the IC package.</p>
+                  <p>• 🔴 Red Socket Marker: Reference Pin 1 corner.</p>
+                  <p>• 🟡 Gold Chip Dot: IC Package Pin 1 index mark.</p>
+                </>
+              )}
             </div>
 
             {/* Quick View Switches */}
@@ -589,7 +634,7 @@ export const SemiconductorSimulation3D: React.FC<SemiconductorSimulation3DProps>
                     : 'bg-slate-800 text-slate-300 border-slate-700 hover:bg-slate-700'
                 }`}
               >
-                Bo mạch kiểm thử ATE
+                {language === 'vi' ? 'Bo mạch kiểm thử ATE' : 'ATE Test Loadboard'}
               </button>
               <button
                 onClick={() => setActiveViewMode('wafer')}
@@ -599,7 +644,7 @@ export const SemiconductorSimulation3D: React.FC<SemiconductorSimulation3DProps>
                     : 'bg-slate-800 text-slate-300 border-slate-700 hover:bg-slate-700'
                 }`}
               >
-                Phiến Wafer 300mm
+                {language === 'vi' ? 'Phiến Wafer 300mm' : '300mm Silicon Wafer'}
               </button>
             </div>
           </div>
@@ -610,35 +655,41 @@ export const SemiconductorSimulation3D: React.FC<SemiconductorSimulation3DProps>
             <div className="bg-slate-800/80 border border-slate-700 rounded-xl p-4">
               <h3 className="text-sm font-bold text-white flex items-center gap-2 mb-3">
                 <Activity className="w-4 h-4 text-cyan-400" />
-                Nhiệm vụ kiểm thử chip:
+                {language === 'vi' ? 'Nhiệm vụ kiểm thử chip:' : 'IC Testing Checklist:'}
               </h3>
 
               <div className="space-y-3 text-xs">
                 {/* Task 1: Check Pin 1 & Rotate */}
                 <div className="p-3 bg-slate-900/60 rounded-lg border border-slate-700/60">
                   <div className="flex justify-between items-center mb-2">
-                    <span className="font-semibold text-slate-200">1. Định hướng Pin 1:</span>
+                    <span className="font-semibold text-slate-200">
+                      {language === 'vi' ? '1. Định hướng Pin 1:' : '1. Pin 1 Orientation:'}
+                    </span>
                     <span className={`px-2 py-0.5 rounded font-mono ${chipRotationDeg === 0 ? 'bg-emerald-500/20 text-emerald-400' : 'bg-amber-500/20 text-amber-400'}`}>
-                      {chipRotationDeg}° {chipRotationDeg === 0 ? '(Chuẩn Pin 1)' : '(Lệch)'}
+                      {chipRotationDeg}° {chipRotationDeg === 0 ? (language === 'vi' ? '(Chuẩn Pin 1)' : '(Aligned)') : (language === 'vi' ? '(Lệch)' : '(Misaligned)')}
                     </span>
                   </div>
                   <p className="text-slate-400 text-[11px] mb-2.5">
-                    Xoay chip sao cho chấm vàng (Pin 1) trùng góc với tam giác đỏ trên socket.
+                    {language === 'vi'
+                      ? 'Xoay chip sao cho chấm vàng (Pin 1) trùng góc với tam giác đỏ trên socket.'
+                      : 'Rotate the IC until the gold dot (Pin 1) matches the red triangle corner on the socket.'}
                   </p>
                   <button
                     onClick={handleRotateChip}
                     className="w-full py-2 bg-slate-800 hover:bg-slate-700 text-cyan-300 border border-slate-600 rounded-lg font-medium flex items-center justify-center gap-2 transition"
                   >
-                    <RotateCcw className="w-4 h-4" /> Xoay chip 90° (+90°)
+                    <RotateCcw className="w-4 h-4" /> {language === 'vi' ? 'Xoay chip 90° (+90°)' : 'Rotate Chip 90° (+90°)'}
                   </button>
                 </div>
 
                 {/* Task 2: Insert into socket */}
                 <div className="p-3 bg-slate-900/60 rounded-lg border border-slate-700/60">
                   <div className="flex justify-between items-center mb-2">
-                    <span className="font-semibold text-slate-200">2. Gắn chip vào socket:</span>
+                    <span className="font-semibold text-slate-200">
+                      {language === 'vi' ? '2. Gắn chip vào socket:' : '2. Seat Chip in Socket:'}
+                    </span>
                     <span className={`px-2 py-0.5 rounded font-mono ${isChipPlaced ? 'bg-emerald-500/20 text-emerald-400' : 'bg-slate-700 text-slate-300'}`}>
-                      {isChipPlaced ? 'Đã gắn' : 'Đang nhấc'}
+                      {isChipPlaced ? (language === 'vi' ? 'Đã gắn' : 'Seated') : (language === 'vi' ? 'Đang nhấc' : 'Lifted')}
                     </span>
                   </div>
                   <button
@@ -649,16 +700,20 @@ export const SemiconductorSimulation3D: React.FC<SemiconductorSimulation3DProps>
                         : 'bg-cyan-600 hover:bg-cyan-500 text-white border-cyan-400'
                     }`}
                   >
-                    {isChipPlaced ? 'Nhấc chip ra khỏi socket' : 'Hạ chip vào khay socket'}
+                    {isChipPlaced
+                      ? (language === 'vi' ? 'Nhấc chip ra khỏi socket' : 'Lift Chip Out of Socket')
+                      : (language === 'vi' ? 'Hạ chip vào khay socket' : 'Seat Chip into Socket')}
                   </button>
                 </div>
 
                 {/* Task 3: Connect ATE Test Probes */}
                 <div className="p-3 bg-slate-900/60 rounded-lg border border-slate-700/60">
                   <div className="flex justify-between items-center mb-2">
-                    <span className="font-semibold text-slate-200">3. Đầu dò kiểm thử ATE:</span>
+                    <span className="font-semibold text-slate-200">
+                      {language === 'vi' ? '3. Đầu dò kiểm thử ATE:' : '3. ATE Test Probes:'}
+                    </span>
                     <span className={`px-2 py-0.5 rounded font-mono ${probesConnected ? 'bg-emerald-500/20 text-emerald-400' : 'bg-slate-700 text-slate-300'}`}>
-                      {probesConnected ? 'Đã kết nối' : 'Chưa tiếp xúc'}
+                      {probesConnected ? (language === 'vi' ? 'Đã kết nối' : 'Engaged') : (language === 'vi' ? 'Chưa tiếp xúc' : 'Retracted')}
                     </span>
                   </div>
                   <button
@@ -670,7 +725,9 @@ export const SemiconductorSimulation3D: React.FC<SemiconductorSimulation3DProps>
                     }`}
                   >
                     <Zap className="w-4 h-4" />
-                    {probesConnected ? 'Rút đầu dò kiểm thử' : 'Tiếp xúc đầu dò ATE (Test Probes)'}
+                    {probesConnected
+                      ? (language === 'vi' ? 'Rút đầu dò kiểm thử' : 'Retract Test Probes')
+                      : (language === 'vi' ? 'Tiếp xúc đầu dò ATE (Test Probes)' : 'Engage ATE Test Probes')}
                   </button>
                 </div>
 
@@ -681,7 +738,7 @@ export const SemiconductorSimulation3D: React.FC<SemiconductorSimulation3DProps>
                   className="w-full py-2.5 bg-gradient-to-r from-cyan-600 to-blue-600 hover:from-cyan-500 hover:to-blue-500 text-white font-bold rounded-xl shadow-lg shadow-cyan-900/30 flex items-center justify-center gap-2 transition disabled:opacity-50"
                 >
                   <Play className="w-4 h-4 fill-current" />
-                  Chạy chương trình chẩn đoán ATE
+                  {language === 'vi' ? 'Chạy chương trình chẩn đoán ATE' : 'Run ATE Diagnostic Sequence'}
                 </button>
               </div>
             </div>
@@ -702,9 +759,9 @@ export const SemiconductorSimulation3D: React.FC<SemiconductorSimulation3DProps>
                   {diagnosticState === 'failed' && <AlertTriangle className="w-4 h-4 text-rose-400" />}
                   {diagnosticState === 'running' && <Activity className="w-4 h-4 animate-spin text-cyan-400" />}
                   <span>
-                    {diagnosticState === 'success' && 'KẾT QUẢ ĐO KIỂM: ĐẠT CHUẨN (PASS)'}
-                    {diagnosticState === 'failed' && 'KẾT QUẢ ĐO KIỂM: LỖI (FAIL)'}
-                    {diagnosticState === 'running' && 'HỆ THỐNG ĐANG QUÉT TÍN HIỆU...'}
+                    {diagnosticState === 'success' && (language === 'vi' ? 'KẾT QUẢ ĐO KIỂM: ĐẠT CHUẨN (PASS)' : 'TEST RESULT: PASSED')}
+                    {diagnosticState === 'failed' && (language === 'vi' ? 'KẾT QUẢ ĐO KIỂM: LỖI (FAIL)' : 'TEST RESULT: FAILED')}
+                    {diagnosticState === 'running' && (language === 'vi' ? 'HỆ THỐNG ĐANG QUÉT TÍN HIỆU...' : 'SCANNING TEST VECTORS...')}
                   </span>
                 </div>
                 <p>{diagnosticMessage}</p>
@@ -714,10 +771,12 @@ export const SemiconductorSimulation3D: React.FC<SemiconductorSimulation3DProps>
             {/* Knowledge Box */}
             <div className="bg-slate-800/50 border border-slate-700/60 rounded-xl p-3.5 text-xs text-slate-300">
               <h4 className="font-semibold text-cyan-400 mb-1.5 flex items-center gap-1.5">
-                <Sparkles className="w-4 h-4" /> Kiến thức chuỗi bán dẫn:
+                <Sparkles className="w-4 h-4" /> {language === 'vi' ? 'Kiến thức chuỗi bán dẫn:' : 'Semiconductor Value Chain Insight:'}
               </h4>
               <p className="leading-relaxed text-[11px] text-slate-400">
-                Ở giai đoạn 4 (Testing), con chip sau khi đóng gói được thử nghiệm tự động bằng máy ATE với hàng triệu xung tín hiệu để phát hiện lỗi logic, rò rỉ điện hoặc quá nhiệt trước khi lắp vào điện thoại hay ô tô.
+                {language === 'vi'
+                  ? 'Ở giai đoạn 4 (Testing), con chip sau khi đóng gói được thử nghiệm tự động bằng máy ATE với hàng triệu xung tín hiệu để phát hiện lỗi logic, rò rỉ điện hoặc quá nhiệt trước khi lắp vào điện thoại hay ô tô.'
+                  : 'In Phase 4 (ATE Testing), packaged chips undergo automated high-speed testing using millions of signal vectors to detect logic defects, current leakage, or thermal issues before shipping into smartphones or EVs.'}
               </p>
             </div>
 
@@ -725,15 +784,21 @@ export const SemiconductorSimulation3D: React.FC<SemiconductorSimulation3DProps>
             <div className="bg-slate-800/80 border border-slate-700 rounded-xl p-4 text-xs">
               <h4 className="font-bold text-white mb-2 flex items-center gap-1.5">
                 <HelpCircle className="w-4 h-4 text-cyan-400" />
-                Cảm nhận sau trải nghiệm:
+                {language === 'vi' ? 'Cảm nhận sau trải nghiệm:' : 'Post-Lab Reflection:'}
               </h4>
               <p className="text-slate-400 text-[11px] mb-2">
-                Sau khi quan sát vi mạch và thử xoay chip đúng điểm khuyết Pin 1, em thấy công việc kỹ sư đo kiểm bán dẫn đòi hỏi đức tính gì nhất?
+                {language === 'vi'
+                  ? 'Sau khi quan sát vi mạch và thử xoay chip đúng điểm khuyết Pin 1, em thấy công việc kỹ sư đo kiểm bán dẫn đòi hỏi đức tính gì nhất?'
+                  : 'After inspecting the IC package and aligning the Pin 1 index mark, what qualities do you think are most critical for a Semiconductor Test Engineer?'}
               </p>
               <textarea
                 value={reflectionAnswer}
                 onChange={(e) => setReflectionAnswer(e.target.value)}
-                placeholder="Ví dụ: Em thấy công việc này đòi hỏi sự chính xác tuyệt đối, cẩn thận và tính kỷ luật cao vì một sai sót nhỏ sẽ gây chập nguồn linh kiện..."
+                placeholder={
+                  language === 'vi'
+                    ? 'Ví dụ: Em thấy công việc này đòi hỏi sự chính xác tuyệt đối, cẩn thận và tính kỷ luật cao vì một sai sót nhỏ sẽ gây chập nguồn linh kiện...'
+                    : 'E.g., This role requires extreme precision, patience, and systematic discipline because even a minor orientation error can short-circuit the chip...'
+                }
                 className="w-full h-20 p-2.5 bg-slate-900 border border-slate-700 rounded-lg text-slate-200 placeholder-slate-500 focus:outline-none focus:border-cyan-500 text-xs"
               />
               <button
@@ -742,7 +807,9 @@ export const SemiconductorSimulation3D: React.FC<SemiconductorSimulation3DProps>
                 className="mt-2.5 w-full py-2 bg-slate-700 hover:bg-slate-600 text-white font-medium rounded-lg transition disabled:opacity-50 flex items-center justify-center gap-2"
               >
                 {reflectionSaved ? <CheckCircle2 className="w-4 h-4 text-emerald-400" /> : null}
-                {reflectionSaved ? 'Đã lưu cảm nhận vào hồ sơ cá nhân' : 'Lưu phản tư của em'}
+                {reflectionSaved
+                  ? (language === 'vi' ? 'Đã lưu cảm nhận vào hồ sơ cá nhân' : 'Reflection saved to profile')
+                  : (language === 'vi' ? 'Lưu phản tư của em' : 'Save Reflection')}
               </button>
             </div>
           </div>

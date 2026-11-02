@@ -8,10 +8,12 @@ import { UNIVERSITIES_DATA, ADMISSION_RECORDS } from './src/data/admissions.ts';
 import { MAJORS_DATA } from './src/data/majors.ts';
 import { CAREERS_DATA } from './src/data/careers.ts';
 
-dotenv.config();
-
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
+
+dotenv.config();
+dotenv.config({ path: path.resolve(__dirname, '.env') });
+dotenv.config({ path: path.resolve(process.cwd(), '.env') });
 
 const app = express();
 const PORT = process.env.PORT || 3000;
@@ -29,9 +31,9 @@ app.use((req, res, next) => {
   next();
 });
 
-import { processChamAiChat, streamChamAiChat } from './src/server/chamAiService.ts';
+import { processChamAiChat, streamChamAiChat, getGeminiApiKey } from './src/server/chamAiService.ts';
 
-const apiKey = process.env.GEMINI_API_KEY;
+const apiKey = getGeminiApiKey();
 const ai = apiKey
   ? new GoogleGenAI({
       apiKey: apiKey,
@@ -341,13 +343,13 @@ Bạn có thể chọn một trong các câu hỏi gợi ý bên dưới hoặc 
 
 // SSE STREAMING ENDPOINT: /api/cham-ai/stream
 app.post('/api/cham-ai/stream', async (req, res) => {
-  const { message, profile, currentContext, chatHistory } = req.body;
+  const { message, language, profile, currentContext, chatHistory } = req.body;
 
   if (!message || !message.trim()) {
     return res.status(400).json({
       success: false,
       error: 'EMPTY_MESSAGE',
-      errorMessage: 'Tin nhắn không được để trống.',
+      errorMessage: language === 'en' ? 'Message cannot be empty.' : 'Tin nhắn không được để trống.',
     });
   }
 
@@ -359,62 +361,80 @@ app.post('/api/cham-ai/stream', async (req, res) => {
   res.flushHeaders?.();
 
   const abortController = new AbortController();
-  req.on('close', () => {
-    abortController.abort();
+  res.on('close', () => {
+    if (!res.writableEnded) {
+      abortController.abort();
+    }
   });
 
   try {
     await streamChamAiChat({
       message,
+      language: language === 'en' ? 'en' : 'vi',
       profile,
       currentContext,
       chatHistory,
       signal: abortController.signal,
       onStart: (info) => {
-        res.write(`data: ${JSON.stringify({ type: 'start', ...info })}\n\n`);
+        if (!res.writableEnded) {
+          res.write(`data: ${JSON.stringify({ type: 'start', ...info })}\n\n`);
+        }
       },
       onChunk: (chunkText) => {
-        res.write(`data: ${JSON.stringify({ type: 'chunk', text: chunkText })}\n\n`);
+        if (!res.writableEnded) {
+          res.write(`data: ${JSON.stringify({ type: 'chunk', text: chunkText })}\n\n`);
+        }
       },
       onError: (errData) => {
-        res.write(`data: ${JSON.stringify({ type: 'error', ...errData })}\n\n`);
-        res.end();
+        if (!res.writableEnded) {
+          res.write(`data: ${JSON.stringify({ type: 'error', ...errData })}\n\n`);
+          res.end();
+        }
       },
       onDone: (summary) => {
-        res.write(`data: ${JSON.stringify({ type: 'done', ...summary })}\n\n`);
-        res.end();
+        if (!res.writableEnded) {
+          res.write(`data: ${JSON.stringify({ type: 'done', ...summary })}\n\n`);
+          res.end();
+        }
       },
     });
   } catch (err: any) {
     console.error('Unhandled stream error:', err);
-    res.write(
-      `data: ${JSON.stringify({
-        type: 'error',
-        error: 'AI_OVERLOADED_503',
-        errorMessage: 'AI đang bận, em vui lòng thử lại sau ít phút.',
-        canRetry: true,
-      })}\n\n`
-    );
-    res.end();
+    if (!res.writableEnded) {
+      res.write(
+        `data: ${JSON.stringify({
+          type: 'error',
+          error: 'AI_OVERLOADED_503',
+          errorMessage: language === 'en' ? 'AI is busy. Please try again in a few moments.' : 'AI đang bận, em vui lòng thử lại sau ít phút.',
+          canRetry: true,
+        })}\n\n`
+      );
+      res.end();
+    }
+  } finally {
+    if (!res.writableEnded) {
+      res.end();
+    }
   }
 });
 
 // MAIN CHATBOT ENDPOINT: /api/cham-ai & /api/cham-ai/chat
 app.post(['/api/cham-ai', '/api/cham-ai/chat'], async (req, res) => {
   try {
-    const { message, profile, currentContext, chatHistory } = req.body;
+    const { message, language, profile, currentContext, chatHistory } = req.body;
 
     if (!message || !message.trim()) {
       return res.status(400).json({
         success: false,
         error: 'EMPTY_MESSAGE',
-        errorMessage: 'Tin nhắn không được để trống.',
+        errorMessage: language === 'en' ? 'Message cannot be empty.' : 'Tin nhắn không được để trống.',
         canRetry: false,
       });
     }
 
     const result = await processChamAiChat({
       message,
+      language: language === 'en' ? 'en' : 'vi',
       profile,
       currentContext,
       chatHistory,

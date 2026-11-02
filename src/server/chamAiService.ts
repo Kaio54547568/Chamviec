@@ -1,17 +1,62 @@
+import dotenv from 'dotenv';
+import fs from 'fs';
+import path from 'path';
+import { fileURLToPath } from 'url';
+
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = path.dirname(__filename);
+
+dotenv.config();
+dotenv.config({ path: path.resolve(process.cwd(), '.env') });
+dotenv.config({ path: path.resolve(__dirname, '../../.env') });
+
 import { GoogleGenAI } from '@google/genai';
 import { UNIVERSITIES_DATA, ADMISSION_RECORDS } from '../data/admissions.ts';
 import { CAREERS_DATA } from '../data/careers.ts';
 import { MAJORS_DATA } from '../data/majors.ts';
 
+export function getGeminiApiKey(): string {
+  if (process.env.GEMINI_API_KEY && process.env.GEMINI_API_KEY.trim()) {
+    return process.env.GEMINI_API_KEY.trim();
+  }
+  if (process.env.GOOGLE_API_KEY && process.env.GOOGLE_API_KEY.trim()) {
+    return process.env.GOOGLE_API_KEY.trim();
+  }
+  if (process.env.GEMINI_KEY && process.env.GEMINI_KEY.trim()) {
+    return process.env.GEMINI_KEY.trim();
+  }
+
+  const possiblePaths = [
+    path.resolve(process.cwd(), '.env'),
+    path.resolve(process.cwd(), '.env.local'),
+    path.resolve('/app/applet/.env'),
+    path.resolve(__dirname, '../../.env'),
+    path.resolve(__dirname, '../.env'),
+    path.resolve(__dirname, '.env'),
+  ];
+
+  for (const p of possiblePaths) {
+    try {
+      if (fs.existsSync(p)) {
+        const content = fs.readFileSync(p, 'utf-8');
+        const match = content.match(/GEMINI_API_KEY=["']?([^"'\r\n]+)["']?/);
+        if (match && match[1]) {
+          const found = match[1].trim();
+          process.env.GEMINI_API_KEY = found;
+          return found;
+        }
+      }
+    } catch {
+      // ignore
+    }
+  }
+
+  return '';
+}
+
 // Get Gemini client dynamically with fresh environment check
 export function getGeminiClient(): { ai: GoogleGenAI | null; keySource: string | null } {
-  const apiKey =
-    process.env.GEMINI_API_KEY ||
-    process.env.GOOGLE_API_KEY ||
-    process.env.GEMINI_KEY ||
-    '';
-
-  const cleanKey = apiKey.trim();
+  const cleanKey = getGeminiApiKey();
   if (!cleanKey) {
     return { ai: null, keySource: null };
   }
@@ -28,47 +73,114 @@ export function getGeminiClient(): { ai: GoogleGenAI | null; keySource: string |
   return { ai, keySource: 'env' };
 }
 
-// Build verified database grounding summary
-export function buildGroundingContext(): string {
-  const uniSummary = UNIVERSITIES_DATA.slice(0, 40).map(
-    (u) =>
-      `- [${u.institutionCode || u.code}] ${u.officialName || u.name} (${u.shortName || ''}), Tỉnh/Thành: ${u.province || u.city}, Miền: ${u.region}, Loại: ${u.ownershipType || u.type}, Web: ${u.officialWebsite || u.website}, Tuyển sinh: ${u.admissionWebsite || ''}, Nguồn xác minh: ${u.source}`
-  ).join('\n');
+// Normalize Vietnamese text for flexible keyword matching
+function normalizeSearchText(text: string): string {
+  return (text || '')
+    .toLowerCase()
+    .normalize('NFD')
+    .replace(/[\u0300-\u036f]/g, '')
+    .replace(/đ/g, 'd')
+    .trim();
+}
 
-  const admSummary = ADMISSION_RECORDS.map(
-    (a) =>
-      `- Trường: ${a.universityName} | Ngành: ${a.majorName} (Mã: ${a.majorCode}) | Chương trình: ${a.programName || a.program || 'Chuẩn'} | Năm: ${a.year} | Điểm chuẩn/sàn: ${a.cutoffScore} (${a.scoreScale}) | Tổ hợp: ${a.subjectCombination} | Phương thức: ${a.method} | Học phí: ${a.tuitionInfo || a.tuition} | Nguồn: ${a.sourceDocument} (${a.sourceUrl})`
-  ).join('\n');
+// Build compact, targeted grounding summary dynamically (< 2,500 chars instead of 125,000 chars)
+export function buildDynamicGroundingContext(query: string = '', profile?: any): string {
+  const qNorm = normalizeSearchText(query);
+  const profileTokens = [
+    ...(profile?.favoriteSubjects || []),
+    ...(profile?.savedCareers || []),
+    ...(profile?.savedMajors || []),
+    ...(profile?.targetCombinations || []),
+    ...(profile?.topRiasec || []),
+  ].map(normalizeSearchText);
 
-  const careerSummary = CAREERS_DATA.map(
-    (c) =>
-      `- Nghề: ${c.title} (Nhóm: ${c.categoryLabel}, RIASEC: ${c.riasecCodes.join(', ')}) | Tóm tắt: ${c.shortSummary} | Môn THPT: ${c.highSchoolSubjects.join(', ')} | Thách thức: ${c.difficultiesAndTradeoffs.slice(0, 2).join('; ')}`
-  ).join('\n');
+  const allTokens = [qNorm, ...profileTokens].join(' ');
 
-  const majorSummary = MAJORS_DATA.slice(0, 25).map(
-    (m) =>
-      `- Ngành: ${m.name} (Mã: ${m.code}, Nhóm: ${m.categoryName || m.field}) | Mô tả: ${m.description.slice(0, 100)}...`
-  ).join('\n');
+  // 1. Select matching universities (max 3)
+  let matchedUnis = UNIVERSITIES_DATA.filter((u) => {
+    const code = normalizeSearchText(u.institutionCode || u.code || '');
+    const short = normalizeSearchText(u.shortName || '');
+    const name = normalizeSearchText(u.officialName || u.name || '');
+    return (
+      (code && allTokens.includes(code)) ||
+      (short && allTokens.includes(short)) ||
+      (name && allTokens.includes(name))
+    );
+  }).slice(0, 3);
+
+  if (matchedUnis.length === 0) {
+    matchedUnis = UNIVERSITIES_DATA.slice(0, 3);
+  }
+
+  const uniSummary = matchedUnis
+    .map(
+      (u) =>
+        `- [${u.institutionCode || u.code}] ${u.officialName || u.name} (${u.shortName || ''}), Tỉnh/Thành: ${u.province || u.city}, Miền: ${u.region}, Web: ${u.officialWebsite || u.website}`
+    )
+    .join('\n');
+
+  // 2. Select matching admission records (max 4)
+  let matchedAdmissions = ADMISSION_RECORDS.filter((a) => {
+    const uni = normalizeSearchText(a.universityName || '');
+    const major = normalizeSearchText(a.majorName || '');
+    const combo = normalizeSearchText(a.subjectCombination || '');
+    return (
+      (uni && allTokens.includes(uni)) ||
+      (major && allTokens.includes(major)) ||
+      (combo && allTokens.includes(combo))
+    );
+  }).slice(0, 4);
+
+  if (matchedAdmissions.length === 0) {
+    matchedAdmissions = ADMISSION_RECORDS.slice(0, 4);
+  }
+
+  const admSummary = matchedAdmissions
+    .map(
+      (a) =>
+        `- Trường: ${a.universityName} | Ngành: ${a.majorName} (${a.majorCode}) | Điểm chuẩn/sàn: ${a.cutoffScore} | Tổ hợp: ${a.subjectCombination} | Năm: ${a.year}`
+    )
+    .join('\n');
+
+  // 3. Select matching careers (max 3)
+  let matchedCareers = CAREERS_DATA.filter((c) => {
+    const title = normalizeSearchText(c.title);
+    const category = normalizeSearchText(c.categoryLabel);
+    const riasec = c.riasecCodes.map((r: string) => r.toLowerCase());
+    return (
+      allTokens.includes(title) ||
+      allTokens.includes(category) ||
+      riasec.some((r: string) => allTokens.includes(r))
+    );
+  }).slice(0, 3);
+
+  if (matchedCareers.length === 0) {
+    matchedCareers = CAREERS_DATA.slice(0, 3);
+  }
+
+  const careerSummary = matchedCareers
+    .map(
+      (c) =>
+        `- Nghề: ${c.title} (Nhóm: ${c.categoryLabel}, RIASEC: ${c.riasecCodes.join(', ')}) | Tóm tắt: ${c.shortSummary} | Môn THPT: ${c.highSchoolSubjects.join(', ')}`
+    )
+    .join('\n');
 
   return `
-DANH SÁCH TRƯỜNG ĐẠI HỌC ĐÃ XÁC MINH TRONG HỆ THỐNG:
+DỮ LIỆU ĐỐI CHIẾU XÁC MINH CỦA HỆ THỐNG:
+TRƯỜNG ĐẠI HỌC:
 ${uniSummary}
 
-DANH SÁCH BẢN GHI ĐIỂM CHUẨN & ĐỀ ÁN TUYỂN SINH XÁC MINH (GỒM CẢ ĐỀ ÁN 2025 THEO GDPT 2018 MỚI):
+ĐIỂM CHUẨN & ĐỀ ÁN XÁC MINH:
 ${admSummary}
 
-DANH SÁCH NGHỀ NGHIỆP TRONG HỆ THỐNG:
+NGHỀ NGHIỆP THAM KHẢO:
 ${careerSummary}
-
-DANH SÁCH NGÀNH HỌC TIÊU BIỂU:
-${majorSummary}
 `;
 }
 
-const DATABASE_GROUNDING_BRIEF = buildGroundingContext();
-
 export interface ProcessChamAiParams {
   message: string;
+  language?: 'vi' | 'en';
   profile?: any;
   currentContext?: string;
   chatHistory?: Array<{ sender: 'ai' | 'user'; text: string }>;
@@ -86,7 +198,7 @@ export interface ChamAiResponseResult {
 }
 
 export async function processChamAiChat(params: ProcessChamAiParams): Promise<ChamAiResponseResult> {
-  const { message, profile, currentContext, chatHistory, customAiClient } = params;
+  const { message, language = 'vi', profile, currentContext, chatHistory, customAiClient } = params;
 
   if (!message || !message.trim()) {
     return {
@@ -150,7 +262,11 @@ NGUYÊN TẮC CỐT LÕI (BẮT BUỘC TUÂN THỦ):
    - Thân thiện, chân thành, khuyến khích học sinh tự tin, định dạng Markdown đẹp, dùng gạch đầu dòng và in đậm điểm mấu chốt.
 
 --- CƠ SỞ DỮ LIỆU ĐÃ XÁC MINH CỦA HỆ THỐNG ---
-${DATABASE_GROUNDING_BRIEF}
+${buildDynamicGroundingContext(message, profile)}
+
+${language === 'en'
+  ? `CRITICAL LANGUAGE INSTRUCTION: The user is browsing the application in ENGLISH. You MUST formulate your entire response in clear, encouraging, natural, and helpful ENGLISH for high school students. Retain official proper names (such as "CHẠM VIỆC", Vietnamese university names, and combination codes like K01, A00, HSA, TSA). Do NOT reply in Vietnamese.`
+  : `YÊU CẦU NGÔN NGỮ: Trả lời bằng tiếng Việt thân thiện, rõ ràng, dễ hiểu cho học sinh THPT.`}
 `;
 
   // Build profile context safely without exposing private data
@@ -248,10 +364,11 @@ Hãy trả lời học sinh với vai trò "CHẠM AI – Người bạn đồng
     // (Never use deprecated 1.5/2.0 or paid models)
     const configuredModel = process.env.GEMINI_MODEL?.trim();
     const modelsToTry: string[] = [
-      configuredModel || 'gemini-3.8-flash',
-      'gemini-flash-latest',
+      configuredModel,
       'gemini-3.1-flash-lite',
-    ].filter((m, idx, arr) => m && arr.indexOf(m) === idx);
+      'gemini-3.8-flash',
+      'gemini-flash-latest',
+    ].filter(Boolean) as string[];
 
     // Helper to detect 503 UNAVAILABLE or overload transients
     const is503OrOverloaded = (err: any): boolean => {
@@ -294,8 +411,8 @@ Hãy trả lời học sinh với vai trò "CHẠM AI – Người bạn đồng
     for (const modelName of modelsToTry) {
       console.log(`[CHAM AI] Attempting Gemini model: ${modelName}`);
 
-      // Inner loop: Retry up to 3 times on 503 / overload with exponential backoff and jitter
-      const MAX_RETRIES = 3;
+      // Inner loop: Retry up to 2 times on 503 / overload with exponential backoff and jitter
+      const MAX_RETRIES = 2;
       let attempt = 0;
       let modelSucceeded = false;
 
@@ -306,11 +423,14 @@ Hãy trả lời học sinh với vai trò "CHẠM AI – Người bạn đồng
             contents: contents,
             config: {
               systemInstruction,
+              thinkingConfig: {
+                thinkingBudget: 0,
+              },
             },
           });
 
           const timeoutPromise = new Promise<never>((_, reject) =>
-            setTimeout(() => reject(new Error('TIMEOUT_20S')), 20000)
+            setTimeout(() => reject(new Error('TIMEOUT_15S')), 15000)
           );
 
           response = await Promise.race([callPromise, timeoutPromise]);
@@ -591,6 +711,7 @@ Em có thể tìm hiểu thêm bằng cách:
 // STREAMING CHATBOT FUNCTION WITH SERVER-SENT EVENTS
 export interface StreamChamAiOptions {
   message: string;
+  language?: 'vi' | 'en';
   profile?: any;
   currentContext?: string;
   chatHistory?: Array<{ sender: 'ai' | 'user'; text: string }>;
@@ -602,7 +723,7 @@ export interface StreamChamAiOptions {
 }
 
 export async function streamChamAiChat(options: StreamChamAiOptions): Promise<void> {
-  const { message, profile, currentContext, chatHistory, onStart, onChunk, onError, onDone, signal } = options;
+  const { message, language = 'vi', profile, currentContext, chatHistory, onStart, onChunk, onError, onDone, signal } = options;
 
   const requestId = 'req_' + Date.now().toString(36) + '_' + Math.random().toString(36).substring(2, 6);
   const startTime = Date.now();
@@ -610,7 +731,7 @@ export async function streamChamAiChat(options: StreamChamAiOptions): Promise<vo
   if (!message || !message.trim()) {
     onError({
       error: 'EMPTY_MESSAGE',
-      errorMessage: 'Tin nhắn không được để trống.',
+      errorMessage: language === 'en' ? 'Message cannot be empty.' : 'Tin nhắn không được để trống.',
       canRetry: false,
     });
     return;
@@ -666,7 +787,11 @@ NGUYÊN TẮC CỐT LÕI (BẮT BUỘC TUÂN THỦ):
    - Dùng BẢNG MARKDOWN phân tích tiêu chí rõ ràng: Chương trình học | Kỹ năng cần | Môi trường làm việc | Cơ hội việc làm | Điểm xét tuyển tham khảo.
 
 --- CƠ SỞ DỮ LIỆU ĐÃ XÁC MINH CỦA HỆ THỐNG ---
-${DATABASE_GROUNDING_BRIEF}
+${buildDynamicGroundingContext(message, profile)}
+
+${language === 'en'
+  ? `CRITICAL LANGUAGE INSTRUCTION: The user is browsing the application in ENGLISH. You MUST formulate your entire response in clear, encouraging, natural, and helpful ENGLISH for high school students. Retain official proper names (such as "CHẠM VIỆC", Vietnamese university names, and combination codes like K01, A00, HSA, TSA). Do NOT reply in Vietnamese.`
+  : `YÊU CẦU NGÔN NGỮ: Trả lời bằng tiếng Việt thân thiện, rõ ràng, dễ hiểu cho học sinh THPT.`}
 `;
 
   // Profile Context
@@ -715,10 +840,11 @@ Hãy trả lời học sinh với vai trò "CHẠM AI – Người bạn đồng
 
   const configuredModel = process.env.GEMINI_MODEL?.trim();
   const modelsToTry: string[] = [
-    configuredModel || 'gemini-3.8-flash',
-    'gemini-flash-latest',
+    configuredModel,
     'gemini-3.1-flash-lite',
-  ].filter((m, idx, arr) => m && arr.indexOf(m) === idx);
+    'gemini-3.8-flash',
+    'gemini-flash-latest',
+  ].filter(Boolean) as string[];
 
   let streamSucceeded = false;
   let totalChars = 0;
@@ -743,6 +869,9 @@ Hãy trả lời học sinh với vai trò "CHẠM AI – Người bạn đồng
           contents,
           config: {
             systemInstruction,
+            thinkingConfig: {
+              thinkingBudget: 0,
+            },
           },
         });
 

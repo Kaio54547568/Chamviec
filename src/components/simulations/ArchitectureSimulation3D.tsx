@@ -50,6 +50,18 @@ export const ArchitectureSimulation3D: React.FC<ArchitectureSimulation3DProps> =
     { id: 'f-3', type: 'sofa', name: 'Sofa tiếp khách', x: 2.0, z: 1.0, rotation: 0 }
   ]);
 
+  const getFurnitureDisplayName = (item: PlacedFurniture) => {
+    if (language === 'vi') return item.name;
+    const enMap: Record<PlacedFurniture['type'], string> = {
+      bed: 'Master Bed',
+      desk: 'Daylight Study Desk',
+      sofa: 'Living Room Sofa',
+      dining: 'Family Dining Table',
+      wall: 'Interior Partition Wall'
+    };
+    return enMap[item.type] || item.name;
+  };
+
   const [circulationWarning, setCirculationWarning] = useState<string | null>(null);
   const [reflectionAnswer, setReflectionAnswer] = useState<string>('');
   const [reflectionSaved, setReflectionSaved] = useState<boolean>(false);
@@ -88,11 +100,15 @@ export const ArchitectureSimulation3D: React.FC<ArchitectureSimulation3DProps> =
     });
 
     if (doorBlocked) {
-      setCirculationWarning('CẢNH BÁO LƯU THÔNG: Lối vào cửa chính đang bị đồ nội thất che chắn! Cần giữ khoảng cách thông thủy tối thiểu 0.9m để thoát hiểm an toàn.');
+      setCirculationWarning(
+        language === 'vi'
+          ? 'CẢNH BÁO LƯU THÔNG: Lối vào cửa chính đang bị đồ nội thất che chắn! Cần giữ khoảng cách thông thủy tối thiểu 0.9m để thoát hiểm an toàn.'
+          : 'CIRCULATION WARNING: The main entrance doorway is obstructed by furniture! Maintain at least 0.9m clear egress width for fire & life safety.'
+      );
     } else {
       setCirculationWarning(null);
     }
-  }, [furnitureList]);
+  }, [furnitureList, language]);
 
   // Three.js Scene Setup
   useEffect(() => {
@@ -482,19 +498,23 @@ export const ArchitectureSimulation3D: React.FC<ArchitectureSimulation3DProps> =
             <div>
               <div className="flex items-center gap-2">
                 <span className="text-xs font-semibold px-2.5 py-0.5 rounded-full bg-blue-500/10 text-blue-400 border border-blue-500/20">
-                  MÔ PHỎNG 3D TƯƠNG TÁC
+                  {language === 'vi' ? 'MÔ PHỎNG 3D TƯƠNG TÁC' : '3D INTERACTIVE SIMULATION'}
                 </span>
-                <span className="text-xs text-slate-400">Trạm 1 • Kiến trúc, Quy hoạch & Thiết kế Nhà</span>
+                <span className="text-xs text-slate-400">
+                  {language === 'vi' ? 'Trạm 1 • Kiến trúc, Quy hoạch & Thiết kế Nhà' : 'Station 1 • Architecture, Spatial Planning & Interior Design'}
+                </span>
               </div>
               <h2 className="text-lg font-bold text-white">
-                Phòng Lab Thiết kế Mặt bằng, Bố trí Nội thất & Hướng Nắng 3D
+                {language === 'vi'
+                  ? 'Phòng Lab Thiết kế Mặt bằng, Bố trí Nội thất & Hướng Nắng 3D'
+                  : '3D Floorplan Studio, Interior Layout & Solar Path Lab'}
               </h2>
             </div>
           </div>
           <button
             onClick={onClose}
             className="p-2 text-slate-400 hover:text-white rounded-lg hover:bg-slate-800 transition"
-            title="Đóng mô phỏng"
+            title={language === 'vi' ? 'Đóng mô phỏng' : 'Close simulation'}
           >
             <X className="w-6 h-6" />
           </button>
@@ -503,7 +523,7 @@ export const ArchitectureSimulation3D: React.FC<ArchitectureSimulation3DProps> =
         {/* View Mode & Structural Toggles Sub-bar */}
         <div className="flex flex-wrap items-center justify-between px-6 py-2.5 bg-slate-950 border-b border-slate-800 text-xs gap-3">
           <div className="flex items-center gap-2">
-            <span className="text-slate-400">Góc nhìn:</span>
+            <span className="text-slate-400">{language === 'vi' ? 'Góc nhìn:' : 'View Mode:'}</span>
             <button
               onClick={() => setViewMode('cutaway')}
               className={`px-3 py-1.5 rounded-lg border font-medium transition ${
@@ -512,7 +532,7 @@ export const ArchitectureSimulation3D: React.FC<ArchitectureSimulation3DProps> =
                   : 'bg-slate-800 text-slate-300 border-slate-700 hover:bg-slate-700'
               }`}
             >
-              Mặt bằng cắt lớp (Nhìn trong phòng)
+              {language === 'vi' ? 'Mặt bằng cắt lớp (Nhìn trong phòng)' : 'Cutaway Floorplan (Interior View)'}
             </button>
             <button
               onClick={() => setViewMode('exterior')}
@@ -522,7 +542,7 @@ export const ArchitectureSimulation3D: React.FC<ArchitectureSimulation3DProps> =
                   : 'bg-slate-800 text-slate-300 border-slate-700 hover:bg-slate-700'
               }`}
             >
-              Ngoại thất có mái
+              {language === 'vi' ? 'Ngoại thất có mái' : 'Full Exterior with Roof'}
             </button>
           </div>
 
@@ -536,14 +556,14 @@ export const ArchitectureSimulation3D: React.FC<ArchitectureSimulation3DProps> =
                 className="rounded border-slate-600 text-orange-500 focus:ring-0"
               />
               <span className="flex items-center gap-1 font-medium text-orange-400">
-                <Layers className="w-4 h-4" /> Khung kết cấu (Cột/Dầm cam)
+                <Layers className="w-4 h-4" /> {language === 'vi' ? 'Khung kết cấu (Cột/Dầm cam)' : 'Structural Frame (Columns/Beams)'}
               </span>
             </label>
 
             {/* Time of Day Sun Slider */}
             <div className="flex items-center gap-2 bg-slate-900 border border-slate-700 px-3 py-1 rounded-lg">
               <Sun className="w-4 h-4 text-amber-400" />
-              <span className="text-slate-400">Giờ nắng:</span>
+              <span className="text-slate-400">{language === 'vi' ? 'Giờ nắng:' : 'Solar Time:'}</span>
               <span className="font-mono font-bold text-amber-300">{timeOfDayHours}:00</span>
               <input
                 type="range"
@@ -563,7 +583,9 @@ export const ArchitectureSimulation3D: React.FC<ArchitectureSimulation3DProps> =
           <div className="bg-amber-950/40 border-b border-amber-800/40 px-6 py-1.5 text-[11px] text-amber-300 flex items-center gap-2">
             <Info className="w-3.5 h-3.5 flex-shrink-0" />
             <span>
-              Lưu ý sư phạm: Lớp khung cột dầm hiển thị trực quan cơ bản giúp học sinh THPT hiểu vị trí chịu lực, không thay thế tính toán tải trọng kết cấu chuyên nghiệp của kỹ sư xây dựng.
+              {language === 'vi'
+                ? 'Lưu ý sư phạm: Lớp khung cột dầm hiển thị trực quan cơ bản giúp học sinh THPT hiểu vị trí chịu lực, không thay thế tính toán tải trọng kết cấu chuyên nghiệp của kỹ sư xây dựng.'
+                : 'Educational Note: The column/beam frame overlay illustrates primary load-bearing positions for high school exploration and does not replace structural engineering load calculations.'}
             </span>
           </div>
         )}
@@ -585,21 +607,27 @@ export const ArchitectureSimulation3D: React.FC<ArchitectureSimulation3DProps> =
             {/* Scorecard Overlay */}
             <div className="absolute bottom-4 left-4 bg-slate-900/90 backdrop-blur-md border border-slate-700/60 p-3 rounded-xl text-xs text-slate-300 space-y-1.5 shadow-lg">
               <div className="font-bold text-white flex items-center gap-1.5 mb-1 text-xs">
-                <Sparkles className="w-4 h-4 text-blue-400" /> Tiêu chí đánh giá mặt bằng:
+                <Sparkles className="w-4 h-4 text-blue-400" /> {language === 'vi' ? 'Tiêu chí đánh giá mặt bằng:' : 'Floorplan Evaluation Rubric:'}
               </div>
               <div className="flex items-center justify-between gap-4">
-                <span>• Công năng sử dụng:</span>
-                <span className="font-bold text-emerald-400">Đầy đủ 3 khu vực (3/3)</span>
-              </div>
-              <div className="flex items-center justify-between gap-4">
-                <span>• Luồng lưu thông:</span>
-                <span className={`font-bold ${circulationWarning ? 'text-rose-400' : 'text-emerald-400'}`}>
-                  {circulationWarning ? 'Bị nghẽn cửa (1/3)' : 'Thông thoáng (3/3)'}
+                <span>{language === 'vi' ? '• Công năng sử dụng:' : '• Functional Zoning:'}</span>
+                <span className="font-bold text-emerald-400">
+                  {language === 'vi' ? 'Đầy đủ 3 khu vực (3/3)' : 'All 3 Zones Active (3/3)'}
                 </span>
               </div>
               <div className="flex items-center justify-between gap-4">
-                <span>• Đón sáng tự nhiên:</span>
-                <span className="font-bold text-amber-400">Bàn học đón nắng chiều (3/3)</span>
+                <span>{language === 'vi' ? '• Luồng lưu thông:' : '• Egress & Circulation:'}</span>
+                <span className={`font-bold ${circulationWarning ? 'text-rose-400' : 'text-emerald-400'}`}>
+                  {circulationWarning
+                    ? (language === 'vi' ? 'Bị nghẽn cửa (1/3)' : 'Doorway Blocked (1/3)')
+                    : (language === 'vi' ? 'Thông thoáng (3/3)' : 'Clear Path (3/3)')}
+                </span>
+              </div>
+              <div className="flex items-center justify-between gap-4">
+                <span>{language === 'vi' ? '• Đón sáng tự nhiên:' : '• Natural Daylighting:'}</span>
+                <span className="font-bold text-amber-400">
+                  {language === 'vi' ? 'Bàn học đón nắng chiều (3/3)' : 'Optimal Desk Daylight (3/3)'}
+                </span>
               </div>
             </div>
           </div>
@@ -609,38 +637,38 @@ export const ArchitectureSimulation3D: React.FC<ArchitectureSimulation3DProps> =
             {/* Add Components Toolbox */}
             <div className="bg-slate-800/80 border border-slate-700 rounded-xl p-4">
               <h3 className="text-sm font-bold text-white mb-2.5 flex items-center gap-2">
-                <Plus className="w-4 h-4 text-blue-400" /> Thêm thành phần vào phòng (Snap lưới 0.5m):
+                <Plus className="w-4 h-4 text-blue-400" /> {language === 'vi' ? 'Thêm thành phần vào phòng (Snap lưới 0.5m):' : 'Add Interior Modules (0.5m Grid Snap):'}
               </h3>
               <div className="grid grid-cols-2 gap-2 text-xs">
                 <button
                   onClick={() => handleAddFurniture('bed')}
                   className="p-2 bg-slate-700/80 hover:bg-slate-700 text-slate-200 border border-slate-600 rounded-lg text-left transition flex items-center gap-1.5"
                 >
-                  <span className="w-3 h-3 rounded bg-blue-500 inline-block" /> + Giường ngủ
+                  <span className="w-3 h-3 rounded bg-blue-500 inline-block" /> {language === 'vi' ? '+ Giường ngủ' : '+ Master Bed'}
                 </button>
                 <button
                   onClick={() => handleAddFurniture('desk')}
                   className="p-2 bg-slate-700/80 hover:bg-slate-700 text-slate-200 border border-slate-600 rounded-lg text-left transition flex items-center gap-1.5"
                 >
-                  <span className="w-3 h-3 rounded bg-amber-500 inline-block" /> + Bàn làm việc
+                  <span className="w-3 h-3 rounded bg-amber-500 inline-block" /> {language === 'vi' ? '+ Bàn làm việc' : '+ Study Desk'}
                 </button>
                 <button
                   onClick={() => handleAddFurniture('sofa')}
                   className="p-2 bg-slate-700/80 hover:bg-slate-700 text-slate-200 border border-slate-600 rounded-lg text-left transition flex items-center gap-1.5"
                 >
-                  <span className="w-3 h-3 rounded bg-emerald-500 inline-block" /> + Sofa phòng khách
+                  <span className="w-3 h-3 rounded bg-emerald-500 inline-block" /> {language === 'vi' ? '+ Sofa phòng khách' : '+ Living Sofa'}
                 </button>
                 <button
                   onClick={() => handleAddFurniture('dining')}
                   className="p-2 bg-slate-700/80 hover:bg-slate-700 text-slate-200 border border-slate-600 rounded-lg text-left transition flex items-center gap-1.5"
                 >
-                  <span className="w-3 h-3 rounded bg-purple-500 inline-block" /> + Bàn ăn gia đình
+                  <span className="w-3 h-3 rounded bg-purple-500 inline-block" /> {language === 'vi' ? '+ Bàn ăn gia đình' : '+ Dining Table'}
                 </button>
                 <button
                   onClick={() => handleAddFurniture('wall')}
                   className="col-span-2 p-2 bg-slate-700/80 hover:bg-slate-700 text-slate-200 border border-slate-600 rounded-lg text-center transition flex items-center justify-center gap-1.5"
                 >
-                  <span className="w-3 h-3 rounded bg-slate-400 inline-block" /> + Tường ngăn phòng (Partition Wall)
+                  <span className="w-3 h-3 rounded bg-slate-400 inline-block" /> {language === 'vi' ? '+ Tường ngăn phòng (Partition Wall)' : '+ Interior Partition Wall'}
                 </button>
               </div>
             </div>
@@ -648,8 +676,8 @@ export const ArchitectureSimulation3D: React.FC<ArchitectureSimulation3DProps> =
             {/* Current Placed Items Controller */}
             <div className="bg-slate-800/80 border border-slate-700 rounded-xl p-4 flex-1">
               <h3 className="text-sm font-bold text-white mb-2.5 flex items-center justify-between">
-                <span>Đồ nội thất hiện có ({furnitureList.length}):</span>
-                <span className="text-[11px] text-slate-400 font-normal">Khuôn viên 8m x 6m</span>
+                <span>{language === 'vi' ? `Đồ nội thất hiện có (${furnitureList.length}):` : `Placed Modules (${furnitureList.length}):`}</span>
+                <span className="text-[11px] text-slate-400 font-normal">{language === 'vi' ? 'Khuôn viên 8m x 6m' : '8m x 6m Footprint'}</span>
               </h3>
 
               <div className="space-y-2.5 text-xs max-h-56 overflow-y-auto pr-1">
@@ -659,7 +687,7 @@ export const ArchitectureSimulation3D: React.FC<ArchitectureSimulation3DProps> =
                     className="p-2.5 bg-slate-900/60 border border-slate-700/60 rounded-lg flex items-center justify-between gap-2"
                   >
                     <div>
-                      <div className="font-semibold text-slate-200">{item.name}</div>
+                      <div className="font-semibold text-slate-200">{getFurnitureDisplayName(item)}</div>
                       <div className="text-[11px] text-slate-400 font-mono">
                         X: {item.x.toFixed(1)}m | Z: {item.z.toFixed(1)}m
                       </div>
@@ -670,35 +698,35 @@ export const ArchitectureSimulation3D: React.FC<ArchitectureSimulation3DProps> =
                       <button
                         onClick={() => handleMoveFurniture(item.id, -0.5, 0)}
                         className="w-6 h-6 rounded bg-slate-800 hover:bg-slate-700 text-slate-300 text-center font-bold"
-                        title="Dịch sang trái"
+                        title={language === 'vi' ? 'Dịch sang trái' : 'Move Left'}
                       >
                         ←
                       </button>
                       <button
                         onClick={() => handleMoveFurniture(item.id, 0.5, 0)}
                         className="w-6 h-6 rounded bg-slate-800 hover:bg-slate-700 text-slate-300 text-center font-bold"
-                        title="Dịch sang phải"
+                        title={language === 'vi' ? 'Dịch sang phải' : 'Move Right'}
                       >
                         →
                       </button>
                       <button
                         onClick={() => handleMoveFurniture(item.id, 0, -0.5)}
                         className="w-6 h-6 rounded bg-slate-800 hover:bg-slate-700 text-slate-300 text-center font-bold"
-                        title="Dịch lên trên"
+                        title={language === 'vi' ? 'Dịch lên trên' : 'Move Forward'}
                       >
                         ↑
                       </button>
                       <button
                         onClick={() => handleMoveFurniture(item.id, 0, 0.5)}
                         className="w-6 h-6 rounded bg-slate-800 hover:bg-slate-700 text-slate-300 text-center font-bold"
-                        title="Dịch xuống dưới"
+                        title={language === 'vi' ? 'Dịch xuống dưới' : 'Move Back'}
                       >
                         ↓
                       </button>
                       <button
                         onClick={() => handleRemoveFurniture(item.id)}
                         className="w-6 h-6 rounded bg-rose-950/60 text-rose-400 hover:bg-rose-900 flex items-center justify-center ml-1"
-                        title="Xóa món đồ này"
+                        title={language === 'vi' ? 'Xóa món đồ này' : 'Remove module'}
                       >
                         <Trash2 className="w-3.5 h-3.5" />
                       </button>
@@ -712,15 +740,21 @@ export const ArchitectureSimulation3D: React.FC<ArchitectureSimulation3DProps> =
             <div className="bg-slate-800/80 border border-slate-700 rounded-xl p-4 text-xs">
               <h4 className="font-bold text-white mb-2 flex items-center gap-1.5">
                 <HelpCircle className="w-4 h-4 text-blue-400" />
-                Cảm nhận sau trải nghiệm:
+                {language === 'vi' ? 'Cảm nhận sau trải nghiệm:' : 'Post-Studio Reflection:'}
               </h4>
               <p className="text-slate-400 text-[11px] mb-2">
-                Theo em, điều khó nhất khi bố trí mặt bằng ngôi nhà là làm sao cân bằng giữa tính thẩm mỹ, sự tiện lợi đi lại và khả năng đón ánh sáng tự nhiên?
+                {language === 'vi'
+                  ? 'Theo em, điều khó nhất khi bố trí mặt bằng ngôi nhà là làm sao cân bằng giữa tính thẩm mỹ, sự tiện lợi đi lại và khả năng đón ánh sáng tự nhiên?'
+                  : 'In your view, what is the biggest challenge in balancing aesthetics, unobstructed circulation, and natural daylight when designing a residential floorplan?'}
               </p>
               <textarea
                 value={reflectionAnswer}
                 onChange={(e) => setReflectionAnswer(e.target.value)}
-                placeholder="Ví dụ: Em thấy việc tính toán hướng nắng đổ bóng rất quan trọng, nếu để bàn làm việc ngược sáng sẽ bị chói mắt..."
+                placeholder={
+                  language === 'vi'
+                    ? 'Ví dụ: Em thấy việc tính toán hướng nắng đổ bóng rất quan trọng, nếu để bàn làm việc ngược sáng sẽ bị chói mắt...'
+                    : 'E.g., Calculating sun angles and shadow casting is essential so the study desk gets natural light without glare while keeping the main doorway clear...'
+                }
                 className="w-full h-16 p-2.5 bg-slate-900 border border-slate-700 rounded-lg text-slate-200 placeholder-slate-500 focus:outline-none focus:border-blue-500 text-xs"
               />
               <button
@@ -729,7 +763,9 @@ export const ArchitectureSimulation3D: React.FC<ArchitectureSimulation3DProps> =
                 className="mt-2.5 w-full py-2 bg-slate-700 hover:bg-slate-600 text-white font-medium rounded-lg transition disabled:opacity-50 flex items-center justify-center gap-2"
               >
                 {reflectionSaved ? <CheckCircle2 className="w-4 h-4 text-emerald-400" /> : null}
-                {reflectionSaved ? 'Đã lưu phản tư của em' : 'Lưu cảm nhận của em'}
+                {reflectionSaved
+                  ? (language === 'vi' ? 'Đã lưu phản tư của em' : 'Reflection saved to profile')
+                  : (language === 'vi' ? 'Lưu cảm nhận của em' : 'Save Reflection')}
               </button>
             </div>
           </div>

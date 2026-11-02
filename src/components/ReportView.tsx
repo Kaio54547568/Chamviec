@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useMemo } from 'react';
 import { 
   FileText, 
   Printer, 
@@ -21,34 +21,115 @@ import { ADMISSION_RECORDS } from '../data/admissions';
 import { CAREERS_DATA } from '../data/careers';
 import { RIASEC_INFO } from '../data/riasecQuestions';
 import { useLanguage } from '../i18n/LanguageContext';
+import {
+  localizeAdmissionRecord,
+  localizeCareer,
+  localizeSubject,
+  localizeRegion
+} from '../utils/i18nData';
 
 interface ReportViewProps {
   profile: StudentProfile;
 }
 
 export const ReportView: React.FC<ReportViewProps> = ({ profile }) => {
-  const { t, language } = useLanguage();
+  const { language } = useLanguage();
   const [copied, setCopied] = useState(false);
-  const snapshot = generateRecommendations(profile);
-  const actionPlan = generateActionPlan(profile);
 
-  const savedAdmissionsRecords = ADMISSION_RECORDS.filter((r) =>
-    profile.savedAdmissions.includes(r.id)
+  const snapshot = useMemo(
+    () => generateRecommendations(profile, language),
+    [profile, language]
   );
 
-  const savedCareersList = CAREERS_DATA.filter((c) =>
-    profile.savedCareers.includes(c.id)
+  const actionPlan = useMemo(
+    () => generateActionPlan(profile, language, snapshot),
+    [profile, language, snapshot]
   );
+
+  const savedAdmissionsRecords = useMemo(
+    () =>
+      ADMISSION_RECORDS.filter((r) => (profile.savedAdmissions || []).includes(r.id)).map((r) =>
+        localizeAdmissionRecord(r, language)
+      ),
+    [profile.savedAdmissions, language]
+  );
+
+  const localizedSubjects = useMemo(
+    () => (profile.favoriteSubjects || []).map((s) => localizeSubject(s, language)),
+    [profile.favoriteSubjects, language]
+  );
+
+  const localizedRegions = useMemo(
+    () => (profile.preferredRegions || []).map((r) => localizeRegion(r, language)),
+    [profile.preferredRegions, language]
+  );
+
+  const localizedValues = useMemo(() => {
+    const valMap: Record<string, string> = {
+      'Thu nhập tốt & cơ hội thăng tiến': 'Competitive Income & Career Growth',
+      'Công việc ổn định, bền vững': 'Job Stability & Long-term Security',
+      'Được sáng tạo & tự chủ': 'Creativity & Autonomy',
+      'Giúp đỡ cộng đồng & xã hội': 'Helping People & Social Impact',
+      'Làm việc với công nghệ hiện đại': 'Working with Advanced Technology',
+      'Cân bằng công việc & cuộc sống': 'Work-Life Balance',
+      'Môi trường năng động, hội nhập quốc tế': 'Dynamic & International Environment',
+      'Gần gia đình / phát triển tại địa phương': 'Close to Family / Local Development',
+    };
+    return (profile.priorityValues || []).map((v) =>
+      language === 'en' ? valMap[v] || v : v
+    );
+  }, [profile.priorityValues, language]);
+
+  const localizedBudget = useMemo(() => {
+    const raw = profile.budgetRange || '';
+    if (!raw) return language === 'vi' ? 'Chưa ghi' : 'Not specified';
+    if (language === 'vi') return raw;
+    const budgetMap: Record<string, string> = {
+      'Dưới 15 triệu/năm (Ưu tiên trường Công lập / Miễn học phí Sư phạm)':
+        'Under 15M VND/yr (Public / Tuition-Exempt Pedagogy)',
+      'Dưới 20 triệu/năm': 'Under 20M VND/year',
+      'Từ 15 - 30 triệu/năm (Công lập tự chủ)': '15 - 30M VND/yr (Autonomous Public)',
+      '20 - 40 triệu/năm': '20 - 40M VND/year',
+      'Từ 30 - 60 triệu/năm (Chất lượng cao / Tư thục)':
+        '30 - 60M VND/yr (High-Quality / Private)',
+      '40 - 80 triệu/năm': '40 - 80M VND/year',
+      'Trên 60 triệu/năm (Quốc tế / Liên kết)': 'Over 60M VND/yr (International / Joint)',
+      'Trên 80 triệu/năm': 'Over 80M VND/year',
+      'Cần hỗ trợ học bổng / Miễn giảm học phí': 'Needs Scholarship / Tuition Waiver Support',
+    };
+    return (
+      budgetMap[raw] ||
+      raw.replace(/triệu\/năm/gi, 'M VND/year').replace(/Dưới/gi, 'Under').replace(/Trên/gi, 'Over')
+    );
+  }, [profile.budgetRange, language]);
+
+  const gradeDisplay =
+    profile.grade === 'lop_10'
+      ? language === 'vi' ? 'Lớp 10' : 'Grade 10'
+      : profile.grade === 'lop_11'
+      ? language === 'vi' ? 'Lớp 11' : 'Grade 11'
+      : profile.grade === 'lop_12'
+      ? language === 'vi' ? 'Lớp 12' : 'Grade 12'
+      : language === 'vi' ? 'Tự do' : 'Independent';
 
   const handleCopySummary = () => {
-    const summaryText = `BÁO CÁO HƯỚNG NGHIỆP & TUYỂN SINH - CHẠM VIỆC
+    const summaryText = language === 'vi' 
+      ? `BÁO CÁO HƯỚNG NGHIỆP & TUYỂN SINH - CHẠM VIỆC
 Ngày lập: ${new Date().toLocaleDateString('vi-VN')}
-Khối lớp: ${profile.grade}
-Môn học yêu thích: ${profile.favoriteSubjects.join(', ') || 'Chưa ghi'}
+Khối lớp: ${gradeDisplay}
+Môn học yêu thích: ${localizedSubjects.join(', ') || 'Chưa ghi'}
 Điểm sở thích RIASEC: R(${profile.riasecScores.R}), I(${profile.riasecScores.I}), A(${profile.riasecScores.A}), S(${profile.riasecScores.S}), E(${profile.riasecScores.E}), C(${profile.riasecScores.C})
 Hướng nghề gợi ý: ${snapshot.recommendations.map(r => r.career.title).join('; ')}
 Ngành & trường đã lưu: ${savedAdmissionsRecords.map(a => `${a.universityName} - ${a.majorName} (Điểm: ${a.cutoffScore})`).join('; ') || 'Chưa lưu'}
-Kế hoạch 30 ngày: Khám phá 2 nghề và phỏng vấn người làm nghề.`;
+Kế hoạch 30 ngày: Khám phá 2 nghề và phỏng vấn người làm nghề.`
+      : `VOCATIONAL GUIDANCE & ADMISSIONS DOSSIER - CHẠM VIỆC
+Generated Date: ${new Date().toLocaleDateString('en-US')}
+Grade Level: ${gradeDisplay}
+Favorite Subjects: ${localizedSubjects.join(', ') || 'Not specified'}
+RIASEC Scores: R(${profile.riasecScores.R}), I(${profile.riasecScores.I}), A(${profile.riasecScores.A}), S(${profile.riasecScores.S}), E(${profile.riasecScores.E}), C(${profile.riasecScores.C})
+Suggested Careers: ${snapshot.recommendations.map(r => r.career.title).join('; ')}
+Saved Majors & Universities: ${savedAdmissionsRecords.map(a => `${a.universityName} - ${a.majorName} (Cutoff: ${a.cutoffScore})`).join('; ') || 'None saved'}
+30-Day Plan: Explore 2 simulation tasks and conduct informational interviews.`;
 
     navigator.clipboard.writeText(summaryText);
     setCopied(true);
@@ -117,12 +198,12 @@ Kế hoạch 30 ngày: Khám phá 2 nghề và phỏng vấn người làm ngh�
                 {language === 'vi' ? 'Bản Tổng hợp Hồ sơ Khám phá & Lựa chọn Tuyển sinh' : 'Career Discovery & College Admissions Dossier'}
               </h2>
               <p className="text-xs text-slate-500 mt-0.5">
-                {language === 'vi' ? 'Cập nhật lần cuối:' : 'Last updated:'} {new Date(profile.updatedAt).toLocaleDateString('vi-VN')} • {language === 'vi' ? 'Mã hồ sơ:' : 'Dossier ID:'} {profile.id}
+                {language === 'vi' ? 'Cập nhật lần cuối:' : 'Last updated:'} {new Date(profile.updatedAt).toLocaleDateString(language === 'vi' ? 'vi-VN' : 'en-US')} • {language === 'vi' ? 'Mã hồ sơ:' : 'Dossier ID:'} {profile.id}
               </p>
             </div>
           </div>
           <div className="px-3 py-1.5 rounded-xl bg-slate-100 border border-slate-200 text-xs font-semibold text-slate-700">
-            Khối: {profile.grade === 'lop_10' ? 'Lớp 10' : profile.grade === 'lop_11' ? 'Lớp 11' : profile.grade === 'lop_12' ? 'Lớp 12' : 'Tự do'}
+            {language === 'vi' ? 'Khối:' : 'Level:'} {gradeDisplay}
           </div>
         </div>
 
@@ -145,23 +226,25 @@ Kế hoạch 30 ngày: Khám phá 2 nghề và phỏng vấn người làm ngh�
                 ))}
               </div>
               <p className="text-[11px] text-slate-500 italic pt-1">
-                *Sở thích phản ánh xu hướng quan tâm ở thời điểm hiện tại, không phải thước đo cố định năng lực.
+                {language === 'vi'
+                  ? '*Sở thích phản ánh xu hướng quan tâm ở thời điểm hiện tại, không phải thước đo cố định năng lực.'
+                  : '*Interests reflect your current exploration preferences, not a fixed measure of ability.'}
               </p>
             </div>
 
             <div className="p-4 rounded-2xl bg-slate-50 border border-slate-200 space-y-2">
               <div className="font-bold text-slate-800">{language === 'vi' ? 'Môn học yêu thích & Giá trị ưu tiên:' : 'Favorite Subjects & Priority Values:'}</div>
               <div className="text-slate-700">
-                <strong>{language === 'vi' ? 'Môn học:' : 'Subjects:'}</strong> {profile.favoriteSubjects.join(', ') || 'Chưa cập nhật'}
+                <strong>{language === 'vi' ? 'Môn học:' : 'Subjects:'}</strong> {localizedSubjects.join(', ') || (language === 'vi' ? 'Chưa cập nhật' : 'Not specified')}
               </div>
               <div className="text-slate-700">
-                <strong>{language === 'vi' ? 'Giá trị ưu tiên:' : 'Core Values:'}</strong> {profile.priorityValues.join(', ') || 'Chưa chọn'}
+                <strong>{language === 'vi' ? 'Giá trị ưu tiên:' : 'Core Values:'}</strong> {localizedValues.join(', ') || (language === 'vi' ? 'Chưa chọn' : 'Not selected')}
               </div>
               <div className="text-slate-700">
-                <strong>{language === 'vi' ? 'Ngân sách dự kiến:' : 'Estimated Budget:'}</strong> {profile.budgetRange || 'Chưa ghi'}
+                <strong>{language === 'vi' ? 'Ngân sách dự kiến:' : 'Estimated Budget:'}</strong> {localizedBudget}
               </div>
               <div className="text-slate-700">
-                <strong>{language === 'vi' ? 'Khu vực mong muốn:' : 'Preferred Region:'}</strong> {profile.preferredRegions.join(', ') || 'Chưa giới hạn'}
+                <strong>{language === 'vi' ? 'Khu vực mong muốn:' : 'Preferred Region:'}</strong> {localizedRegions.join(', ') || (language === 'vi' ? 'Chưa giới hạn' : 'No preference')}
               </div>
             </div>
           </div>
@@ -192,7 +275,7 @@ Kế hoạch 30 ngày: Khám phá 2 nghề và phỏng vấn người làm ngh�
                   <strong>{language === 'vi' ? 'Khó khăn & Đánh đổi:' : 'Trade-offs & Hardships:'}</strong> {rec.valuesTradeoffs.join('; ')}
                 </div>
                 <div className="text-slate-500">
-                  <strong>{language === 'vi' ? 'Dữ liệu còn thiếu:' : 'Missing Information:'}</strong> {rec.missingInformation.join('; ') || 'Đã có thông tin cơ bản'}
+                  <strong>{language === 'vi' ? 'Dữ liệu còn thiếu:' : 'Missing Information:'}</strong> {rec.missingInformation.join('; ') || (language === 'vi' ? 'Đã có thông tin cơ bản' : 'Core baseline complete')}
                 </div>
               </div>
             ))}
@@ -208,19 +291,21 @@ Kế hoạch 30 ngày: Khám phá 2 nghề và phỏng vấn người làm ngh�
 
           {savedAdmissionsRecords.length === 0 ? (
             <p className="text-xs text-slate-400 italic">
-              Em chưa lưu bản ghi tuyển sinh nào. Hãy vào mục "Ngành & Điểm chuẩn" để bấm lưu các phương án quan tâm.
+              {language === 'vi'
+                ? 'Em chưa lưu bản ghi tuyển sinh nào. Hãy vào mục "Ngành & Điểm chuẩn" để bấm lưu các phương án quan tâm.'
+                : 'No admission records saved yet. Visit "Majors & Cutoffs" to bookmark programs of interest.'}
             </p>
           ) : (
             <div className="overflow-x-auto">
               <table className="w-full text-xs text-left border-collapse border border-slate-200">
                 <thead>
                   <tr className="bg-slate-100 text-slate-700 font-bold border-b border-slate-200">
-                    <th className="p-2.5">Trường</th>
-                    <th className="p-2.5">Ngành</th>
-                    <th className="p-2.5">Năm</th>
-                    <th className="p-2.5">Tổ hợp môn</th>
-                    <th className="p-2.5">Điểm chuẩn</th>
-                    <th className="p-2.5">Học phí & Ghi chú</th>
+                    <th className="p-2.5">{language === 'vi' ? 'Trường' : 'University'}</th>
+                    <th className="p-2.5">{language === 'vi' ? 'Ngành' : 'Major'}</th>
+                    <th className="p-2.5">{language === 'vi' ? 'Năm' : 'Year'}</th>
+                    <th className="p-2.5">{language === 'vi' ? 'Tổ hợp môn' : 'Subject Combo'}</th>
+                    <th className="p-2.5">{language === 'vi' ? 'Điểm chuẩn' : 'Cutoff Score'}</th>
+                    <th className="p-2.5">{language === 'vi' ? 'Học phí & Ghi chú' : 'Tuition & Notes'}</th>
                   </tr>
                 </thead>
                 <tbody className="divide-y divide-slate-200">
@@ -244,12 +329,18 @@ Kế hoạch 30 ngày: Khám phá 2 nghề và phỏng vấn người làm ngh�
         <div className="space-y-4">
           <h3 className="text-base font-bold text-slate-900 flex items-center gap-2">
             <CheckCircle2 className="w-4 h-4 text-teal-600" />
-            <span>4. Nhật ký phản tư sau các nhiệm vụ mô phỏng & chuyện nghề</span>
+            <span>
+              {language === 'vi'
+                ? '4. Nhật ký phản tư sau các nhiệm vụ mô phỏng & chuyện nghề'
+                : '4. Reflection Journal from Career Simulations & Stories'}
+            </span>
           </h3>
 
           {profile.reflections.length === 0 ? (
             <p className="text-xs text-slate-400 italic">
-              Chưa có bản ghi phản tư. Hãy thử một nhiệm vụ trong phần "Chạm Nghề" hoặc xem video để ghi lại cảm nhận.
+              {language === 'vi'
+                ? 'Chưa có bản ghi phản tư. Hãy thử một nhiệm vụ trong phần "Chạm Nghề" hoặc xem video để ghi lại cảm nhận.'
+                : 'No reflection entries yet. Complete a task in "Career Sim" or watch a practitioner story to record your insights.'}
             </p>
           ) : (
             <div className="space-y-3">
@@ -259,9 +350,9 @@ Kế hoạch 30 ngày: Khám phá 2 nghề và phỏng vấn người làm ngh�
                     <span className="font-bold text-amber-900 text-sm">{ref.title}</span>
                     <span className="text-[11px] text-slate-400">{ref.date}</span>
                   </div>
-                  <p className="text-slate-700"><strong>Cảm nhận & Đúc kết:</strong> {ref.keyInsights}</p>
-                  <p className="text-slate-600"><strong>Khó khăn sẵn sàng đón nhận:</strong> {ref.readinessForChallenges}</p>
-                  <p className="text-amber-800 font-semibold"><strong>Hành động tiếp theo:</strong> {ref.nextMicroAction}</p>
+                  <p className="text-slate-700"><strong>{language === 'vi' ? 'Cảm nhận & Đúc kết:' : 'Key Insights:'}</strong> {ref.keyInsights}</p>
+                  <p className="text-slate-600"><strong>{language === 'vi' ? 'Khó khăn sẵn sàng đón nhận:' : 'Readiness for Challenges:'}</strong> {ref.readinessForChallenges}</p>
+                  <p className="text-amber-800 font-semibold"><strong>{language === 'vi' ? 'Hành động tiếp theo:' : 'Next Micro-Action:'}</strong> {ref.nextMicroAction}</p>
                 </div>
               ))}
             </div>
@@ -272,7 +363,11 @@ Kế hoạch 30 ngày: Khám phá 2 nghề và phỏng vấn người làm ngh�
         <div className="space-y-4 pt-4 border-t border-slate-200">
           <h3 className="text-base font-bold text-slate-900 flex items-center gap-2">
             <Calendar className="w-4 h-4 text-teal-600" />
-            <span>5. Kế hoạch hành động tiếp theo (30 / 60 / 90 Ngày)</span>
+            <span>
+              {language === 'vi'
+                ? '5. Kế hoạch hành động tiếp theo (30 / 60 / 90 Ngày)'
+                : '5. Next Action Plan (30 / 60 / 90 Days)'}
+            </span>
           </h3>
 
           <div className="grid grid-cols-1 md:grid-cols-3 gap-4 text-xs">
@@ -280,7 +375,7 @@ Kế hoạch 30 ngày: Khám phá 2 nghề và phỏng vấn người làm ngh�
             <div className="p-4 rounded-2xl bg-teal-50 border border-teal-200 space-y-3">
               <div className="font-bold text-teal-900 uppercase tracking-wider flex items-center gap-1.5">
                 <Clock className="w-4 h-4 text-teal-600" />
-                <span>Kế hoạch 30 ngày tới</span>
+                <span>{language === 'vi' ? 'Kế hoạch 30 ngày tới' : 'Next 30 Days Plan'}</span>
               </div>
               <div className="space-y-2">
                 {actionPlan.filter(p => p.timeframe === '30_days').map(item => (
@@ -296,7 +391,7 @@ Kế hoạch 30 ngày: Khám phá 2 nghề và phỏng vấn người làm ngh�
             <div className="p-4 rounded-2xl bg-amber-50 border border-amber-200 space-y-3">
               <div className="font-bold text-amber-900 uppercase tracking-wider flex items-center gap-1.5">
                 <Clock className="w-4 h-4 text-amber-600" />
-                <span>Kế hoạch 60 ngày tới</span>
+                <span>{language === 'vi' ? 'Kế hoạch 60 ngày tới' : 'Next 60 Days Plan'}</span>
               </div>
               <div className="space-y-2">
                 {actionPlan.filter(p => p.timeframe === '60_days').map(item => (
@@ -312,7 +407,7 @@ Kế hoạch 30 ngày: Khám phá 2 nghề và phỏng vấn người làm ngh�
             <div className="p-4 rounded-2xl bg-blue-50 border border-blue-200 space-y-3">
               <div className="font-bold text-blue-900 uppercase tracking-wider flex items-center gap-1.5">
                 <Clock className="w-4 h-4 text-blue-600" />
-                <span>Kế hoạch 90 ngày tới</span>
+                <span>{language === 'vi' ? 'Kế hoạch 90 ngày tới' : 'Next 90 Days Plan'}</span>
               </div>
               <div className="space-y-2">
                 {actionPlan.filter(p => p.timeframe === '90_days').map(item => (
@@ -329,10 +424,14 @@ Kế hoạch 30 ngày: Khám phá 2 nghề và phỏng vấn người làm ngh�
         {/* Dossier Footer & Signature */}
         <div className="pt-6 border-t border-slate-200 flex flex-col sm:flex-row sm:items-center justify-between gap-4 text-xs text-slate-400">
           <div>
-            CHẠM VIỆC — Chạm trải nghiệm – Hiểu bản thân – Chọn hướng đi.
+            {language === 'vi'
+              ? 'CHẠM VIỆC — Chạm trải nghiệm – Hiểu bản thân – Chọn hướng đi.'
+              : 'CHẠM VIỆC — Experience Work – Know Yourself – Choose Your Path.'}
           </div>
           <div className="italic">
-            Học sinh tự quản lý hồ sơ và quyết định thời điểm chia sẻ.
+            {language === 'vi'
+              ? 'Học sinh tự quản lý hồ sơ và quyết định thời điểm chia sẻ.'
+              : 'Student-owned dossier; you decide when and with whom to share.'}
           </div>
         </div>
       </div>

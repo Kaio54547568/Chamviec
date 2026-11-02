@@ -20,12 +20,24 @@ import {
 } from 'lucide-react';
 import { EnterpriseBatch, EnterpriseRegistration } from '../types';
 import { useLanguage } from '../i18n/LanguageContext';
+import { localizeEnterpriseBatch } from '../utils/i18nData';
 
 export const EnterpriseExperienceView: React.FC = () => {
   const { t, language } = useLanguage();
   const [batches, setBatches] = useState<EnterpriseBatch[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [selectedBatch, setSelectedBatch] = useState<EnterpriseBatch | null>(null);
+
+  const localizedBatches = React.useMemo(
+    () => batches.map((b) => localizeEnterpriseBatch(b, language)),
+    [batches, language]
+  );
+
+  const activeBatch = React.useMemo(() => {
+    if (!selectedBatch) return null;
+    const raw = batches.find((b) => b.id === selectedBatch.id) || selectedBatch;
+    return localizeEnterpriseBatch(raw, language);
+  }, [selectedBatch, batches, language]);
 
   // Registration Form State
   const [studentName, setStudentName] = useState('');
@@ -195,7 +207,11 @@ export const EnterpriseExperienceView: React.FC = () => {
         <div className="flex flex-wrap items-center justify-between gap-3">
           <div className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-indigo-50 text-indigo-900 text-xs font-bold border border-indigo-200">
             <Briefcase className="w-3.5 h-3.5 text-indigo-600" />
-            <span>Trải nghiệm nghề thật tại doanh nghiệp đối tác</span>
+            <span>
+              {language === 'vi'
+                ? 'Trải nghiệm nghề thật tại doanh nghiệp đối tác'
+                : 'Real-World Career Immersion at Partner Enterprises'}
+            </span>
           </div>
 
           <button
@@ -206,7 +222,11 @@ export const EnterpriseExperienceView: React.FC = () => {
             className="text-xs font-semibold text-slate-500 hover:text-indigo-600 flex items-center gap-1.5 px-3 py-1 rounded-xl bg-slate-100 hover:bg-slate-200/80"
           >
             <Lock className="w-3.5 h-3.5" />
-            <span>{showAdminTab ? 'Xem danh sách đợt mở' : t.enterprise.adminPortal}</span>
+            <span>
+              {showAdminTab
+                ? (language === 'vi' ? 'Xem danh sách đợt mở' : 'View Open Batches')
+                : t.enterprise.adminPortal}
+            </span>
           </button>
         </div>
 
@@ -234,10 +254,16 @@ export const EnterpriseExperienceView: React.FC = () => {
           <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 pb-4 border-b border-slate-200">
             <div>
               <h3 className="font-extrabold text-slate-900 text-lg">
-                Quản trị danh sách học sinh đăng ký trải nghiệm
+                {language === 'vi'
+                  ? 'Quản trị danh sách học sinh đăng ký trải nghiệm'
+                  : 'Enterprise Immersion Student Registration Management'}
               </h3>
               <p className="text-xs text-slate-500">
-                Tổng cộng có <strong>{adminRegistrations.length}</strong> hồ sơ đã đăng ký qua hệ thống.
+                {language === 'vi' ? (
+                  <>Tổng cộng có <strong>{adminRegistrations.length}</strong> hồ sơ đã đăng ký qua hệ thống.</>
+                ) : (
+                  <>Total of <strong>{adminRegistrations.length}</strong> student registrations recorded.</>
+                )}
               </p>
             </div>
 
@@ -247,7 +273,7 @@ export const EnterpriseExperienceView: React.FC = () => {
                 className="px-4 py-2 rounded-xl bg-emerald-600 hover:bg-emerald-700 text-white font-bold text-xs flex items-center gap-1.5 shadow-xs"
               >
                 <Download className="w-3.5 h-3.5" />
-                <span>Xuất file Excel/CSV</span>
+                <span>{language === 'vi' ? 'Xuất file Excel/CSV' : 'Export Excel/CSV'}</span>
               </button>
             </div>
           </div>
@@ -256,13 +282,13 @@ export const EnterpriseExperienceView: React.FC = () => {
             <table className="w-full text-xs text-left">
               <thead className="bg-slate-50 text-slate-700 font-bold border-b border-slate-200">
                 <tr>
-                  <th className="p-3">Mã phiếu</th>
-                  <th className="p-3">Học sinh</th>
-                  <th className="p-3">Trường / Khối</th>
-                  <th className="p-3">Chương trình</th>
-                  <th className="p-3">Liên hệ</th>
-                  <th className="p-3">Trạng thái</th>
-                  <th className="p-3">Hành động</th>
+                  <th className="p-3">{language === 'vi' ? 'Mã phiếu' : 'Pass Code'}</th>
+                  <th className="p-3">{language === 'vi' ? 'Học sinh' : 'Student'}</th>
+                  <th className="p-3">{language === 'vi' ? 'Trường / Khối' : 'School / Grade'}</th>
+                  <th className="p-3">{language === 'vi' ? 'Chương trình' : 'Program'}</th>
+                  <th className="p-3">{language === 'vi' ? 'Liên hệ' : 'Contact'}</th>
+                  <th className="p-3">{language === 'vi' ? 'Trạng thái' : 'Status'}</th>
+                  <th className="p-3">{language === 'vi' ? 'Hành động' : 'Action'}</th>
                 </tr>
               </thead>
               <tbody className="divide-y divide-slate-100">
@@ -272,7 +298,9 @@ export const EnterpriseExperienceView: React.FC = () => {
                     <td className="p-3">
                       <div className="font-bold text-slate-900">{reg.studentName}</div>
                       {reg.isInternationalStudent && (
-                        <span className="text-[10px] text-amber-700 bg-amber-50 px-1.5 py-0.2 rounded font-medium">Quốc tế</span>
+                        <span className="text-[10px] text-amber-700 bg-amber-50 px-1.5 py-0.2 rounded font-medium">
+                          {language === 'vi' ? 'Quốc tế' : 'International'}
+                        </span>
                       )}
                     </td>
                     <td className="p-3 text-slate-600">{reg.schoolName} ({reg.grade})</td>
@@ -282,7 +310,9 @@ export const EnterpriseExperienceView: React.FC = () => {
                     </td>
                     <td className="p-3 text-slate-600">
                       <div>{reg.studentEmail}</div>
-                      <div className="text-[11px] text-slate-400">{reg.studentPhone || 'Chưa cung cấp'}</div>
+                      <div className="text-[11px] text-slate-400">
+                        {reg.studentPhone || (language === 'vi' ? 'Chưa cung cấp' : 'Not provided')}
+                      </div>
                     </td>
                     <td className="p-3">
                       <span className={`px-2.5 py-1 rounded-full text-[11px] font-bold ${
@@ -291,9 +321,13 @@ export const EnterpriseExperienceView: React.FC = () => {
                         reg.status === 'CHO_THANH_TOAN' ? 'bg-amber-50 text-amber-700 border border-amber-200' :
                         'bg-slate-100 text-slate-600'
                       }`}>
-                        {reg.status === 'DA_XAC_NHAN' ? 'Đã xác nhận' :
-                         reg.status === 'DA_TIEP_NHAN' ? 'Đã tiếp nhận' :
-                         reg.status === 'CHO_THANH_TOAN' ? 'Chờ thanh toán' : reg.status}
+                        {reg.status === 'DA_XAC_NHAN'
+                          ? (language === 'vi' ? 'Đã xác nhận' : 'Confirmed')
+                          : reg.status === 'DA_TIEP_NHAN'
+                          ? (language === 'vi' ? 'Đã tiếp nhận' : 'Received')
+                          : reg.status === 'CHO_THANH_TOAN'
+                          ? (language === 'vi' ? 'Chờ thanh toán' : 'Pending Payment')
+                          : reg.status}
                       </span>
                     </td>
                     <td className="p-3">
@@ -302,11 +336,11 @@ export const EnterpriseExperienceView: React.FC = () => {
                         onChange={(e) => handleStatusChange(reg.registrationCode, e.target.value)}
                         className="py-1 px-2 rounded-lg border border-slate-300 text-[11px] font-medium bg-white"
                       >
-                        <option value="DA_TIEP_NHAN">Đã tiếp nhận</option>
-                        <option value="CHO_THANH_TOAN">Chờ thanh toán</option>
-                        <option value="DA_THANH_TOAN">Đã thanh toán</option>
-                        <option value="DA_XAC_NHAN">Đã xác nhận</option>
-                        <option value="DA_HUY">Đã hủy</option>
+                        <option value="DA_TIEP_NHAN">{language === 'vi' ? 'Đã tiếp nhận' : 'Received'}</option>
+                        <option value="CHO_THANH_TOAN">{language === 'vi' ? 'Chờ thanh toán' : 'Pending Payment'}</option>
+                        <option value="DA_THANH_TOAN">{language === 'vi' ? 'Đã thanh toán' : 'Paid'}</option>
+                        <option value="DA_XAC_NHAN">{language === 'vi' ? 'Đã xác nhận' : 'Confirmed'}</option>
+                        <option value="DA_HUY">{language === 'vi' ? 'Đã hủy' : 'Cancelled'}</option>
                       </select>
                     </td>
                   </tr>
@@ -318,7 +352,7 @@ export const EnterpriseExperienceView: React.FC = () => {
       ) : (
         /* PUBLIC BATCHES LIST */
         <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-          {batches.map((batch) => {
+          {localizedBatches.map((batch) => {
             const slotsRemaining = batch.totalSlots - batch.registeredSlots;
             const isFull = slotsRemaining <= 0 || batch.status === 'HET_CHO';
 
@@ -467,7 +501,7 @@ export const EnterpriseExperienceView: React.FC = () => {
       )}
 
       {/* REGISTRATION MODAL WITH PROMINENT CLOSE BUTTON */}
-      {selectedBatch && (
+      {activeBatch && (
         <div 
           onClick={handleCloseModal}
           className="fixed inset-0 z-50 bg-slate-950/80 backdrop-blur-xs flex items-center justify-center p-3 sm:p-6 overflow-y-auto animate-fade-in"
@@ -480,13 +514,14 @@ export const EnterpriseExperienceView: React.FC = () => {
             <div className="flex items-start justify-between pb-4 border-b border-slate-200 gap-3">
               <div>
                 <span className="text-[11px] font-bold text-indigo-700 uppercase tracking-wider bg-indigo-50 px-2.5 py-0.5 rounded-full border border-indigo-200">
-                  {selectedBatch.careerCategory}
+                  {activeBatch.careerCategory}
                 </span>
                 <h3 className="text-lg sm:text-xl font-extrabold text-slate-900 mt-1">
-                  Đăng ký: {selectedBatch.programName}
+                  {language === 'vi' ? `Đăng ký: ${activeBatch.programName}` : `Register: ${activeBatch.programName}`}
                 </h3>
                 <div className="text-xs text-slate-500">
-                  Doanh nghiệp tiếp nhận: <strong>{selectedBatch.enterpriseName}</strong>
+                  {language === 'vi' ? 'Doanh nghiệp tiếp nhận:' : 'Host Enterprise:'}{' '}
+                  <strong>{activeBatch.enterpriseName}</strong>
                 </div>
               </div>
 
@@ -528,20 +563,20 @@ export const EnterpriseExperienceView: React.FC = () => {
 
                   <div className="grid grid-cols-2 gap-2 text-xs">
                     <div>
-                      <span className="text-[10px] text-slate-500 block">Học sinh:</span>
+                      <span className="text-[10px] text-slate-500 block">{language === 'vi' ? 'Học sinh:' : 'Student:'}</span>
                       <strong className="text-slate-900">{confirmedRegistration.studentName}</strong>
                     </div>
                     <div>
-                      <span className="text-[10px] text-slate-500 block">Trường & Khối:</span>
+                      <span className="text-[10px] text-slate-500 block">{language === 'vi' ? 'Trường & Khối:' : 'School & Grade:'}</span>
                       <strong className="text-slate-900">{confirmedRegistration.schoolName} ({confirmedRegistration.grade})</strong>
                     </div>
                     <div>
-                      <span className="text-[10px] text-slate-500 block">Địa điểm:</span>
-                      <strong className="text-slate-900">{selectedBatch.location}</strong>
+                      <span className="text-[10px] text-slate-500 block">{language === 'vi' ? 'Địa điểm:' : 'Location:'}</span>
+                      <strong className="text-slate-900">{activeBatch.location}</strong>
                     </div>
                     <div>
-                      <span className="text-[10px] text-slate-500 block">Thời gian:</span>
-                      <strong className="text-slate-900">{selectedBatch.scheduleDate}</strong>
+                      <span className="text-[10px] text-slate-500 block">{language === 'vi' ? 'Thời gian:' : 'Schedule:'}</span>
+                      <strong className="text-slate-900">{activeBatch.scheduleDate}</strong>
                     </div>
                   </div>
                 </div>

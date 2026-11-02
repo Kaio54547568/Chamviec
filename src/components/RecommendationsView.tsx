@@ -29,6 +29,7 @@ import { generateRecommendations } from '../utils/recommendation';
 import { saveStudentProfile } from '../utils/storage';
 import { CAREERS_DATA } from '../data/careers';
 import { useLanguage } from '../i18n/LanguageContext';
+import { localizeCareer } from '../utils/i18nData';
 
 interface RecommendationsViewProps {
   profile: StudentProfile;
@@ -86,15 +87,36 @@ export const RecommendationsView: React.FC<RecommendationsViewProps> = ({
   const [searchQuery, setSearchQuery] = useState('');
   const [selectedGroup, setSelectedGroup] = useState<string>('ALL');
   const [selectedExpType, setSelectedExpType] = useState<string>('ALL');
+  const [visibleCount, setVisibleCount] = useState<number>(24);
   const [comparisonList, setComparisonList] = useState<Career[]>([]);
   const [isCompareModalOpen, setIsCompareModalOpen] = useState(false);
   const [selectedCareerDetail, setSelectedCareerDetail] = useState<Career | null>(null);
 
   const { t, language } = useLanguage();
-  const snapshot = generateRecommendations(profile);
+  const snapshot = useMemo(
+    () => generateRecommendations(profile, language),
+    [profile, language]
+  );
+
+  const localizedCareersData = useMemo(() => {
+    return CAREERS_DATA.map(c => localizeCareer(c, language));
+  }, [language]);
+
+  const localizedComparisonList = useMemo(() => {
+    return comparisonList.map(c => {
+      const raw = CAREERS_DATA.find(item => item.id === c.id) || c;
+      return localizeCareer(raw, language);
+    });
+  }, [comparisonList, language]);
+
+  const localizedSelectedCareerDetail = useMemo(() => {
+    if (!selectedCareerDetail) return null;
+    const raw = CAREERS_DATA.find(item => item.id === selectedCareerDetail.id) || selectedCareerDetail;
+    return localizeCareer(raw, language);
+  }, [selectedCareerDetail, language]);
 
   const handleToggleSaveCareer = (careerId: string) => {
-    const current = [...profile.savedCareers];
+    const current = [...(profile.savedCareers || [])];
     const index = current.indexOf(careerId);
     if (index > -1) {
       current.splice(index, 1);
@@ -123,7 +145,7 @@ export const RecommendationsView: React.FC<RecommendationsViewProps> = ({
 
   // Filter careers in Directory
   const filteredCareers = useMemo(() => {
-    let result = CAREERS_DATA;
+    let result = localizedCareersData;
 
     if (selectedGroup !== 'ALL') {
       result = result.filter(c => c.group === selectedGroup);
@@ -147,7 +169,12 @@ export const RecommendationsView: React.FC<RecommendationsViewProps> = ({
     }
 
     return result;
-  }, [selectedGroup, selectedExpType, searchQuery]);
+  }, [localizedCareersData, selectedGroup, selectedExpType, searchQuery]);
+
+  const visibleCareers = useMemo(
+    () => filteredCareers.slice(0, visibleCount),
+    [filteredCareers, visibleCount]
+  );
 
   return (
     <div className="space-y-8 pb-20">
@@ -157,7 +184,11 @@ export const RecommendationsView: React.FC<RecommendationsViewProps> = ({
           <div className="space-y-1">
             <div className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-teal-50 text-teal-800 text-xs font-bold">
               <Compass className="w-3.5 h-3.5 text-teal-600" />
-              <span>Kho Dữ Liệu {CAREERS_DATA.length} Nghề Nghiệp & 20 Nhóm Ngành</span>
+              <span>
+                {language === 'vi'
+                  ? `Kho Dữ Liệu ${CAREERS_DATA.length} Nghề Nghiệp & 20 Nhóm Ngành`
+                  : `${CAREERS_DATA.length} Careers & 20 Occupational Clusters`}
+              </span>
             </div>
             <h1 className="text-2xl sm:text-3xl font-extrabold text-slate-900 tracking-tight">
               {activeTab === 'recommended' 
@@ -207,7 +238,15 @@ export const RecommendationsView: React.FC<RecommendationsViewProps> = ({
           <div className="flex items-center gap-2 p-3 rounded-xl bg-slate-50 border border-slate-200 text-slate-600 text-xs">
             <ShieldCheck className="w-4 h-4 text-emerald-600 shrink-0" />
             <span>
-              <em>Nguyên tắc minh bạch:</em> Điểm tương thích là chỉ số tham chiếu quy tắc thiết kế (rule-based score), không phải là xác suất trúng tuyển đại học hay tỷ lệ thành công trong tương lai.
+              {language === 'vi' ? (
+                <>
+                  <em>Nguyên tắc minh bạch:</em> Điểm tương thích là chỉ số tham chiếu quy tắc thiết kế (rule-based score), không phải là xác suất trúng tuyển đại học hay tỷ lệ thành công trong tương lai.
+                </>
+              ) : (
+                <>
+                  <em>Transparency Principle:</em> The match score is a transparent rule-based reference indicator, not a university admission probability or a guarantee of future career success.
+                </>
+              )}
             </span>
           </div>
         )}
@@ -238,11 +277,11 @@ export const RecommendationsView: React.FC<RecommendationsViewProps> = ({
                     </div>
                     <div>
                       <h2 className="text-xl sm:text-2xl font-bold tracking-tight text-white">
-                        {language === 'en' && rec.career.englishTitle ? rec.career.englishTitle : rec.career.title}
+                        {rec.career.title}
                       </h2>
-                      {language === 'en' && (
+                      {language === 'vi' && rec.career.englishTitle && (
                         <div className="text-xs text-teal-200 mt-0.5">
-                          {rec.career.title}
+                          {rec.career.englishTitle}
                         </div>
                       )}
                     </div>
@@ -265,7 +304,7 @@ export const RecommendationsView: React.FC<RecommendationsViewProps> = ({
                           ? 'bg-amber-500 text-slate-950 font-bold'
                           : 'bg-white/10 text-white hover:bg-white/20'
                       }`}
-                      title={isSaved ? 'Đã lưu vào hồ sơ' : 'Lưu nghề này'}
+                      title={isSaved ? (language === 'vi' ? 'Đã lưu vào hồ sơ' : 'Saved to profile') : (language === 'vi' ? 'Lưu nghề này' : 'Save this career')}
                     >
                       <Bookmark className="w-5 h-5 fill-current" />
                     </button>
@@ -288,7 +327,7 @@ export const RecommendationsView: React.FC<RecommendationsViewProps> = ({
                       />
                       <div className="absolute inset-0 bg-gradient-to-t from-slate-950/70 via-transparent to-transparent pointer-events-none" />
                       <div className="absolute bottom-2 left-2 right-2 text-[10px] text-white/90 bg-slate-950/70 backdrop-blur-xs px-2 py-1 rounded">
-                        <span>Môi trường: {rec.career.categoryLabel}</span>
+                        <span>{language === 'vi' ? 'Môi trường:' : 'Field:'} {rec.career.categoryLabel}</span>
                       </div>
                     </div>
 
@@ -298,11 +337,6 @@ export const RecommendationsView: React.FC<RecommendationsViewProps> = ({
                           <div className="text-[11px] font-bold text-teal-800 uppercase tracking-wider">
                             {language === 'vi' ? 'Tổng quan nghề nghiệp' : 'Career Overview'}
                           </div>
-                          {language === 'en' && (
-                            <span className="text-[10px] text-amber-700 bg-amber-50 px-2 py-0.5 rounded border border-amber-200">
-                              ℹ️ {t.common.untranslatedNotice}
-                            </span>
-                          )}
                         </div>
                         <p className="text-slate-700 leading-relaxed text-sm font-medium">
                           {rec.career.shortSummary}
@@ -458,13 +492,19 @@ export const RecommendationsView: React.FC<RecommendationsViewProps> = ({
                 <input
                   type="text"
                   value={searchQuery}
-                  onChange={(e) => setSearchQuery(e.target.value)}
+                  onChange={(e) => {
+                    setSearchQuery(e.target.value);
+                    setVisibleCount(24);
+                  }}
                   placeholder={t.careers.searchPlaceholder}
                   className="w-full pl-10 pr-4 py-2.5 rounded-2xl border border-slate-300 text-xs sm:text-sm focus:ring-2 focus:ring-teal-500 focus:outline-none"
                 />
                 {searchQuery && (
                   <button
-                    onClick={() => setSearchQuery('')}
+                    onClick={() => {
+                      setSearchQuery('');
+                      setVisibleCount(24);
+                    }}
                     className="absolute right-3 top-3 text-slate-400 hover:text-slate-600 text-xs font-bold"
                   >
                     ✕
@@ -482,7 +522,10 @@ export const RecommendationsView: React.FC<RecommendationsViewProps> = ({
                 ].map((exp) => (
                   <button
                     key={exp.id}
-                    onClick={() => setSelectedExpType(exp.id)}
+                    onClick={() => {
+                      setSelectedExpType(exp.id);
+                      setVisibleCount(24);
+                    }}
                     className={`px-3 py-2 rounded-xl text-xs font-bold whitespace-nowrap transition-all ${
                       selectedExpType === exp.id
                         ? 'bg-slate-900 text-white shadow-xs'
@@ -511,7 +554,10 @@ export const RecommendationsView: React.FC<RecommendationsViewProps> = ({
                   return (
                     <button
                       key={grp.id}
-                      onClick={() => setSelectedGroup(grp.id)}
+                      onClick={() => {
+                        setSelectedGroup(grp.id);
+                        setVisibleCount(24);
+                      }}
                       className={`px-3 py-1.5 rounded-xl text-xs font-semibold transition-all flex items-center gap-1.5 ${
                         selectedGroup === grp.id
                           ? 'bg-teal-700 text-white shadow-xs'
@@ -533,11 +579,11 @@ export const RecommendationsView: React.FC<RecommendationsViewProps> = ({
             {/* Status bar */}
             <div className="flex items-center justify-between text-xs text-slate-500 pt-1">
               <span>
-                {t.careers.displaying} <strong>{filteredCareers.length}</strong> / <strong>{CAREERS_DATA.length}</strong> {t.careers.careersCount}
+                {t.careers.displaying} <strong>{visibleCareers.length}</strong> / <strong>{filteredCareers.length}</strong> {t.careers.careersCount}
               </span>
               {comparisonList.length > 0 && (
                 <span className="text-teal-700 font-bold">
-                  Đã chọn {comparisonList.length}/3 nghề để so sánh
+                  {language === 'vi' ? `Đã chọn ${comparisonList.length}/3 nghề để so sánh` : `Selected ${comparisonList.length}/3 careers to compare`}
                 </span>
               )}
             </div>
@@ -545,9 +591,9 @@ export const RecommendationsView: React.FC<RecommendationsViewProps> = ({
 
           {/* Careers Grid */}
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-5">
-            {filteredCareers.map((career) => {
+            {visibleCareers.map((career) => {
               const isComparing = comparisonList.some(c => c.id === career.id);
-              const isSaved = profile.savedCareers.includes(career.id);
+              const isSaved = (profile.savedCareers || []).includes(career.id);
 
               return (
                 <div
@@ -601,7 +647,7 @@ export const RecommendationsView: React.FC<RecommendationsViewProps> = ({
                           className={`p-1.5 rounded-lg backdrop-blur-md transition-colors ${
                             isSaved ? 'bg-amber-500 text-slate-950 font-bold' : 'bg-black/40 text-white hover:bg-black/60'
                           }`}
-                          title="Lưu nghề này"
+                          title={language === 'vi' ? 'Lưu nghề này' : 'Save career'}
                         >
                           <Bookmark className="w-3.5 h-3.5 fill-current" />
                         </button>
@@ -609,10 +655,10 @@ export const RecommendationsView: React.FC<RecommendationsViewProps> = ({
 
                       <div className="absolute bottom-2.5 left-3 right-3 text-white">
                         <div className="text-[10px] text-teal-300 font-medium truncate">
-                          {language === 'en' ? career.title : career.englishTitle}
+                          {language === 'en' ? career.categoryLabel : career.englishTitle}
                         </div>
                         <h3 className="font-bold text-sm text-white truncate group-hover:text-amber-300 transition-colors">
-                          {language === 'en' && career.englishTitle ? career.englishTitle : career.title}
+                          {career.title}
                         </h3>
                       </div>
                     </div>
@@ -660,6 +706,31 @@ export const RecommendationsView: React.FC<RecommendationsViewProps> = ({
               );
             })}
           </div>
+
+          {/* Load More Controls */}
+          {visibleCount < filteredCareers.length && (
+            <div className="flex flex-col sm:flex-row items-center justify-center gap-3 pt-4">
+              <button
+                onClick={() => setVisibleCount((prev) => prev + 36)}
+                className="px-6 py-3 rounded-2xl bg-teal-700 hover:bg-teal-800 text-white font-bold text-xs sm:text-sm shadow-sm transition-all flex items-center gap-2"
+              >
+                <span>
+                  {language === 'vi'
+                    ? `Xem thêm nghề (${filteredCareers.length - visibleCount} nghề còn lại)`
+                    : `Load More Careers (${filteredCareers.length - visibleCount} remaining)`}
+                </span>
+                <ArrowRight className="w-4 h-4" />
+              </button>
+              <button
+                onClick={() => setVisibleCount(filteredCareers.length)}
+                className="px-4 py-3 rounded-2xl bg-slate-100 hover:bg-slate-200 text-slate-700 font-bold text-xs transition-all"
+              >
+                {language === 'vi'
+                  ? `Hiển thị tất cả ${filteredCareers.length} nghề`
+                  : `Show all ${filteredCareers.length} careers`}
+              </button>
+            </div>
+          )}
         </div>
       )}
 
@@ -673,7 +744,7 @@ export const RecommendationsView: React.FC<RecommendationsViewProps> = ({
                 {t.careers.selectedForCompare} {comparisonList.length}/3 {t.careers.toCompare}
               </div>
               <div className="text-[10px] text-slate-400 truncate max-w-xs">
-                {comparisonList.map(c => c.title).join(' • ')}
+                {localizedComparisonList.map(c => c.title).join(' • ')}
               </div>
             </div>
           </div>
@@ -705,7 +776,7 @@ export const RecommendationsView: React.FC<RecommendationsViewProps> = ({
               <div className="flex items-center gap-2.5">
                 <Scale className="w-5 h-5 text-teal-400" />
                 <h3 className="font-extrabold text-base sm:text-lg">
-                  {t.careers.compareModalTitle} ({comparisonList.length})
+                  {t.careers.compareModalTitle} ({localizedComparisonList.length})
                 </h3>
               </div>
               <button
@@ -724,11 +795,13 @@ export const RecommendationsView: React.FC<RecommendationsViewProps> = ({
                     <th className="p-3 w-40 font-bold text-slate-500 uppercase tracking-wider bg-slate-50">
                       {t.careers.criteriaTitle}
                     </th>
-                    {comparisonList.map((c) => (
+                    {localizedComparisonList.map((c) => (
                       <th key={c.id} className="p-3 font-extrabold text-slate-900 text-sm">
                         <div className="text-teal-700 text-xs font-semibold">{c.categoryLabel}</div>
                         <div>{c.title}</div>
-                        <div className="text-[10px] text-slate-500 font-normal">{c.englishTitle}</div>
+                        {language === 'vi' && c.englishTitle && (
+                          <div className="text-[10px] text-slate-500 font-normal">{c.englishTitle}</div>
+                        )}
                       </th>
                     ))}
                   </tr>
@@ -736,7 +809,7 @@ export const RecommendationsView: React.FC<RecommendationsViewProps> = ({
                 <tbody className="divide-y divide-slate-100">
                   <tr>
                     <td className="p-3 font-bold text-slate-700 bg-slate-50">{t.careers.riasecCode}</td>
-                    {comparisonList.map(c => (
+                    {localizedComparisonList.map(c => (
                       <td key={c.id} className="p-3">
                         <span className="px-2 py-0.5 rounded font-bold font-mono bg-amber-100 text-amber-900">
                           {c.riasecCodes.join(' - ')}
@@ -746,7 +819,7 @@ export const RecommendationsView: React.FC<RecommendationsViewProps> = ({
                   </tr>
                   <tr>
                     <td className="p-3 font-bold text-slate-700 bg-slate-50">{t.careers.jobSummary}</td>
-                    {comparisonList.map(c => (
+                    {localizedComparisonList.map(c => (
                       <td key={c.id} className="p-3 text-slate-700 leading-relaxed">
                         {c.shortSummary}
                       </td>
@@ -754,7 +827,7 @@ export const RecommendationsView: React.FC<RecommendationsViewProps> = ({
                   </tr>
                   <tr>
                     <td className="p-3 font-bold text-slate-700 bg-slate-50">{t.careers.typicalTasks}</td>
-                    {comparisonList.map(c => (
+                    {localizedComparisonList.map(c => (
                       <td key={c.id} className="p-3">
                         <ul className="list-disc list-inside space-y-1 text-slate-600">
                           {c.typicalTasks.slice(0, 3).map((t, idx) => (
@@ -766,15 +839,15 @@ export const RecommendationsView: React.FC<RecommendationsViewProps> = ({
                   </tr>
                   <tr>
                     <td className="p-3 font-bold text-slate-700 bg-slate-50">{t.careers.deliverables}</td>
-                    {comparisonList.map(c => (
+                    {localizedComparisonList.map(c => (
                       <td key={c.id} className="p-3 text-slate-700">
-                        {c.deliverables?.slice(0, 3).join(', ') || 'Báo cáo, hồ sơ kỹ thuật'}
+                        {c.deliverables?.slice(0, 3).join(', ') || (language === 'vi' ? 'Báo cáo, hồ sơ kỹ thuật' : 'Technical reports & documentation')}
                       </td>
                     ))}
                   </tr>
                   <tr>
                     <td className="p-3 font-bold text-slate-700 bg-slate-50">{t.careers.toolsSoftware}</td>
-                    {comparisonList.map(c => (
+                    {localizedComparisonList.map(c => (
                       <td key={c.id} className="p-3 text-slate-700">
                         {c.toolsUsed.slice(0, 4).join(', ')}
                       </td>
@@ -782,7 +855,7 @@ export const RecommendationsView: React.FC<RecommendationsViewProps> = ({
                   </tr>
                   <tr>
                     <td className="p-3 font-bold text-slate-700 bg-slate-50">{t.careers.difficultiesTradeoffs}</td>
-                    {comparisonList.map(c => (
+                    {localizedComparisonList.map(c => (
                       <td key={c.id} className="p-3 text-rose-900 bg-rose-50/40 leading-relaxed">
                         {c.difficultiesAndTradeoffs[0]}
                       </td>
@@ -790,7 +863,7 @@ export const RecommendationsView: React.FC<RecommendationsViewProps> = ({
                   </tr>
                   <tr>
                     <td className="p-3 font-bold text-slate-700 bg-slate-50">{t.careers.highSchoolSubjects}</td>
-                    {comparisonList.map(c => (
+                    {localizedComparisonList.map(c => (
                       <td key={c.id} className="p-3 text-teal-800 font-semibold">
                         {c.highSchoolSubjects.join(', ')}
                       </td>
@@ -798,7 +871,7 @@ export const RecommendationsView: React.FC<RecommendationsViewProps> = ({
                   </tr>
                   <tr>
                     <td className="p-3 font-bold text-slate-700 bg-slate-50">{t.careers.entryPathway}</td>
-                    {comparisonList.map(c => (
+                    {localizedComparisonList.map(c => (
                       <td key={c.id} className="p-3 text-slate-700">
                         {c.entryPathway}
                       </td>
@@ -806,7 +879,7 @@ export const RecommendationsView: React.FC<RecommendationsViewProps> = ({
                   </tr>
                   <tr>
                     <td className="p-3 font-bold text-slate-700 bg-slate-50">{t.careers.handsOnTrial}</td>
-                    {comparisonList.map(c => (
+                    {localizedComparisonList.map(c => (
                       <td key={c.id} className="p-3">
                         {c.simulationTaskId ? (
                           <button
@@ -833,14 +906,14 @@ export const RecommendationsView: React.FC<RecommendationsViewProps> = ({
       )}
 
       {/* SINGLE CAREER DETAIL MODAL */}
-      {selectedCareerDetail && (
+      {localizedSelectedCareerDetail && (
         <div className="fixed inset-0 z-50 bg-black/80 backdrop-blur-sm flex items-center justify-center p-3 sm:p-6 overflow-y-auto">
           <div className="bg-white rounded-3xl max-w-3xl w-full max-h-[90vh] overflow-y-auto shadow-2xl border border-slate-200">
             {/* Header with photo */}
             <div className="relative aspect-[16/9] sm:aspect-[21/9] bg-slate-900 overflow-hidden">
               <img
-                src={selectedCareerDetail.imageUrl}
-                alt={selectedCareerDetail.imageAlt || selectedCareerDetail.title}
+                src={localizedSelectedCareerDetail.imageUrl}
+                alt={localizedSelectedCareerDetail.imageAlt || localizedSelectedCareerDetail.title}
                 className="w-full h-full object-cover"
               />
               <div className="absolute inset-0 bg-gradient-to-t from-slate-950 via-slate-950/40 to-transparent" />
@@ -852,24 +925,26 @@ export const RecommendationsView: React.FC<RecommendationsViewProps> = ({
               </button>
               <div className="absolute bottom-4 left-6 right-6 text-white space-y-1">
                 <span className="px-2.5 py-1 rounded-lg bg-teal-500 text-slate-950 text-[10px] font-black uppercase">
-                  {selectedCareerDetail.categoryLabel}
+                  {localizedSelectedCareerDetail.categoryLabel}
                 </span>
-                <h2 className="text-2xl font-black">{selectedCareerDetail.title}</h2>
-                <p className="text-xs text-teal-200">{selectedCareerDetail.englishTitle}</p>
+                <h2 className="text-2xl font-black">{localizedSelectedCareerDetail.title}</h2>
+                {language === 'vi' && localizedSelectedCareerDetail.englishTitle && (
+                  <p className="text-xs text-teal-200">{localizedSelectedCareerDetail.englishTitle}</p>
+                )}
               </div>
             </div>
 
             <div className="p-6 space-y-5 text-xs sm:text-sm">
               <div className="space-y-1">
                 <h4 className="font-bold text-slate-900 uppercase tracking-wider text-xs">{t.careers.jobDescription}</h4>
-                <p className="text-slate-700 leading-relaxed font-medium">{selectedCareerDetail.shortSummary}</p>
+                <p className="text-slate-700 leading-relaxed font-medium">{localizedSelectedCareerDetail.shortSummary}</p>
               </div>
 
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                 <div className="p-4 rounded-2xl bg-slate-50 border border-slate-200 space-y-2">
                   <h4 className="font-bold text-teal-900">{t.careers.dailyTasks}</h4>
                   <ul className="list-disc list-inside space-y-1 text-slate-600 pl-1">
-                    {selectedCareerDetail.typicalTasks.map((t, idx) => (
+                    {localizedSelectedCareerDetail.typicalTasks.map((t, idx) => (
                       <li key={idx}>{t}</li>
                     ))}
                   </ul>
@@ -878,7 +953,7 @@ export const RecommendationsView: React.FC<RecommendationsViewProps> = ({
                 <div className="p-4 rounded-2xl bg-amber-50/60 border border-amber-200 space-y-2">
                   <h4 className="font-bold text-amber-900">{t.careers.difficultiesTradeoffs}:</h4>
                   <ul className="list-disc list-inside space-y-1 text-slate-700 pl-1">
-                    {selectedCareerDetail.difficultiesAndTradeoffs.map((d, idx) => (
+                    {localizedSelectedCareerDetail.difficultiesAndTradeoffs.map((d, idx) => (
                       <li key={idx}>{d}</li>
                     ))}
                   </ul>
@@ -888,37 +963,37 @@ export const RecommendationsView: React.FC<RecommendationsViewProps> = ({
               <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 text-xs">
                 <div className="p-3 rounded-xl bg-slate-100">
                   <div className="font-bold text-slate-500 uppercase text-[10px]">{t.careers.highSchoolSubjects}:</div>
-                  <div className="font-semibold text-slate-800 mt-1">{selectedCareerDetail.highSchoolSubjects.join(', ')}</div>
+                  <div className="font-semibold text-slate-800 mt-1">{localizedSelectedCareerDetail.highSchoolSubjects.join(', ')}</div>
                 </div>
                 <div className="p-3 rounded-xl bg-slate-100">
                   <div className="font-bold text-slate-500 uppercase text-[10px]">{t.careers.toolsSoftware}:</div>
-                  <div className="font-semibold text-slate-800 mt-1">{selectedCareerDetail.toolsUsed.join(', ')}</div>
+                  <div className="font-semibold text-slate-800 mt-1">{localizedSelectedCareerDetail.toolsUsed.join(', ')}</div>
                 </div>
                 <div className="p-3 rounded-xl bg-slate-100">
                   <div className="font-bold text-slate-500 uppercase text-[10px]">{t.careers.hollandCode}</div>
-                  <div className="font-bold text-amber-600 mt-1">{selectedCareerDetail.riasecCodes.join(' - ')}</div>
+                  <div className="font-bold text-amber-600 mt-1">{localizedSelectedCareerDetail.riasecCodes.join(' - ')}</div>
                 </div>
               </div>
 
               <div className="p-4 rounded-2xl bg-blue-50 border border-blue-200 space-y-1">
                 <h4 className="font-bold text-blue-900">{t.careers.trainingPathway}</h4>
-                <p className="text-slate-700">{selectedCareerDetail.entryPathway}</p>
+                <p className="text-slate-700">{localizedSelectedCareerDetail.entryPathway}</p>
               </div>
 
               <div className="pt-2 flex items-center justify-end gap-2">
                 <button
                   onClick={() => {
-                    handleToggleCompare(selectedCareerDetail);
+                    handleToggleCompare(localizedSelectedCareerDetail);
                     setSelectedCareerDetail(null);
                   }}
                   className="px-4 py-2 rounded-xl bg-slate-100 hover:bg-slate-200 text-slate-700 font-bold text-xs"
                 >
                   {t.careers.addToCompare}
                 </button>
-                {selectedCareerDetail.simulationTaskId && (
+                {localizedSelectedCareerDetail.simulationTaskId && (
                   <button
                     onClick={() => {
-                      const taskId = selectedCareerDetail.simulationTaskId!;
+                      const taskId = localizedSelectedCareerDetail.simulationTaskId!;
                       setSelectedCareerDetail(null);
                       onOpenTask(taskId);
                     }}

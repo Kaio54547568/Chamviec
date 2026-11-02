@@ -34,6 +34,13 @@ import { removeVietnameseTones, matchQuery, matchUniversity, matchAdmissionRecor
 import { saveStudentProfile } from '../utils/storage';
 import { Admission2026Center } from './Admission2026Center';
 import { useLanguage } from '../i18n/LanguageContext';
+import {
+  localizeUniversity,
+  localizeAdmissionRecord,
+  localizeMajorName,
+  localizeRegion,
+  localizeOwnership
+} from '../utils/i18nData';
 
 interface UniversityAdmissionsViewProps {
   profile: StudentProfile;
@@ -147,27 +154,56 @@ export const UniversityAdmissionsView: React.FC<UniversityAdmissionsViewProps> =
 
   // Dynamic available majors based on selectedMajorCategory
   const availableMajorsList = useMemo(() => {
-    if (selectedMajorCategory === 'all') {
-      return MAJORS_DATA;
-    }
-    return MAJORS_DATA.filter((m) => m.category === selectedMajorCategory);
-  }, [selectedMajorCategory]);
+    const base = selectedMajorCategory === 'all'
+      ? MAJORS_DATA
+      : MAJORS_DATA.filter((m) => m.category === selectedMajorCategory);
+    return base.map((m) => ({
+      ...m,
+      displayName: localizeMajorName(m.name, language)
+    }));
+  }, [selectedMajorCategory, language]);
+
+  const MAJOR_CATEGORY_EN: Record<string, string> = {
+    all: 'All Major Categories',
+    'cong-nghe': 'Engineering & Information Technology',
+    'kinh-te': 'Economics – Business & Management',
+    'suc-khoe': 'Medicine – Pharmacy & Health Sciences',
+    'su-pham': 'Education & Teacher Training',
+    'xa-hoi': 'Social Sciences – Humanities – Law',
+    'nghe-thuat': 'Arts – Design – Architecture',
+    'nong-nghiep': 'Agriculture – Environment – Biotech'
+  };
 
   // Standard combinations list (including 2025 new combinations)
-  const COMBINATIONS_LIST = [
-    { code: 'all', label: 'Tất cả tổ hợp' },
-    { code: 'K01', label: 'K01 (Toán, Vật lý, Tin học - Mới 2025)' },
-    { code: 'Toán-Tin-Anh', label: 'Toán, Tin học, Tiếng Anh (Mới 2025)' },
-    { code: 'A00', label: 'A00 (Toán, Vật lý, Hóa học)' },
-    { code: 'A01', label: 'A01 (Toán, Vật lý, Tiếng Anh)' },
-    { code: 'B00', label: 'B00 (Toán, Hóa học, Sinh học)' },
-    { code: 'B08', label: 'B08 (Toán, Sinh học, Tiếng Anh)' },
-    { code: 'C00', label: 'C00 (Ngữ văn, Lịch sử, Địa lý)' },
-    { code: 'D01', label: 'D01 (Toán, Ngữ văn, Tiếng Anh)' },
-    { code: 'D07', label: 'D07 (Toán, Hóa học, Tiếng Anh)' },
-    { code: 'TSA', label: 'Đánh giá tư duy TSA (Bách khoa)' },
-    { code: 'ĐGNL', label: 'Đánh giá năng lực (HSA/ĐHQG)' }
-  ];
+  const COMBINATIONS_LIST = language === 'vi'
+    ? [
+        { code: 'all', label: 'Tất cả tổ hợp' },
+        { code: 'K01', label: 'K01 (Toán, Vật lý, Tin học - Mới 2025)' },
+        { code: 'Toán-Tin-Anh', label: 'Toán, Tin học, Tiếng Anh (Mới 2025)' },
+        { code: 'A00', label: 'A00 (Toán, Vật lý, Hóa học)' },
+        { code: 'A01', label: 'A01 (Toán, Vật lý, Tiếng Anh)' },
+        { code: 'B00', label: 'B00 (Toán, Hóa học, Sinh học)' },
+        { code: 'B08', label: 'B08 (Toán, Sinh học, Tiếng Anh)' },
+        { code: 'C00', label: 'C00 (Ngữ văn, Lịch sử, Địa lý)' },
+        { code: 'D01', label: 'D01 (Toán, Ngữ văn, Tiếng Anh)' },
+        { code: 'D07', label: 'D07 (Toán, Hóa học, Tiếng Anh)' },
+        { code: 'TSA', label: 'Đánh giá tư duy TSA (Bách khoa)' },
+        { code: 'ĐGNL', label: 'Đánh giá năng lực (HSA/ĐHQG)' }
+      ]
+    : [
+        { code: 'all', label: 'All Subject Combinations' },
+        { code: 'K01', label: 'K01 (Math, Physics, Informatics - New 2025)' },
+        { code: 'Toán-Tin-Anh', label: 'Math, Informatics, English (New 2025)' },
+        { code: 'A00', label: 'A00 (Math, Physics, Chemistry)' },
+        { code: 'A01', label: 'A01 (Math, Physics, English)' },
+        { code: 'B00', label: 'B00 (Math, Chemistry, Biology)' },
+        { code: 'B08', label: 'B08 (Math, Biology, English)' },
+        { code: 'C00', label: 'C00 (Literature, History, Geography)' },
+        { code: 'D01', label: 'D01 (Math, Literature, English)' },
+        { code: 'D07', label: 'D07 (Math, Chemistry, English)' },
+        { code: 'TSA', label: 'TSA Thinking Skills Assessment (HUST)' },
+        { code: 'ĐGNL', label: 'Aptitude Test (HSA / VNU)' }
+      ];
 
   // Toggle Save Admission
   const handleToggleSaveAdmission = (id: string) => {
@@ -203,7 +239,6 @@ export const UniversityAdmissionsView: React.FC<UniversityAdmissionsViewProps> =
       setComparisonList(comparisonList.filter((item) => item !== id));
     } else {
       if (comparisonList.length >= 3) {
-        alert(t.admissions.maxCompareAlert);
         return;
       }
       setComparisonList([...comparisonList, id]);
@@ -372,7 +407,7 @@ export const UniversityAdmissionsView: React.FC<UniversityAdmissionsViewProps> =
               <Sparkles className="w-4 h-4 text-amber-300" />
               <span>{t.admissions.tab2026}</span>
               <span className="px-1.5 py-0.5 rounded-md bg-amber-400 text-slate-950 text-[10px] font-black">
-                MỚI
+                {language === 'vi' ? 'MỚI' : 'NEW'}
               </span>
             </button>
             <button
@@ -401,10 +436,16 @@ export const UniversityAdmissionsView: React.FC<UniversityAdmissionsViewProps> =
 
           <div className="text-xs text-slate-500 font-medium hidden md:block">
             {viewMode === 'admissions2026'
-              ? 'Quy chế Bộ GD&ĐT 2026, Kho 100 Đề ĐGNL & Quà tặng EIE Education'
+              ? (language === 'vi'
+                  ? 'Quy chế Bộ GD&ĐT 2026, Kho 100 Đề ĐGNL & Quà tặng EIE Education'
+                  : 'MOET 2026 Regulations, 100+ Competency Exams & EIE Scholarships')
               : viewMode === 'search' 
-              ? `Hiển thị ${filteredRecords.length} phương án tuyển sinh`
-              : `Thống kê ${filteredStats2025Records.length}/${records2025.length} ngành đề án 2025`
+              ? (language === 'vi'
+                  ? `Hiển thị ${filteredRecords.length} phương án tuyển sinh`
+                  : `Showing ${filteredRecords.length} verified admission records`)
+              : (language === 'vi'
+                  ? `Thống kê ${filteredStats2025Records.length}/${records2025.length} ngành đề án 2025`
+                  : `Statistics for ${filteredStats2025Records.length}/${records2025.length} 2025 admission schemes`)
             }
           </div>
         </div>
@@ -436,30 +477,43 @@ export const UniversityAdmissionsView: React.FC<UniversityAdmissionsViewProps> =
               <div className="space-y-2">
                 <div className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-indigo-500/20 text-indigo-300 text-xs font-bold border border-indigo-400/30">
                   <Sparkles className="w-3.5 h-3.5 text-amber-300" />
-                  <span>Trung tâm Dữ liệu & Thống kê Tuyển sinh Đại học 2025 (Chương trình GDPT 2018)</span>
+                  <span>
+                    {language === 'vi'
+                      ? 'Trung tâm Dữ liệu & Thống kê Tuyển sinh Đại học 2025 (Chương trình GDPT 2018)'
+                      : '2025 University Admissions Statistical Center (2018 General Education Curriculum)'}
+                  </span>
                 </div>
                 <h2 className="text-2xl sm:text-3xl font-black text-white tracking-tight">
-                  Thống kê Ngành & Đề án Tuyển sinh 2025
+                  {language === 'vi' ? 'Thống kê Ngành & Đề án Tuyển sinh 2025' : '2025 University Majors & Admission Schemes'}
                 </h2>
                 <p className="text-xs sm:text-sm text-slate-300 max-w-3xl leading-relaxed">
-                  Năm 2025 là năm đầu tiên học sinh thi tốt nghiệp THPT theo chương trình GDPT 2018 mới (2 môn bắt buộc Toán, Ngữ văn + 2 môn tự chọn). Dưới đây là thống kê toàn diện {records2025.length} ngành trọng điểm đã công bố đề án tuyển sinh chính thức từ {uniqueUnis2025.length} trường đại học hàng đầu Việt Nam.
+                  {language === 'vi'
+                    ? `Năm 2025 là năm đầu tiên học sinh thi tốt nghiệp THPT theo chương trình GDPT 2018 mới (2 môn bắt buộc Toán, Ngữ văn + 2 môn tự chọn). Dưới đây là thống kê toàn diện ${records2025.length} ngành trọng điểm đã công bố đề án tuyển sinh chính thức từ ${uniqueUnis2025.length} trường đại học hàng đầu Việt Nam.`
+                    : `2025 marks the first cohort graduating under the 2018 General Education Curriculum (2 compulsory subjects: Math & Literature + 2 electives). Below is a comprehensive breakdown of ${records2025.length} key majors from ${uniqueUnis2025.length} leading universities across Vietnam.`}
                 </p>
               </div>
 
               <div className="flex flex-wrap items-center gap-2.5 shrink-0">
                 <button
-                  onClick={() => onAskAiAboutSchool && onAskAiAboutSchool('Hãy thống kê chi tiết các ngành và phương án tuyển sinh năm 2025 theo chương trình mới trong hệ thống?')}
+                  onClick={() =>
+                    onAskAiAboutSchool &&
+                    onAskAiAboutSchool(
+                      language === 'vi'
+                        ? 'Hãy thống kê chi tiết các ngành và phương án tuyển sinh năm 2025 theo chương trình mới trong hệ thống?'
+                        : 'Please summarize the 2025 university admission schemes and new subject combinations in the system.'
+                    )
+                  }
                   className="px-4 py-2.5 rounded-2xl bg-amber-400 hover:bg-amber-300 text-slate-950 font-black text-xs transition-all shadow-md flex items-center gap-1.5"
                 >
                   <Sparkles className="w-4 h-4 text-slate-950" />
-                  <span>Hỏi CHẠM AI phân tích 2025</span>
+                  <span>{language === 'vi' ? 'Hỏi CHẠM AI phân tích 2025' : 'Ask CHẠM AI to Analyze 2025'}</span>
                 </button>
                 <button
                   onClick={() => setViewMode('search')}
                   className="px-4 py-2.5 rounded-2xl bg-white/10 hover:bg-white/20 text-white font-bold text-xs border border-white/20 transition-all flex items-center gap-1.5"
                 >
                   <Search className="w-4 h-4" />
-                  <span>Chuyển sang Tra cứu & Bộ lọc</span>
+                  <span>{language === 'vi' ? 'Chuyển sang Tra cứu & Bộ lọc' : 'Switch to Multi-Criteria Search'}</span>
                 </button>
               </div>
             </div>
@@ -467,33 +521,61 @@ export const UniversityAdmissionsView: React.FC<UniversityAdmissionsViewProps> =
             {/* 4 Statistical KPI Metrics */}
             <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3.5 pt-2">
               <div className="p-4 rounded-2xl bg-white/10 border border-white/15 backdrop-blur-xs">
-                <div className="text-[11px] font-bold text-indigo-200 uppercase tracking-wider">Tổng ngành đã công bố</div>
-                <div className="text-2xl font-black text-white mt-1 flex items-baseline gap-1.5">
-                  <span>{records2025.length} Ngành</span>
-                  <span className="text-[11px] font-semibold text-emerald-300">Đề án chính thức</span>
+                <div className="text-[11px] font-bold text-indigo-200 uppercase tracking-wider">
+                  {language === 'vi' ? 'Tổng ngành đã công bố' : 'Total Published Majors'}
                 </div>
-                <div className="text-[11px] text-slate-300 mt-1">Thuộc {uniqueUnis2025.length} cơ sở đào tạo đại học trọng điểm cả 3 miền</div>
+                <div className="text-2xl font-black text-white mt-1 flex items-baseline gap-1.5">
+                  <span>{records2025.length} {language === 'vi' ? 'Ngành' : 'Majors'}</span>
+                  <span className="text-[11px] font-semibold text-emerald-300">
+                    {language === 'vi' ? 'Đề án chính thức' : 'Official Schemes'}
+                  </span>
+                </div>
+                <div className="text-[11px] text-slate-300 mt-1">
+                  {language === 'vi'
+                    ? `Thuộc ${uniqueUnis2025.length} cơ sở đào tạo đại học trọng điểm cả 3 miền`
+                    : `Across ${uniqueUnis2025.length} flagship universities nationwide`}
+                </div>
               </div>
 
               <div className="p-4 rounded-2xl bg-white/10 border border-white/15 backdrop-blur-xs">
-                <div className="text-[11px] font-bold text-emerald-200 uppercase tracking-wider">Đột phá: Môn Tin học</div>
+                <div className="text-[11px] font-bold text-emerald-200 uppercase tracking-wider">
+                  {language === 'vi' ? 'Đột phá: Môn Tin học' : 'Breakthrough: Informatics'}
+                </div>
                 <div className="text-2xl font-black text-emerald-300 mt-1 flex items-baseline gap-1.5">
-                  <span>{informaticsRecords2025.length} Ngành</span>
+                  <span>{informaticsRecords2025.length} {language === 'vi' ? 'Ngành' : 'Majors'}</span>
                   <span className="text-[11px] font-semibold text-emerald-200">~{Math.round((informaticsRecords2025.length / records2025.length) * 100)}%</span>
                 </div>
-                <div className="text-[11px] text-slate-300 mt-1">Xuất hiện tổ hợp K01 (Toán-Lý-Tin) & Toán-Tin-Anh</div>
+                <div className="text-[11px] text-slate-300 mt-1">
+                  {language === 'vi'
+                    ? 'Xuất hiện tổ hợp K01 (Toán-Lý-Tin) & Toán-Tin-Anh'
+                    : 'Includes new K01 (Math-Physics-Informatics) & Math-IT-English'}
+                </div>
               </div>
 
               <div className="p-4 rounded-2xl bg-white/10 border border-white/15 backdrop-blur-xs">
-                <div className="text-[11px] font-bold text-amber-200 uppercase tracking-wider">Ngưỡng sàn nhận hồ sơ</div>
+                <div className="text-[11px] font-bold text-amber-200 uppercase tracking-wider">
+                  {language === 'vi' ? 'Ngưỡng sàn nhận hồ sơ' : 'Minimum Qualifying Score'}
+                </div>
                 <div className="text-2xl font-black text-amber-300 mt-1">18.00 – 24.50</div>
-                <div className="text-[11px] text-slate-300 mt-1">Thang 30 (Ngưỡng sơ tuyển / điểm sàn đề án các trường)</div>
+                <div className="text-[11px] text-slate-300 mt-1">
+                  {language === 'vi'
+                    ? 'Thang 30 (Ngưỡng sơ tuyển / điểm sàn đề án các trường)'
+                    : '30-Point Scale (Institutional floor threshold)'}
+                </div>
               </div>
 
               <div className="p-4 rounded-2xl bg-white/10 border border-white/15 backdrop-blur-xs">
-                <div className="text-[11px] font-bold text-teal-200 uppercase tracking-wider">Phương thức tuyển sinh</div>
-                <div className="text-2xl font-black text-teal-300 mt-1">Đa dạng ĐGNL / ĐGTD</div>
-                <div className="text-[11px] text-slate-300 mt-1">Kỳ thi HSA ĐHQGHN, TSA Bách khoa, ĐGNL ĐHQG-HCM, SPT...</div>
+                <div className="text-[11px] font-bold text-teal-200 uppercase tracking-wider">
+                  {language === 'vi' ? 'Phương thức tuyển sinh' : 'Admission Pathways'}
+                </div>
+                <div className="text-2xl font-black text-teal-300 mt-1">
+                  {language === 'vi' ? 'Đa dạng ĐGNL / ĐGTD' : 'Multi-Modal Aptitude'}
+                </div>
+                <div className="text-[11px] text-slate-300 mt-1">
+                  {language === 'vi'
+                    ? 'Kỳ thi HSA ĐHQGHN, TSA Bách khoa, ĐGNL ĐHQG-HCM, SPT...'
+                    : 'VNU-HN HSA, HUST TSA, VNU-HCM Aptitude Test, HNUE SPT...'}
+                </div>
               </div>
             </div>
           </div>
@@ -502,36 +584,46 @@ export const UniversityAdmissionsView: React.FC<UniversityAdmissionsViewProps> =
           <div className="bg-white rounded-3xl p-6 border border-indigo-200/80 shadow-xs space-y-3">
             <div className="flex items-center gap-2 text-indigo-900 font-bold text-sm">
               <BookOpen className="w-4 h-4 text-indigo-600" />
-              <span>3 Điểm thay đổi cốt lõi học sinh lớp 12 cần lưu ý trong tuyển sinh năm 2025:</span>
+              <span>
+                {language === 'vi'
+                  ? '3 Điểm thay đổi cốt lõi học sinh lớp 12 cần lưu ý trong tuyển sinh năm 2025:'
+                  : '3 Core Admission Shifts Grade 12 Students Should Note for 2025–2026:'}
+              </span>
             </div>
             <div className="grid grid-cols-1 md:grid-cols-3 gap-3 text-xs leading-relaxed text-slate-700">
               <div className="p-3.5 rounded-2xl bg-indigo-50/60 border border-indigo-100 space-y-1">
                 <div className="font-bold text-indigo-900 flex items-center gap-1.5">
                   <CheckCircle2 className="w-3.5 h-3.5 text-indigo-600" />
-                  <span>1. Cấu trúc kỳ thi tốt nghiệp 2 + 2</span>
+                  <span>{language === 'vi' ? '1. Cấu trúc kỳ thi tốt nghiệp 2 + 2' : '1. The 2 + 2 Graduation Exam Format'}</span>
                 </div>
                 <p className="text-slate-600">
-                  Thí sinh chỉ thi 4 môn: Toán & Ngữ văn (bắt buộc) cùng 2 môn tự chọn trong các môn đã học. Giảm tải số môn so với chương trình cũ.
+                  {language === 'vi'
+                    ? 'Thí sinh chỉ thi 4 môn: Toán & Ngữ văn (bắt buộc) cùng 2 môn tự chọn trong các môn đã học. Giảm tải số môn so với chương trình cũ.'
+                    : 'Candidates take 4 subjects: Math & Literature (compulsory) plus 2 electives chosen from high school subjects, reducing exam load.'}
                 </p>
               </div>
 
               <div className="p-3.5 rounded-2xl bg-teal-50/60 border border-teal-100 space-y-1">
                 <div className="font-bold text-teal-900 flex items-center gap-1.5">
                   <CheckCircle2 className="w-3.5 h-3.5 text-teal-600" />
-                  <span>2. Xuất hiện môn Tin học (K01)</span>
+                  <span>{language === 'vi' ? '2. Xuất hiện môn Tin học (K01)' : '2. Informatics Combinations (K01)'}</span>
                 </div>
                 <p className="text-slate-600">
-                  Các khối ngành Công nghệ thông tin, Trí tuệ nhân tạo, Tự động hóa, Kinh tế số tại Bách khoa Hà Nội, ĐHQGHN, ĐH Kinh tế Quốc dân, ĐH Cần Thơ, UIT... chính thức xét tuyển tổ hợp có môn Tin học.
+                  {language === 'vi'
+                    ? 'Các khối ngành Công nghệ thông tin, Trí tuệ nhân tạo, Tự động hóa, Kinh tế số tại Bách khoa Hà Nội, ĐHQGHN, ĐH Kinh tế Quốc dân, ĐH Cần Thơ, UIT... chính thức xét tuyển tổ hợp có môn Tin học.'
+                    : 'IT, AI, Automation, and Digital Economy programs at HUST, VNU, NEU, CTU, and UIT officially accept Informatics combinations (K01).'}
                 </p>
               </div>
 
               <div className="p-3.5 rounded-2xl bg-amber-50/60 border border-amber-100 space-y-1">
                 <div className="font-bold text-amber-950 flex items-center gap-1.5">
                   <CheckCircle2 className="w-3.5 h-3.5 text-amber-700" />
-                  <span>3. Trọng số ĐGNL / ĐGTD gia tăng</span>
+                  <span>{language === 'vi' ? '3. Trọng số ĐGNL / ĐGTD gia tăng' : '3. Expanded Aptitude & Thinking Tests'}</span>
                 </div>
                 <p className="text-slate-600">
-                  Tỷ lệ chỉ tiêu dành cho các kỳ thi đánh giá năng lực (HSA, TSA, ĐGNL ĐHQG-HCM, SPT) tiếp tục tăng. Thí sinh nên chuẩn bị sớm từ học kỳ 1 lớp 12.
+                  {language === 'vi'
+                    ? 'Tỷ lệ chỉ tiêu dành cho các kỳ thi đánh giá năng lực (HSA, TSA, ĐGNL ĐHQG-HCM, SPT) tiếp tục tăng. Thí sinh nên chuẩn bị sớm từ học kỳ 1 lớp 12.'
+                    : 'Quota shares for university aptitude tests (HSA, TSA, VNU-HCM, SPT) continue to grow. Early preparation from Semester 1 of Grade 12 is recommended.'}
                 </p>
               </div>
             </div>
@@ -542,7 +634,11 @@ export const UniversityAdmissionsView: React.FC<UniversityAdmissionsViewProps> =
             <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
               <div className="flex items-center gap-2 text-xs font-bold text-slate-800">
                 <Filter className="w-4 h-4 text-indigo-600" />
-                <span>Bộ lọc chuyên sâu ngành 2025 ({filteredStats2025Records.length} ngành đang hiển thị)</span>
+                <span>
+                  {language === 'vi'
+                    ? `Bộ lọc chuyên sâu ngành 2025 (${filteredStats2025Records.length} ngành đang hiển thị)`
+                    : `2025 Scheme Filter (${filteredStats2025Records.length} majors displayed)`}
+                </span>
               </div>
 
               {/* Checkbox Only Informatics */}
@@ -553,7 +649,11 @@ export const UniversityAdmissionsView: React.FC<UniversityAdmissionsViewProps> =
                   onChange={(e) => setStats2025OnlyInformatics(e.target.checked)}
                   className="rounded text-indigo-600 focus:ring-indigo-500 w-3.5 h-3.5"
                 />
-                <span>Chỉ hiện ngành có tổ hợp môn Tin học (K01 / Toán-Tin-Anh)</span>
+                <span>
+                  {language === 'vi'
+                    ? 'Chỉ hiện ngành có tổ hợp môn Tin học (K01 / Toán-Tin-Anh)'
+                    : 'Only show majors accepting Informatics (K01 / Math-IT-English)'}
+                </span>
               </label>
             </div>
 
@@ -565,7 +665,7 @@ export const UniversityAdmissionsView: React.FC<UniversityAdmissionsViewProps> =
                   type="text"
                   value={stats2025Search}
                   onChange={(e) => setStats2025Search(e.target.value)}
-                  placeholder="Tìm ngành, trường đề án 2025..."
+                  placeholder={language === 'vi' ? 'Tìm ngành, trường đề án 2025...' : 'Search 2025 major, university...'}
                   className="w-full pl-10 pr-4 py-2.5 rounded-xl border border-slate-300 text-xs focus:ring-2 focus:ring-indigo-500 focus:outline-none"
                 />
               </div>
@@ -577,13 +677,13 @@ export const UniversityAdmissionsView: React.FC<UniversityAdmissionsViewProps> =
                   onChange={(e) => setStats2025Category(e.target.value)}
                   className="w-full px-3 py-2.5 rounded-xl border border-slate-300 text-xs focus:ring-2 focus:ring-indigo-500 focus:outline-none bg-white font-medium"
                 >
-                  <option value="all">Khối ngành: Tất cả khối ngành</option>
-                  <option value="cong-nghe">Công nghệ – Kỹ thuật</option>
-                  <option value="kinh-te">Kinh tế – Kinh doanh</option>
-                  <option value="suc-khoe">Y Dược – Sức khỏe</option>
-                  <option value="su-pham">Sư phạm – Giáo dục</option>
-                  <option value="xa-hoi">Xã hội – Luật – Báo chí</option>
-                  <option value="nong-nghiep">Nông nghiệp</option>
+                  <option value="all">{language === 'vi' ? 'Khối ngành: Tất cả khối ngành' : 'Category: All Major Fields'}</option>
+                  <option value="cong-nghe">{language === 'vi' ? 'Công nghệ – Kỹ thuật' : 'Engineering & Technology'}</option>
+                  <option value="kinh-te">{language === 'vi' ? 'Kinh tế – Kinh doanh' : 'Economics & Business'}</option>
+                  <option value="suc-khoe">{language === 'vi' ? 'Y Dược – Sức khỏe' : 'Medicine & Health Sciences'}</option>
+                  <option value="su-pham">{language === 'vi' ? 'Sư phạm – Giáo dục' : 'Education & Pedagogy'}</option>
+                  <option value="xa-hoi">{language === 'vi' ? 'Xã hội – Luật – Báo chí' : 'Social Sciences, Law & Media'}</option>
+                  <option value="nong-nghiep">{language === 'vi' ? 'Nông nghiệp' : 'Agriculture & Biotech'}</option>
                 </select>
               </div>
 
@@ -594,10 +694,10 @@ export const UniversityAdmissionsView: React.FC<UniversityAdmissionsViewProps> =
                   onChange={(e) => setStats2025Region(e.target.value)}
                   className="w-full px-3 py-2.5 rounded-xl border border-slate-300 text-xs focus:ring-2 focus:ring-indigo-500 focus:outline-none bg-white font-medium"
                 >
-                  <option value="all">Khu vực: Toàn quốc</option>
-                  <option value="Miền Bắc">Miền Bắc</option>
-                  <option value="Miền Trung">Miền Trung</option>
-                  <option value="Miền Nam">Miền Nam</option>
+                  <option value="all">{language === 'vi' ? 'Khu vực: Toàn quốc' : 'Region: Nationwide'}</option>
+                  <option value="Miền Bắc">{language === 'vi' ? 'Miền Bắc' : 'Northern Vietnam'}</option>
+                  <option value="Miền Trung">{language === 'vi' ? 'Miền Trung' : 'Central Vietnam'}</option>
+                  <option value="Miền Nam">{language === 'vi' ? 'Miền Nam' : 'Southern Vietnam'}</option>
                 </select>
               </div>
             </div>
@@ -609,14 +709,20 @@ export const UniversityAdmissionsView: React.FC<UniversityAdmissionsViewProps> =
               <div>
                 <h3 className="font-bold text-slate-900 text-sm flex items-center gap-2">
                   <BarChart3 className="w-4 h-4 text-indigo-600" />
-                  <span>Bảng Thống kê Chi tiết Ngành Tuyển sinh Năm 2025 (Chương trình GDPT 2018)</span>
+                  <span>
+                    {language === 'vi'
+                      ? 'Bảng Thống kê Chi tiết Ngành Tuyển sinh Năm 2025 (Chương trình GDPT 2018)'
+                      : 'Detailed 2025 University Admission Schemes Table (2018 Curriculum)'}
+                  </span>
                 </h3>
                 <p className="text-[11px] text-slate-500 mt-0.5">
-                  Dữ liệu được trích xuất trực tiếp từ các thông báo tuyển sinh và đề án 2025 chính thức của từng trường.
+                  {language === 'vi'
+                    ? 'Dữ liệu được trích xuất trực tiếp từ các thông báo tuyển sinh và đề án 2025 chính thức của từng trường.'
+                    : 'Data extracted directly from official 2025 institutional admission schemes and announcements.'}
                 </p>
               </div>
               <span className="text-xs font-bold px-2.5 py-1 rounded-full bg-indigo-100 text-indigo-800">
-                {filteredStats2025Records.length} ngành phù hợp
+                {filteredStats2025Records.length} {language === 'vi' ? 'ngành phù hợp' : 'matching majors'}
               </span>
             </div>
 
@@ -624,29 +730,33 @@ export const UniversityAdmissionsView: React.FC<UniversityAdmissionsViewProps> =
               <table className="w-full text-left text-xs">
                 <thead className="bg-slate-100/80 text-slate-700 font-bold border-b border-slate-200">
                   <tr>
-                    <th className="p-3.5 whitespace-nowrap">STT</th>
-                    <th className="p-3.5 min-w-[200px]">Cơ sở đào tạo</th>
-                    <th className="p-3.5 min-w-[180px]">Ngành tuyển sinh 2025</th>
-                    <th className="p-3.5 min-w-[170px]">Tổ hợp xét tuyển mới</th>
-                    <th className="p-3.5 whitespace-nowrap text-indigo-800 font-black">Điểm sàn đề án</th>
-                    <th className="p-3.5 min-w-[160px]">Phương thức xét tuyển 2025</th>
-                    <th className="p-3.5 min-w-[150px]">Học phí dự kiến</th>
-                    <th className="p-3.5 whitespace-nowrap">Đề án & Hỏi AI</th>
+                    <th className="p-3.5 whitespace-nowrap">#</th>
+                    <th className="p-3.5 min-w-[200px]">{language === 'vi' ? 'Cơ sở đào tạo' : 'University'}</th>
+                    <th className="p-3.5 min-w-[180px]">{language === 'vi' ? 'Ngành tuyển sinh 2025' : '2025 Major'}</th>
+                    <th className="p-3.5 min-w-[170px]">{language === 'vi' ? 'Tổ hợp xét tuyển mới' : 'Subject Combinations'}</th>
+                    <th className="p-3.5 whitespace-nowrap text-indigo-800 font-black">{language === 'vi' ? 'Điểm sàn đề án' : 'Floor Score'}</th>
+                    <th className="p-3.5 min-w-[160px]">{language === 'vi' ? 'Phương thức xét tuyển 2025' : '2025 Admission Method'}</th>
+                    <th className="p-3.5 min-w-[150px]">{language === 'vi' ? 'Học phí dự kiến' : 'Estimated Tuition'}</th>
+                    <th className="p-3.5 whitespace-nowrap">{language === 'vi' ? 'Đề án & Hỏi AI' : 'Source & AI'}</th>
                   </tr>
                 </thead>
                 <tbody className="divide-y divide-slate-200/80">
                   {filteredStats2025Records.length === 0 ? (
                     <tr>
                       <td colSpan={8} className="p-8 text-center text-slate-400">
-                        Không có ngành nào phù hợp với bộ lọc thống kê 2025 hiện tại.
+                        {language === 'vi'
+                          ? 'Không có ngành nào phù hợp với bộ lọc thống kê 2025 hiện tại.'
+                          : 'No majors match the current 2025 statistical filter.'}
                       </td>
                     </tr>
                   ) : (
-                    filteredStats2025Records.map((rec, index) => {
-                      const uni = UNIVERSITIES_DATA.find((u) => u.id === rec.universityId);
+                    filteredStats2025Records.map((rawRec, index) => {
+                      const rec = localizeAdmissionRecord(rawRec, language);
+                      const rawUni = UNIVERSITIES_DATA.find((u) => u.id === rawRec.universityId);
+                      const uni = rawUni ? localizeUniversity(rawUni, language) : undefined;
                       const hasTinHoc =
-                        rec.subjectCombination.toLowerCase().includes('tin') ||
-                        rec.subjectCombination.includes('K01');
+                        rawRec.subjectCombination.toLowerCase().includes('tin') ||
+                        rawRec.subjectCombination.includes('K01');
 
                       return (
                         <tr
@@ -687,10 +797,10 @@ export const UniversityAdmissionsView: React.FC<UniversityAdmissionsViewProps> =
                               </span>
                             </div>
                             <div className="text-[11px] text-slate-400 font-mono mt-0.5">
-                              Mã: {rec.majorCode}
+                              {language === 'vi' ? 'Mã:' : 'Code:'} {rec.majorCode}
                             </div>
                             <div className="text-[10px] text-slate-500 mt-0.5 font-medium">
-                              Chương trình: {rec.programName || rec.program}
+                              {language === 'vi' ? 'Chương trình:' : 'Program:'} {rec.programName || rec.program}
                             </div>
                           </td>
 
@@ -702,7 +812,7 @@ export const UniversityAdmissionsView: React.FC<UniversityAdmissionsViewProps> =
                             {hasTinHoc && (
                               <span className="inline-flex items-center gap-1 text-[10px] font-bold text-emerald-800 bg-emerald-100/90 px-1.5 py-0.5 rounded mt-1 border border-emerald-200">
                                 <Sparkles className="w-2.5 h-2.5 text-emerald-700" />
-                                <span>Có môn Tin học (K01 / Mới)</span>
+                                <span>{language === 'vi' ? 'Có môn Tin học (K01 / Mới)' : 'Includes Informatics (K01)'}</span>
                               </span>
                             )}
                           </td>
@@ -713,7 +823,7 @@ export const UniversityAdmissionsView: React.FC<UniversityAdmissionsViewProps> =
                               {rec.cutoffScore}
                             </div>
                             <div className="text-[10px] text-slate-500">
-                              Điểm sàn nhận hồ sơ
+                              {language === 'vi' ? 'Điểm sàn nhận hồ sơ' : 'Minimum floor score'}
                             </div>
                             <div className="text-[10px] text-slate-400">
                               {rec.scoreScale}
@@ -725,7 +835,7 @@ export const UniversityAdmissionsView: React.FC<UniversityAdmissionsViewProps> =
                             {rec.method}
                             {rec.admissionMethods && rec.admissionMethods.length > 0 && (
                               <div className="text-[10px] text-slate-500 mt-0.5">
-                                Các phương thức: {rec.admissionMethods.join(' • ')}
+                                {language === 'vi' ? 'Các phương thức:' : 'Methods:'} {rec.admissionMethods.join(' • ')}
                               </div>
                             )}
                           </td>
@@ -737,7 +847,7 @@ export const UniversityAdmissionsView: React.FC<UniversityAdmissionsViewProps> =
                             </div>
                             {rec.subCriteria && (
                               <div className="text-[10px] text-slate-500 mt-0.5">
-                                Tiêu chí phụ: {rec.subCriteria}
+                                {language === 'vi' ? 'Tiêu chí phụ:' : 'Sub-criteria:'} {rec.subCriteria}
                               </div>
                             )}
                           </td>
@@ -750,9 +860,9 @@ export const UniversityAdmissionsView: React.FC<UniversityAdmissionsViewProps> =
                                 target="_blank"
                                 rel="noopener noreferrer"
                                 className="inline-flex items-center gap-1 text-[11px] font-bold text-indigo-700 hover:text-indigo-900 underline"
-                                title="Xem văn bản đề án 2025 gốc"
+                                title={language === 'vi' ? 'Xem văn bản đề án 2025 gốc' : 'View official 2025 admission scheme'}
                               >
-                                <span>Đề án 2025 gốc</span>
+                                <span>{language === 'vi' ? 'Đề án 2025 gốc' : 'Official Scheme'}</span>
                                 <ExternalLink className="w-3 h-3" />
                               </a>
                             </div>
@@ -760,13 +870,17 @@ export const UniversityAdmissionsView: React.FC<UniversityAdmissionsViewProps> =
                             <button
                               onClick={() => {
                                 if (onAskAiAboutSchool) {
-                                  onAskAiAboutSchool(`Cho em hỏi về đề án tuyển sinh 2025 ngành ${rec.majorName} trường ${rec.universityName}? Điểm sàn, tổ hợp môn mới và phương thức xét tuyển thế nào?`);
+                                  onAskAiAboutSchool(
+                                    language === 'vi'
+                                      ? `Cho em hỏi về đề án tuyển sinh 2025 ngành ${rec.majorName} trường ${rec.universityName}? Điểm sàn, tổ hợp môn mới và phương thức xét tuyển thế nào?`
+                                      : `Can you explain the 2025 admission scheme for ${rec.majorName} at ${rec.universityName}, including floor scores, combinations, and admission methods?`
+                                  );
                                 }
                               }}
                               className="px-2.5 py-1 rounded-lg bg-teal-50 hover:bg-teal-100 text-teal-800 text-[10px] font-bold flex items-center gap-1 transition-colors border border-teal-200"
                             >
                               <Sparkles className="w-3 h-3 text-teal-600" />
-                              <span>Hỏi CHẠM AI</span>
+                              <span>{language === 'vi' ? 'Hỏi CHẠM AI' : 'Ask CHẠM AI'}</span>
                             </button>
                           </td>
                         </tr>
@@ -789,16 +903,22 @@ export const UniversityAdmissionsView: React.FC<UniversityAdmissionsViewProps> =
               <div className="space-y-1">
                 <div className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-indigo-500/20 text-indigo-300 text-xs font-bold border border-indigo-400/30">
                   <Sparkles className="w-3.5 h-3.5 text-amber-300" />
-                  <span>Cập nhật mới: Thống kê Phương án Tuyển sinh 2025 (Chương trình GDPT 2018)</span>
+                  <span>
+                    {language === 'vi'
+                      ? 'Cập nhật mới: Thống kê Phương án Tuyển sinh 2025 (Chương trình GDPT 2018)'
+                      : 'New Update: 2025 University Admission Schemes (2018 Curriculum)'}
+                  </span>
                 </div>
                 <h2 className="text-xl sm:text-2xl font-black text-white tracking-tight flex items-center gap-2">
-                  <span>Đề án & Ngành tuyển sinh Đại học 2025</span>
+                  <span>{language === 'vi' ? 'Đề án & Ngành tuyển sinh Đại học 2025' : '2025 University Admission Schemes & Majors'}</span>
                   <span className="text-xs font-bold px-2 py-0.5 rounded-full bg-emerald-500/30 text-emerald-300 border border-emerald-400/40">
-                    {records2025.length} Ngành tiên phong
+                    {records2025.length} {language === 'vi' ? 'Ngành tiên phong' : 'Flagship Majors'}
                   </span>
                 </h2>
                 <p className="text-xs sm:text-sm text-slate-300 max-w-3xl leading-relaxed">
-                  Tổng hợp đề án và phương thức tuyển sinh mới nhất năm 2025 từ các trường đại học hàng đầu: bổ sung tổ hợp môn Tin học (K01, Toán-Tin-Anh), điểm sàn nhận hồ sơ và phương thức thi đánh giá năng lực/tư duy.
+                  {language === 'vi'
+                    ? 'Tổng hợp đề án và phương thức tuyển sinh mới nhất năm 2025 từ các trường đại học hàng đầu: bổ sung tổ hợp môn Tin học (K01, Toán-Tin-Anh), điểm sàn nhận hồ sơ và phương thức thi đánh giá năng lực/tư duy.'
+                    : 'Comprehensive 2025 admission schemes from top universities: featuring new Informatics subject combinations (K01, Math-IT-English), floor scores, and aptitude/thinking assessment pathways.'}
                 </p>
               </div>
 
@@ -808,7 +928,11 @@ export const UniversityAdmissionsView: React.FC<UniversityAdmissionsViewProps> =
                   className="px-4 py-2.5 rounded-2xl text-xs font-black transition-all shadow-md flex items-center gap-2 bg-gradient-to-r from-amber-400 to-amber-500 hover:from-amber-300 hover:to-amber-400 text-slate-950 ring-2 ring-amber-300"
                 >
                   <BarChart3 className="w-4 h-4 text-slate-950" />
-                  <span>Mở Bảng Thống kê 2025 ({records2025.length} ngành)</span>
+                  <span>
+                    {language === 'vi'
+                      ? `Mở Bảng Thống kê 2025 (${records2025.length} ngành)`
+                      : `Open 2025 Statistics Table (${records2025.length} majors)`}
+                  </span>
                 </button>
                 <button
                   onClick={() => {
@@ -822,7 +946,7 @@ export const UniversityAdmissionsView: React.FC<UniversityAdmissionsViewProps> =
                   }`}
                 >
                   <Calendar className="w-4 h-4" />
-                  <span>Lọc riêng bảng năm 2025</span>
+                  <span>{language === 'vi' ? 'Lọc riêng bảng năm 2025' : 'Filter 2025 Records Only'}</span>
                 </button>
               </div>
             </div>
@@ -830,21 +954,45 @@ export const UniversityAdmissionsView: React.FC<UniversityAdmissionsViewProps> =
             {/* 3 Key 2025 Statistics Cards */}
             <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 pt-2">
               <div className="p-3.5 rounded-2xl bg-white/10 border border-white/10 backdrop-blur-xs">
-                <div className="text-[11px] font-semibold text-indigo-200">Tổ hợp môn mới 2025</div>
-                <div className="text-sm font-bold text-white mt-1">Xuất hiện môn Tin học (K01)</div>
-                <div className="text-[11px] text-slate-300 mt-0.5">Toán-Lý-Tin, Toán-Tin-Anh áp dụng tại BKA, UET, FTU, NEU, UIT, CTU...</div>
+                <div className="text-[11px] font-semibold text-indigo-200">
+                  {language === 'vi' ? 'Tổ hợp môn mới 2025' : 'New 2025 Subject Combinations'}
+                </div>
+                <div className="text-sm font-bold text-white mt-1">
+                  {language === 'vi' ? 'Xuất hiện môn Tin học (K01)' : 'Informatics Added (K01)'}
+                </div>
+                <div className="text-[11px] text-slate-300 mt-0.5">
+                  {language === 'vi'
+                    ? 'Toán-Lý-Tin, Toán-Tin-Anh áp dụng tại BKA, UET, FTU, NEU, UIT, CTU...'
+                    : 'Math-Physics-IT & Math-IT-English accepted at HUST, UET, FTU, NEU, UIT, CTU...'}
+                </div>
               </div>
 
               <div className="p-3.5 rounded-2xl bg-white/10 border border-white/10 backdrop-blur-xs">
-                <div className="text-[11px] font-semibold text-emerald-200">Phương thức xét tuyển 2025</div>
-                <div className="text-sm font-bold text-white mt-1">Đa dạng ĐGNL / ĐGTD</div>
-                <div className="text-[11px] text-slate-300 mt-0.5">Kỳ thi HSA ĐHQGHN, TSA Bách khoa, ĐGNL ĐHQG-HCM, Kỳ thi SPT ĐH Sư phạm.</div>
+                <div className="text-[11px] font-semibold text-emerald-200">
+                  {language === 'vi' ? 'Phương thức xét tuyển 2025' : '2025 Admission Methods'}
+                </div>
+                <div className="text-sm font-bold text-white mt-1">
+                  {language === 'vi' ? 'Đa dạng ĐGNL / ĐGTD' : 'Aptitude & Thinking Exams'}
+                </div>
+                <div className="text-[11px] text-slate-300 mt-0.5">
+                  {language === 'vi'
+                    ? 'Kỳ thi HSA ĐHQGHN, TSA Bách khoa, ĐGNL ĐHQG-HCM, Kỳ thi SPT ĐH Sư phạm.'
+                    : 'VNU-HN HSA, HUST TSA, VNU-HCM Aptitude Test, and HNUE SPT.'}
+                </div>
               </div>
 
               <div className="p-3.5 rounded-2xl bg-white/10 border border-white/10 backdrop-blur-xs">
-                <div className="text-[11px] font-semibold text-amber-200">Ngưỡng sàn nhận hồ sơ</div>
-                <div className="text-sm font-bold text-white mt-1">18.00 – 24.50 điểm (Thang 30)</div>
-                <div className="text-[11px] text-slate-300 mt-0.5">Điểm chuẩn thực tế sẽ công bố sau khi có kết quả kỳ thi tốt nghiệp 2025.</div>
+                <div className="text-[11px] font-semibold text-amber-200">
+                  {language === 'vi' ? 'Ngưỡng sàn nhận hồ sơ' : 'Qualifying Floor Threshold'}
+                </div>
+                <div className="text-sm font-bold text-white mt-1">
+                  {language === 'vi' ? '18.00 – 24.50 điểm (Thang 30)' : '18.00 – 24.50 pts (30-Point Scale)'}
+                </div>
+                <div className="text-[11px] text-slate-300 mt-0.5">
+                  {language === 'vi'
+                    ? 'Điểm chuẩn thực tế sẽ công bố sau khi có kết quả kỳ thi tốt nghiệp 2025.'
+                    : 'Official cutoffs are published following the national high school graduation results.'}
+                </div>
               </div>
             </div>
           </div>
@@ -856,10 +1004,14 @@ export const UniversityAdmissionsView: React.FC<UniversityAdmissionsViewProps> =
             <Layers className="w-5 h-5 text-teal-400" />
             <div>
               <div className="text-xs font-bold">
-                Đang chọn {comparisonList.length}/3 phương án để so sánh
+                {language === 'vi'
+                  ? `Đang chọn ${comparisonList.length}/3 phương án để so sánh`
+                  : `Selected ${comparisonList.length}/3 admission options to compare`}
               </div>
               <div className="text-[11px] text-slate-400 hidden sm:block">
-                Đối chiếu điểm chuẩn, tổ hợp, học phí và điều kiện phụ cạnh nhau.
+                {language === 'vi'
+                  ? 'Đối chiếu điểm chuẩn, tổ hợp, học phí và điều kiện phụ cạnh nhau.'
+                  : 'Compare cutoff scores, subject combinations, tuition, and sub-criteria side by side.'}
               </div>
             </div>
           </div>
@@ -869,13 +1021,13 @@ export const UniversityAdmissionsView: React.FC<UniversityAdmissionsViewProps> =
               onClick={() => setComparisonList([])}
               className="px-3 py-1.5 rounded-xl bg-slate-800 hover:bg-slate-700 text-xs font-medium text-slate-300"
             >
-              Hủy
+              {language === 'vi' ? 'Hủy' : 'Clear'}
             </button>
             <button
               onClick={() => setShowComparisonModal(true)}
               className="px-4 py-2 rounded-xl bg-teal-500 hover:bg-teal-400 text-slate-950 font-bold text-xs shadow-xs"
             >
-              Xem bảng so sánh ngay
+              {language === 'vi' ? 'Xem bảng so sánh ngay' : 'Open Comparison Table'}
             </button>
           </div>
         </div>
@@ -886,10 +1038,14 @@ export const UniversityAdmissionsView: React.FC<UniversityAdmissionsViewProps> =
         <div className="flex items-center justify-between border-b border-slate-100 pb-3">
           <div className="flex items-center gap-2 text-xs font-bold text-slate-900 uppercase tracking-wider">
             <Filter className="w-4 h-4 text-teal-600" />
-            <span>Bộ lọc tuyển sinh đa tiêu chí</span>
+            <span>{language === 'vi' ? 'Bộ lọc tuyển sinh đa tiêu chí' : 'Multi-Criteria Admissions Filter'}</span>
           </div>
           <span className="text-xs text-slate-400">
-            Hiển thị <strong>{filteredRecords.length}</strong> kết quả phù hợp
+            {language === 'vi' ? (
+              <>Hiển thị <strong>{filteredRecords.length}</strong> kết quả phù hợp</>
+            ) : (
+              <>Showing <strong>{filteredRecords.length}</strong> matching records</>
+            )}
           </span>
         </div>
 
@@ -902,7 +1058,11 @@ export const UniversityAdmissionsView: React.FC<UniversityAdmissionsViewProps> =
               type="text"
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
-              placeholder="Tìm theo tên trường, mã trường (BKA, FTU...), tên ngành, tổ hợp..."
+              placeholder={
+                language === 'vi'
+                  ? 'Tìm theo tên trường, mã trường (BKA, FTU...), tên ngành, tổ hợp...'
+                  : 'Search by university name, code (BKA, FTU...), major, combination...'
+              }
               className="w-full pl-10 pr-4 py-2.5 rounded-xl border border-slate-300 text-xs focus:ring-2 focus:ring-teal-500 focus:outline-none"
             />
           </div>
@@ -918,10 +1078,10 @@ export const UniversityAdmissionsView: React.FC<UniversityAdmissionsViewProps> =
               }}
               className="w-full px-3 py-2.5 rounded-xl border border-slate-300 text-xs focus:ring-2 focus:ring-teal-500 focus:outline-none bg-white font-medium"
             >
-              <option value="all">Khu vực: Toàn quốc</option>
-              <option value="Miền Bắc">Miền Bắc</option>
-              <option value="Miền Trung">Miền Trung</option>
-              <option value="Miền Nam">Miền Nam</option>
+              <option value="all">{language === 'vi' ? 'Khu vực: Toàn quốc' : 'Region: Nationwide'}</option>
+              <option value="Miền Bắc">{language === 'vi' ? 'Miền Bắc' : 'Northern Vietnam'}</option>
+              <option value="Miền Trung">{language === 'vi' ? 'Miền Trung' : 'Central Vietnam'}</option>
+              <option value="Miền Nam">{language === 'vi' ? 'Miền Nam' : 'Southern Vietnam'}</option>
             </select>
           </div>
 
@@ -932,7 +1092,11 @@ export const UniversityAdmissionsView: React.FC<UniversityAdmissionsViewProps> =
               onChange={(e) => setSelectedProvince(e.target.value)}
               className="w-full px-3 py-2.5 rounded-xl border border-slate-300 text-xs focus:ring-2 focus:ring-teal-500 focus:outline-none bg-white font-medium"
             >
-              <option value="all">Tỉnh / Thành phố: {selectedRegion === 'all' ? 'Tất cả' : selectedRegion}</option>
+              <option value="all">
+                {language === 'vi'
+                  ? `Tỉnh / Thành phố: ${selectedRegion === 'all' ? 'Tất cả' : selectedRegion}`
+                  : `Province / City: ${selectedRegion === 'all' ? 'All' : localizeRegion(selectedRegion, 'en')}`}
+              </option>
               {provinceList.map((p) => (
                 <option key={p} value={p}>
                   {p}
@@ -951,10 +1115,10 @@ export const UniversityAdmissionsView: React.FC<UniversityAdmissionsViewProps> =
               onChange={(e) => setSelectedType(e.target.value)}
               className="w-full px-3 py-2.5 rounded-xl border border-slate-300 text-xs focus:ring-2 focus:ring-teal-500 focus:outline-none bg-white font-medium"
             >
-              <option value="all">Loại trường: Tất cả</option>
-              <option value="Công lập">Trường Công lập</option>
-              <option value="Tư thục">Trường Tư thục</option>
-              <option value="Quốc tế">Trường Quốc tế</option>
+              <option value="all">{language === 'vi' ? 'Loại trường: Tất cả' : 'Institution Type: All'}</option>
+              <option value="Công lập">{language === 'vi' ? 'Trường Công lập' : 'Public University'}</option>
+              <option value="Tư thục">{language === 'vi' ? 'Trường Tư thục' : 'Private University'}</option>
+              <option value="Quốc tế">{language === 'vi' ? 'Trường Quốc tế' : 'International University'}</option>
             </select>
           </div>
 
@@ -971,7 +1135,7 @@ export const UniversityAdmissionsView: React.FC<UniversityAdmissionsViewProps> =
             >
               {MAJOR_CATEGORIES.map((c) => (
                 <option key={c.id} value={c.id}>
-                  {c.name}
+                  {language === 'vi' ? c.name : (MAJOR_CATEGORY_EN[c.id] || c.name)}
                 </option>
               ))}
             </select>
@@ -984,10 +1148,10 @@ export const UniversityAdmissionsView: React.FC<UniversityAdmissionsViewProps> =
               onChange={(e) => setSelectedMajorId(e.target.value)}
               className="w-full px-3 py-2.5 rounded-xl border border-slate-300 text-xs focus:ring-2 focus:ring-teal-500 focus:outline-none bg-white font-medium"
             >
-              <option value="all">Ngành học: Tất cả ngành</option>
+              <option value="all">{language === 'vi' ? 'Ngành học: Tất cả ngành' : 'Major: All Majors'}</option>
               {availableMajorsList.map((m) => (
                 <option key={m.id} value={m.id}>
-                  {m.name}
+                  {m.displayName}
                 </option>
               ))}
             </select>
@@ -1015,11 +1179,11 @@ export const UniversityAdmissionsView: React.FC<UniversityAdmissionsViewProps> =
               onChange={(e) => setSelectedYear(Number(e.target.value))}
               className="w-full px-3 py-2.5 rounded-xl border border-slate-300 text-xs focus:ring-2 focus:ring-teal-500 focus:outline-none bg-white font-semibold text-slate-800"
             >
-              <option value={2025}>Năm dữ liệu: 2025 (Đề án GDPT 2018 mới)</option>
-              <option value={2024}>Năm dữ liệu: 2024 (Chính thức)</option>
-              <option value={2023}>Năm dữ liệu: 2023</option>
-              <option value={2022}>Năm dữ liệu: 2022</option>
-              <option value={0}>Tất cả các năm (2022 – 2025)</option>
+              <option value={2025}>{language === 'vi' ? 'Năm dữ liệu: 2025 (Đề án GDPT 2018 mới)' : 'Data Year: 2025 (New 2018 Curriculum)'}</option>
+              <option value={2024}>{language === 'vi' ? 'Năm dữ liệu: 2024 (Chính thức)' : 'Data Year: 2024 (Official)'}</option>
+              <option value={2023}>{language === 'vi' ? 'Năm dữ liệu: 2023' : 'Data Year: 2023'}</option>
+              <option value={2022}>{language === 'vi' ? 'Năm dữ liệu: 2022' : 'Data Year: 2022'}</option>
+              <option value={0}>{language === 'vi' ? 'Tất cả các năm (2022 – 2025)' : 'All Years (2022 – 2025)'}</option>
             </select>
           </div>
         </div>
@@ -1036,13 +1200,17 @@ export const UniversityAdmissionsView: React.FC<UniversityAdmissionsViewProps> =
                 className="w-4 h-4 rounded text-teal-600 focus:ring-teal-500"
               />
               <label htmlFor="enableScore" className="text-xs font-bold text-teal-950 cursor-pointer">
-                Lọc theo Điểm thi tốt nghiệp THPT dự kiến (Thang 30)
+                {language === 'vi'
+                  ? 'Lọc theo Điểm thi tốt nghiệp THPT dự kiến (Thang 30)'
+                  : 'Filter by Estimated High School Graduation Exam Score (30-Point Scale)'}
               </label>
             </div>
 
             {enableScoreFilter && (
               <div className="flex items-center gap-2">
-                <span className="text-xs text-slate-600 font-medium">Mức điểm của bạn:</span>
+                <span className="text-xs text-slate-600 font-medium">
+                  {language === 'vi' ? 'Mức điểm của bạn:' : 'Your estimated score:'}
+                </span>
                 <input
                   type="number"
                   step="0.1"
@@ -1052,7 +1220,7 @@ export const UniversityAdmissionsView: React.FC<UniversityAdmissionsViewProps> =
                   onChange={(e) => setEstimatedScore(parseFloat(e.target.value) || 0)}
                   className="w-20 px-2 py-1 rounded-lg border border-teal-300 text-xs font-bold text-center text-teal-800 focus:outline-none bg-white"
                 />
-                <span className="text-xs font-bold text-teal-700">điểm</span>
+                <span className="text-xs font-bold text-teal-700">{language === 'vi' ? 'điểm' : 'pts'}</span>
               </div>
             )}
           </div>
@@ -1069,9 +1237,11 @@ export const UniversityAdmissionsView: React.FC<UniversityAdmissionsViewProps> =
                 className="w-full accent-teal-600 cursor-pointer"
               />
               <div className="flex items-center justify-between text-[11px] text-teal-800">
-                <span>15 điểm</span>
-                <span className="font-semibold">Đang chọn: {estimatedScore} điểm</span>
-                <span>30 điểm</span>
+                <span>15 {language === 'vi' ? 'điểm' : 'pts'}</span>
+                <span className="font-semibold">
+                  {language === 'vi' ? `Đang chọn: ${estimatedScore} điểm` : `Selected: ${estimatedScore} pts`}
+                </span>
+                <span>30 {language === 'vi' ? 'điểm' : 'pts'}</span>
               </div>
             </div>
           )}
@@ -1085,20 +1255,32 @@ export const UniversityAdmissionsView: React.FC<UniversityAdmissionsViewProps> =
             <div className="p-4 rounded-2xl bg-emerald-50 border border-emerald-200">
               <div className="font-bold text-xs text-emerald-900 flex items-center gap-1.5">
                 <Check className="w-4 h-4 text-emerald-600" />
-                <span>Có thể tham khảo ({categorizedRecords.reachable.length})</span>
+                <span>
+                  {language === 'vi'
+                    ? `Có thể tham khảo (${categorizedRecords.reachable.length})`
+                    : `Within Reach / Target (${categorizedRecords.reachable.length})`}
+                </span>
               </div>
               <p className="text-[11px] text-emerald-700 mt-1 leading-normal">
-                Điểm chuẩn các năm trước tương đối gần hoặc thấp hơn điểm dự kiến {estimatedScore} của bạn.
+                {language === 'vi'
+                  ? `Điểm chuẩn các năm trước tương đối gần hoặc thấp hơn điểm dự kiến ${estimatedScore} của bạn.`
+                  : `Historical cutoffs are below or within 1.0 point of your estimated score (${estimatedScore}).`}
               </p>
             </div>
 
             <div className="p-4 rounded-2xl bg-amber-50 border border-amber-200">
               <div className="font-bold text-xs text-amber-900 flex items-center gap-1.5">
                 <AlertTriangle className="w-4 h-4 text-amber-600" />
-                <span>Cần cân nhắc & Nỗ lực thêm ({categorizedRecords.consider.length})</span>
+                <span>
+                  {language === 'vi'
+                    ? `Cần cân nhắc & Nỗ lực thêm (${categorizedRecords.consider.length})`
+                    : `Reach / Ambitious Options (${categorizedRecords.consider.length})`}
+                </span>
               </div>
               <p className="text-[11px] text-amber-700 mt-1 leading-normal">
-                Điểm chuẩn lịch sử cao hơn đáng kể; cần xây dựng phương án dự phòng hoặc nỗ lực nâng điểm.
+                {language === 'vi'
+                  ? 'Điểm chuẩn lịch sử cao hơn đáng kể; cần xây dựng phương án dự phòng hoặc nỗ lực nâng điểm.'
+                  : 'Historical cutoffs are higher than your current estimate; prepare backup options or aim for higher exam scores.'}
               </p>
             </div>
           </div>
@@ -1110,32 +1292,35 @@ export const UniversityAdmissionsView: React.FC<UniversityAdmissionsViewProps> =
             <table className="w-full text-left text-xs border-collapse">
               <thead>
                 <tr className="bg-slate-100 text-slate-700 border-b border-slate-200 font-bold uppercase tracking-wider text-[11px]">
-                  <th className="p-3.5 whitespace-nowrap">Chọn / Lưu</th>
-                  <th className="p-3.5 min-w-[210px]">Trường / Địa điểm</th>
-                  <th className="p-3.5 min-w-[190px]">Ngành & Mã ngành</th>
-                  <th className="p-3.5 whitespace-nowrap">Chương trình</th>
-                  <th className="p-3.5 whitespace-nowrap">Năm</th>
-                  <th className="p-3.5 min-w-[150px]">Phương thức</th>
-                  <th className="p-3.5 min-w-[160px]">Tổ hợp xét tuyển</th>
-                  <th className="p-3.5 whitespace-nowrap text-teal-800 font-extrabold">Điểm chuẩn</th>
-                  <th className="p-3.5 min-w-[140px]">Thang & Cách tính</th>
-                  <th className="p-3.5 min-w-[170px]">Học phí & Tiêu chí phụ</th>
-                  <th className="p-3.5 whitespace-nowrap">Nguồn & Trợ lý</th>
+                  <th className="p-3.5 whitespace-nowrap">{language === 'vi' ? 'Chọn / Lưu' : 'Compare / Save'}</th>
+                  <th className="p-3.5 min-w-[210px]">{language === 'vi' ? 'Trường / Địa điểm' : 'University / Location'}</th>
+                  <th className="p-3.5 min-w-[190px]">{language === 'vi' ? 'Ngành & Mã ngành' : 'Major & Code'}</th>
+                  <th className="p-3.5 whitespace-nowrap">{language === 'vi' ? 'Chương trình' : 'Program'}</th>
+                  <th className="p-3.5 whitespace-nowrap">{language === 'vi' ? 'Năm' : 'Year'}</th>
+                  <th className="p-3.5 min-w-[150px]">{language === 'vi' ? 'Phương thức' : 'Method'}</th>
+                  <th className="p-3.5 min-w-[160px]">{language === 'vi' ? 'Tổ hợp xét tuyển' : 'Combinations'}</th>
+                  <th className="p-3.5 whitespace-nowrap text-teal-800 font-extrabold">{language === 'vi' ? 'Điểm chuẩn' : 'Cutoff Score'}</th>
+                  <th className="p-3.5 min-w-[140px]">{language === 'vi' ? 'Thang & Cách tính' : 'Scale & Formula'}</th>
+                  <th className="p-3.5 min-w-[170px]">{language === 'vi' ? 'Học phí & Tiêu chí phụ' : 'Tuition & Sub-criteria'}</th>
+                  <th className="p-3.5 whitespace-nowrap">{language === 'vi' ? 'Nguồn & Trợ lý' : 'Source & AI'}</th>
                 </tr>
               </thead>
               <tbody className="divide-y divide-slate-200/80">
                 {filteredRecords.length === 0 ? (
                   <tr>
                     <td colSpan={11} className="p-8 text-center text-slate-400">
-                      Không tìm thấy dữ liệu nào phù hợp với bộ lọc hiện tại. Hãy bấm "Đặt lại bộ lọc" để tìm kiếm lại.
+                      {language === 'vi'
+                        ? 'Không tìm thấy dữ liệu nào phù hợp với bộ lọc hiện tại. Hãy bấm "Đặt lại bộ lọc" để tìm kiếm lại.'
+                        : 'No admission records match your current filters. Click "Reset Filters" to start over.'}
                     </td>
                   </tr>
                 ) : (
-                  filteredRecords.map((rec) => {
-                    const uni = UNIVERSITIES_DATA.find((u) => u.id === rec.universityId);
+                  filteredRecords.map((rawRec) => {
+                    const rec = localizeAdmissionRecord(rawRec, language);
+                    const rawUni = UNIVERSITIES_DATA.find((u) => u.id === rawRec.universityId);
+                    const uni = rawUni ? localizeUniversity(rawUni, language) : undefined;
                     const isSaved = profile.savedAdmissions.includes(rec.id);
                     const isCompared = comparisonList.includes(rec.id);
-                    const isUniSaved = (profile.savedUniversities || []).includes(rec.universityId);
 
                     return (
                       <tr
@@ -1154,7 +1339,7 @@ export const UniversityAdmissionsView: React.FC<UniversityAdmissionsViewProps> =
                                   ? 'bg-amber-500 text-slate-950 border-amber-600'
                                   : 'bg-white text-slate-600 hover:bg-slate-100 border-slate-200'
                               }`}
-                              title="Thêm vào danh sách so sánh"
+                              title={language === 'vi' ? 'Thêm vào danh sách so sánh' : 'Add to comparison'}
                             >
                               <Layers className="w-3.5 h-3.5" />
                             </button>
@@ -1166,7 +1351,7 @@ export const UniversityAdmissionsView: React.FC<UniversityAdmissionsViewProps> =
                                   ? 'text-teal-700 bg-teal-100'
                                   : 'text-slate-400 hover:text-slate-600 bg-slate-50'
                               }`}
-                              title={isSaved ? 'Đã lưu' : 'Lưu lại'}
+                              title={isSaved ? (language === 'vi' ? 'Đã lưu' : 'Saved') : (language === 'vi' ? 'Lưu lại' : 'Save')}
                             >
                               <Bookmark className="w-3.5 h-3.5 fill-current" />
                             </button>
@@ -1199,7 +1384,7 @@ export const UniversityAdmissionsView: React.FC<UniversityAdmissionsViewProps> =
                             {rec.majorName}
                           </div>
                           <div className="text-[11px] text-slate-400 font-mono mt-0.5">
-                            Mã: {rec.majorCode}
+                            {language === 'vi' ? 'Mã:' : 'Code:'} {rec.majorCode}
                           </div>
                         </td>
 
@@ -1215,7 +1400,7 @@ export const UniversityAdmissionsView: React.FC<UniversityAdmissionsViewProps> =
                           {rec.year === 2025 ? (
                             <span className="font-extrabold px-2 py-0.5 rounded-md bg-indigo-50 text-indigo-900 border border-indigo-200 text-[11px] inline-flex items-center gap-1">
                               <Sparkles className="w-2.5 h-2.5 text-indigo-600" />
-                              <span>2025 (Đề án)</span>
+                              <span>{language === 'vi' ? '2025 (Đề án)' : '2025 (Scheme)'}</span>
                             </span>
                           ) : (
                             <span className="font-bold text-slate-900 px-2 py-0.5 rounded-md bg-teal-50 text-teal-900 border border-teal-200 text-xs">
@@ -1241,7 +1426,7 @@ export const UniversityAdmissionsView: React.FC<UniversityAdmissionsViewProps> =
                           </span>
                           {rec.year === 2025 && (
                             <span className="block text-[10px] text-indigo-600 font-medium">
-                              Điểm sàn đề án
+                              {language === 'vi' ? 'Điểm sàn đề án' : 'Floor Score'}
                             </span>
                           )}
                         </td>
@@ -1261,7 +1446,7 @@ export const UniversityAdmissionsView: React.FC<UniversityAdmissionsViewProps> =
                           </div>
                           {rec.subCriteria && (
                             <div className="text-[11px] text-slate-500 mt-1 leading-snug">
-                              <strong>Phụ:</strong> {rec.subCriteria}
+                              <strong>{language === 'vi' ? 'Phụ:' : 'Sub:'}</strong> {rec.subCriteria}
                             </div>
                           )}
                         </td>
@@ -1276,10 +1461,10 @@ export const UniversityAdmissionsView: React.FC<UniversityAdmissionsViewProps> =
                               className="inline-flex items-center gap-1 text-[11px] font-semibold text-teal-700 hover:text-teal-900 underline"
                               title={rec.sourceDocument}
                             >
-                              <span>Nguồn đề án ↗</span>
+                              <span>{language === 'vi' ? 'Nguồn đề án ↗' : 'Official Source ↗'}</span>
                             </a>
                             <div className="text-[10px] text-slate-400">
-                              Duyệt: {rec.verifiedDate}
+                              {language === 'vi' ? 'Duyệt:' : 'Verified:'} {rec.verifiedDate}
                             </div>
                           </div>
 
@@ -1287,13 +1472,15 @@ export const UniversityAdmissionsView: React.FC<UniversityAdmissionsViewProps> =
                             <button
                               onClick={() =>
                                 onAskAiAboutSchool(
-                                  `Hãy giải thích chi tiết về cơ hội việc làm và chương trình đào tạo ngành ${rec.majorName} tại ${rec.universityName}?`
+                                  language === 'vi'
+                                    ? `Hãy giải thích chi tiết về cơ hội việc làm và chương trình đào tạo ngành ${rec.majorName} tại ${rec.universityName}?`
+                                    : `Please explain the curriculum and career opportunities for ${rec.majorName} at ${rec.universityName}.`
                                 )
                               }
                               className="inline-flex items-center gap-1 text-[10px] font-bold text-amber-700 bg-amber-50 hover:bg-amber-100 px-2 py-0.5 rounded border border-amber-200"
                             >
                               <Sparkles className="w-2.5 h-2.5" />
-                              <span>Hỏi CHẠM AI</span>
+                              <span>{language === 'vi' ? 'Hỏi CHẠM AI' : 'Ask CHẠM AI'}</span>
                             </button>
                           )}
                         </td>
@@ -1317,10 +1504,16 @@ export const UniversityAdmissionsView: React.FC<UniversityAdmissionsViewProps> =
               <div>
                 <h3 className="text-xl font-bold text-slate-900 flex items-center gap-2">
                   <Layers className="w-5 h-5 text-teal-600" />
-                  <span>Bảng so sánh phương án tuyển sinh (Tối đa 3 trường/ngành)</span>
+                  <span>
+                    {language === 'vi'
+                      ? 'Bảng so sánh phương án tuyển sinh (Tối đa 3 trường/ngành)'
+                      : 'Side-by-Side Admissions Comparison (Up to 3 Majors/Universities)'}
+                  </span>
                 </h3>
                 <p className="text-xs text-slate-500 mt-0.5">
-                  Đối chiếu khách quan từ cơ sở dữ liệu đã xác minh; không tuyên bố trường nào tốt hơn khi không có tiêu chí cụ thể.
+                  {language === 'vi'
+                    ? 'Đối chiếu khách quan từ cơ sở dữ liệu đã xác minh; không tuyên bố trường nào tốt hơn khi không có tiêu chí cụ thể.'
+                    : 'Objective comparison from verified institutional data; CHẠM VIỆC never ranks one university above another without specific criteria.'}
                 </p>
               </div>
               <button
@@ -1333,9 +1526,11 @@ export const UniversityAdmissionsView: React.FC<UniversityAdmissionsViewProps> =
 
             <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
               {comparisonList.map((id) => {
-                const rec = ADMISSION_RECORDS.find((r) => r.id === id);
-                if (!rec) return null;
-                const uni = UNIVERSITIES_DATA.find((u) => u.id === rec.universityId);
+                const rawRec = ADMISSION_RECORDS.find((r) => r.id === id);
+                if (!rawRec) return null;
+                const rec = localizeAdmissionRecord(rawRec, language);
+                const rawUni = UNIVERSITIES_DATA.find((u) => u.id === rawRec.universityId);
+                const uni = rawUni ? localizeUniversity(rawUni, language) : undefined;
 
                 return (
                   <div
@@ -1349,7 +1544,7 @@ export const UniversityAdmissionsView: React.FC<UniversityAdmissionsViewProps> =
                       <button
                         onClick={() => handleToggleComparison(rec.id)}
                         className="text-slate-400 hover:text-rose-600"
-                        title="Xóa khỏi so sánh"
+                        title={language === 'vi' ? 'Xóa khỏi so sánh' : 'Remove from comparison'}
                       >
                         <X className="w-4 h-4" />
                       </button>
@@ -1362,27 +1557,31 @@ export const UniversityAdmissionsView: React.FC<UniversityAdmissionsViewProps> =
 
                     <div className="p-3 rounded-xl bg-white border border-slate-200 space-y-2">
                       <div className="flex items-center justify-between">
-                        <span className="text-slate-500 font-medium">Điểm chuẩn {rec.year}:</span>
+                        <span className="text-slate-500 font-medium">
+                          {language === 'vi' ? `Điểm chuẩn ${rec.year}:` : `${rec.year} Cutoff Score:`}
+                        </span>
                         <span className="font-black text-base text-teal-700">
                           {rec.cutoffScore}
                         </span>
                       </div>
                       <div className="text-[11px] text-slate-600">
-                        <strong>Thang điểm:</strong> {rec.scoreScale}
+                        <strong>{language === 'vi' ? 'Thang điểm:' : 'Scale:'}</strong> {rec.scoreScale}
                       </div>
                       <div className="text-[11px] text-slate-600">
-                        <strong>Tổ hợp:</strong> {rec.subjectCombination}
+                        <strong>{language === 'vi' ? 'Tổ hợp:' : 'Combinations:'}</strong> {rec.subjectCombination}
                       </div>
                     </div>
 
                     <div className="space-y-1">
-                      <div className="font-bold text-slate-700">Học phí:</div>
+                      <div className="font-bold text-slate-700">{language === 'vi' ? 'Học phí:' : 'Tuition:'}</div>
                       <p className="text-slate-600 leading-normal">{rec.tuitionInfo || rec.tuition}</p>
                     </div>
 
                     <div className="space-y-1">
-                      <div className="font-bold text-slate-700">Điều kiện phụ:</div>
-                      <p className="text-slate-600 leading-normal">{rec.subCriteria || 'Không áp dụng'}</p>
+                      <div className="font-bold text-slate-700">{language === 'vi' ? 'Điều kiện phụ:' : 'Sub-criteria:'}</div>
+                      <p className="text-slate-600 leading-normal">
+                        {rec.subCriteria || (language === 'vi' ? 'Không áp dụng' : 'Not applicable')}
+                      </p>
                     </div>
 
                     <div className="pt-2 border-t border-slate-200 flex items-center justify-between">
@@ -1392,7 +1591,7 @@ export const UniversityAdmissionsView: React.FC<UniversityAdmissionsViewProps> =
                         rel="noopener noreferrer"
                         className="inline-flex items-center gap-1 text-teal-700 font-semibold underline"
                       >
-                        <span>Nguồn chính thức</span>
+                        <span>{language === 'vi' ? 'Nguồn chính thức' : 'Official Source'}</span>
                         <ExternalLink className="w-3 h-3" />
                       </a>
                     </div>
@@ -1406,7 +1605,7 @@ export const UniversityAdmissionsView: React.FC<UniversityAdmissionsViewProps> =
                 onClick={() => setShowComparisonModal(false)}
                 className="px-5 py-2.5 rounded-xl bg-teal-600 hover:bg-teal-700 text-white font-bold text-xs"
               >
-                Đóng bảng so sánh
+                {language === 'vi' ? 'Đóng bảng so sánh' : 'Close Comparison'}
               </button>
             </div>
           </div>
