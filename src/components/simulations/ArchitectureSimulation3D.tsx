@@ -6,11 +6,16 @@ import {
   X, 
   Eye, 
   CheckCircle2, 
+  AlertTriangle, 
   HelpCircle, 
   Sun,
   Layers,
   Sparkles,
-  Compass
+  Compass,
+  Maximize2,
+  Trash2,
+  Plus,
+  Info
 } from 'lucide-react';
 import { useLanguage } from '../../i18n/LanguageContext';
 
@@ -19,41 +24,79 @@ interface ArchitectureSimulation3DProps {
   onComplete?: () => void;
 }
 
+interface PlacedFurniture {
+  id: string;
+  type: 'bed' | 'desk' | 'sofa' | 'dining' | 'wall';
+  name: string;
+  x: number;
+  z: number;
+  rotation: number;
+}
+
 export const ArchitectureSimulation3D: React.FC<ArchitectureSimulation3DProps> = ({ onClose, onComplete }) => {
   const { t, language } = useLanguage();
   const mountRef = useRef<HTMLDivElement>(null);
 
-  // Modular Architectural Components State
-  const [hasFoundation, setHasFoundation] = useState(true);
-  const [hasWalls, setHasWalls] = useState(true);
-  const [roofType, setRoofType] = useState<'gable' | 'flat' | 'none'>('gable');
-  const [hasWindows, setHasWindows] = useState(true);
-  const [hasGarden, setHasGarden] = useState(true);
-  const [sunAngle, setSunAngle] = useState(45); // Sun elevation angle in degrees
-  const [is2DMode, setIs2DMode] = useState(false);
-  const [reflectionAnswer, setReflectionAnswer] = useState('');
-  const [reflectionSaved, setReflectionSaved] = useState(false);
+  // Architectural State
+  const [viewMode, setViewMode] = useState<'exterior' | 'cutaway'>('cutaway'); // Default to cutaway floorplan view!
+  const [showStructuralLayer, setShowStructuralLayer] = useState<boolean>(false);
+  const [timeOfDayHours, setTimeOfDayHours] = useState<number>(14); // 14:00 (2 PM) afternoon sun
+  const [selectedTool, setSelectedTool] = useState<'bed' | 'desk' | 'sofa' | 'dining' | 'wall' | null>(null);
+
+  // Placed furniture items (start with basic functional items)
+  const [furnitureList, setFurnitureList] = useState<PlacedFurniture[]>([
+    { id: 'f-1', type: 'bed', name: 'Giường ngủ', x: -2.0, z: -1.5, rotation: 0 },
+    { id: 'f-2', type: 'desk', name: 'Bàn học đón sáng', x: 2.0, z: -1.5, rotation: 0 },
+    { id: 'f-3', type: 'sofa', name: 'Sofa tiếp khách', x: 2.0, z: 1.0, rotation: 0 }
+  ]);
+
+  const [circulationWarning, setCirculationWarning] = useState<string | null>(null);
+  const [reflectionAnswer, setReflectionAnswer] = useState<string>('');
+  const [reflectionSaved, setReflectionSaved] = useState<boolean>(false);
 
   // Three.js References
   const sceneRef = useRef<THREE.Scene | null>(null);
   const rendererRef = useRef<THREE.WebGLRenderer | null>(null);
   const cameraRef = useRef<THREE.PerspectiveCamera | null>(null);
   const sunLightRef = useRef<THREE.DirectionalLight | null>(null);
-
-  // Meshes group
   const houseGroupRef = useRef<THREE.Group | null>(null);
-  const wallsMeshRef = useRef<THREE.Mesh | null>(null);
-  const roofMeshRef = useRef<THREE.Mesh | null>(null);
-  const gardenGroupRef = useRef<THREE.Group | null>(null);
-  const windowsGroupRef = useRef<THREE.Group | null>(null);
+  const furnitureGroupRef = useRef<THREE.Group | null>(null);
+  const structuralGroupRef = useRef<THREE.Group | null>(null);
+  const roofGroupRef = useRef<THREE.Group | null>(null);
+  const animFrameIdRef = useRef<number | null>(null);
 
   // Orbit rotation
   const isDraggingRef = useRef(false);
   const previousMousePositionRef = useRef({ x: 0, y: 0 });
-  const cameraAngleRef = useRef({ theta: Math.PI / 3, phi: Math.PI / 3.5, radius: 18 });
+  const cameraAngleRef = useRef({ theta: Math.PI / 4, phi: Math.PI / 3.2, radius: 18 });
 
+  const updateCamera = () => {
+    if (!cameraRef.current) return;
+    const { theta, phi, radius } = cameraAngleRef.current;
+    cameraRef.current.position.x = radius * Math.sin(phi) * Math.sin(theta);
+    cameraRef.current.position.y = radius * Math.cos(phi);
+    cameraRef.current.position.z = radius * Math.sin(phi) * Math.cos(theta);
+    cameraRef.current.lookAt(0, 1.2, 0);
+  };
+
+  // Check circulation whenever furniture changes
   useEffect(() => {
-    if (is2DMode || !mountRef.current) return;
+    // Front door is at x: 0, z: 2.5
+    // Doorway buffer: x between -1.0 and +1.0, z > 1.2
+    const doorBlocked = furnitureList.some((item) => {
+      return Math.abs(item.x) < 1.0 && item.z > 1.2;
+    });
+
+    if (doorBlocked) {
+      setCirculationWarning('CẢNH BÁO LƯU THÔNG: Lối vào cửa chính đang bị đồ nội thất che chắn! Cần giữ khoảng cách thông thủy tối thiểu 0.9m để thoát hiểm an toàn.');
+    } else {
+      setCirculationWarning(null);
+    }
+  }, [furnitureList]);
+
+  // Three.js Scene Setup
+  useEffect(() => {
+    if (!mountRef.current) return;
 
     const width = mountRef.current.clientWidth || 800;
     const height = mountRef.current.clientHeight || 500;
@@ -76,520 +119,620 @@ export const ArchitectureSimulation3D: React.FC<ArchitectureSimulation3DProps> =
       mountRef.current.appendChild(renderer.domElement);
       rendererRef.current = renderer;
     } catch (e) {
-      console.warn('WebGL failed, fallback to 2D:', e);
-      setIs2DMode(true);
+      console.warn('WebGL init failed:', e);
       return;
     }
 
-    // Grid terrain & Ground
-    const grid = new THREE.GridHelper(20, 20, 0x06b6d4, 0x1e293b);
+    // Grid Floor
+    const grid = new THREE.GridHelper(24, 24, 0x0284c7, 0x1e293b);
     grid.position.y = -0.01;
     scene.add(grid);
 
-    const groundGeo = new THREE.PlaneGeometry(24, 24);
-    const groundMat = new THREE.MeshStandardMaterial({ color: 0x1e293b, roughness: 0.9 });
+    // Ground Plane
+    const groundGeo = new THREE.PlaneGeometry(30, 30);
+    const groundMat = new THREE.MeshStandardMaterial({ color: 0x1e293b, roughness: 0.85 });
     const ground = new THREE.Mesh(groundGeo, groundMat);
     ground.rotation.x = -Math.PI / 2;
     ground.receiveShadow = true;
     scene.add(ground);
 
     // Ambient light
-    const ambient = new THREE.AmbientLight(0xffffff, 0.5);
-    scene.add(ambient);
+    const ambientLight = new THREE.AmbientLight(0xffffff, 0.6);
+    scene.add(ambientLight);
 
-    // Sun Directional Light
-    const sunLight = new THREE.DirectionalLight(0xffedd5, 1.2);
-    sunLight.position.set(10, 14, 8);
+    // Sun Directional Light with Shadows
+    const sunLight = new THREE.DirectionalLight(0xfff7ed, 1.3);
+    sunLight.position.set(12, 14, 8);
     sunLight.castShadow = true;
     sunLight.shadow.mapSize.width = 1024;
     sunLight.shadow.mapSize.height = 1024;
     scene.add(sunLight);
     sunLightRef.current = sunLight;
 
-    // Building Group
+    // Groups
     const houseGroup = new THREE.Group();
     scene.add(houseGroup);
     houseGroupRef.current = houseGroup;
 
-    // 1. Foundation Slab (Concrete)
-    const foundationGeo = new THREE.BoxGeometry(8, 0.4, 6);
-    const foundationMat = new THREE.MeshStandardMaterial({ color: 0x64748b, roughness: 0.8 });
+    const furnitureGroup = new THREE.Group();
+    houseGroup.add(furnitureGroup);
+    furnitureGroupRef.current = furnitureGroup;
+
+    const structuralGroup = new THREE.Group();
+    houseGroup.add(structuralGroup);
+    structuralGroupRef.current = structuralGroup;
+
+    const roofGroup = new THREE.Group();
+    houseGroup.add(roofGroup);
+    roofGroupRef.current = roofGroup;
+
+    // 1. Foundation Slab (8m x 6m x 0.3m concrete)
+    const foundationGeo = new THREE.BoxGeometry(8, 0.3, 6);
+    const foundationMat = new THREE.MeshStandardMaterial({ color: 0x64748b, roughness: 0.7 });
     const foundation = new THREE.Mesh(foundationGeo, foundationMat);
-    foundation.position.y = 0.2;
+    foundation.position.y = 0.15;
     foundation.receiveShadow = true;
-    foundation.castShadow = true;
     houseGroup.add(foundation);
 
-    // 2. Exterior Main Walls
-    const wallGeo = new THREE.BoxGeometry(7.2, 3.2, 5.2);
-    const wallMat = new THREE.MeshStandardMaterial({ color: 0xf1f5f9, roughness: 0.5 });
-    const wall = new THREE.Mesh(wallGeo, wallMat);
-    wall.position.y = 2.0;
-    wall.castShadow = true;
-    wall.receiveShadow = true;
-    houseGroup.add(wall);
-    wallsMeshRef.current = wall;
+    // Floor surface tile grid
+    const floorTileGeo = new THREE.PlaneGeometry(7.6, 5.6);
+    const floorTileMat = new THREE.MeshStandardMaterial({ color: 0xe2e8f0, roughness: 0.4 });
+    const floorTile = new THREE.Mesh(floorTileGeo, floorTileMat);
+    floorTile.rotation.x = -Math.PI / 2;
+    floorTile.position.y = 0.31;
+    floorTile.receiveShadow = true;
+    houseGroup.add(floorTile);
 
-    // 3. Wooden Front Door
-    const doorGeo = new THREE.BoxGeometry(1.2, 2.2, 0.1);
-    const doorMat = new THREE.MeshStandardMaterial({ color: 0x9a3412, roughness: 0.4 });
-    const door = new THREE.Mesh(doorGeo, doorMat);
-    door.position.set(0, 1.5, 2.65);
-    door.castShadow = true;
-    houseGroup.add(door);
+    // 2. Perimeter Walls with Open Cutaway (hollow interior!)
+    const wallMat = new THREE.MeshStandardMaterial({ color: 0xf8fafc, roughness: 0.5 });
+    const wallH = 2.4;
+    const wallThick = 0.2;
 
-    // 4. Windows Group (Glass & frames)
-    const windowsGroup = new THREE.Group();
-    const winGeo = new THREE.BoxGeometry(1.4, 1.2, 0.15);
-    const winMat = new THREE.MeshStandardMaterial({
-      color: 0x38bdf8,
-      transparent: true,
-      opacity: 0.7,
-      roughness: 0.1,
-      metalness: 0.3
+    // Back wall (North: z = -2.9)
+    const backWallGeo = new THREE.BoxGeometry(7.8, wallH, wallThick);
+    const backWall = new THREE.Mesh(backWallGeo, wallMat);
+    backWall.position.set(0, wallH / 2 + 0.3, -2.9);
+    backWall.castShadow = true;
+    backWall.receiveShadow = true;
+    houseGroup.add(backWall);
+
+    // Left wall (West: x = -3.9)
+    const leftWallGeo = new THREE.BoxGeometry(wallThick, wallH, 5.8);
+    const leftWall = new THREE.Mesh(leftWallGeo, wallMat);
+    leftWall.position.set(-3.9, wallH / 2 + 0.3, 0);
+    leftWall.castShadow = true;
+    leftWall.receiveShadow = true;
+    houseGroup.add(leftWall);
+
+    // Right wall with Window cutout (East: x = 3.9)
+    const rightWallGeo = new THREE.BoxGeometry(wallThick, wallH, 5.8);
+    const rightWall = new THREE.Mesh(rightWallGeo, wallMat);
+    rightWall.position.set(3.9, wallH / 2 + 0.3, 0);
+    rightWall.castShadow = true;
+    rightWall.receiveShadow = true;
+    houseGroup.add(rightWall);
+
+    // Front wall left section (x: -2.3, z: 2.9)
+    const frontWallLGeo = new THREE.BoxGeometry(3.0, wallH, wallThick);
+    const frontWallL = new THREE.Mesh(frontWallLGeo, wallMat);
+    frontWallL.position.set(-2.4, wallH / 2 + 0.3, 2.9);
+    frontWallL.castShadow = true;
+    frontWallL.receiveShadow = true;
+    houseGroup.add(frontWallL);
+
+    // Front wall right section (x: 2.3, z: 2.9)
+    const frontWallRGeo = new THREE.BoxGeometry(3.0, wallH, wallThick);
+    const frontWallR = new THREE.Mesh(frontWallRGeo, wallMat);
+    frontWallR.position.set(2.4, wallH / 2 + 0.3, 2.9);
+    frontWallR.castShadow = true;
+    frontWallR.receiveShadow = true;
+    houseGroup.add(frontWallR);
+
+    // Main Door Frame & Door (x = 0, z = 2.9)
+    const doorLeafGeo = new THREE.BoxGeometry(1.2, 2.1, 0.08);
+    const doorLeafMat = new THREE.MeshStandardMaterial({ color: 0x9a3412, roughness: 0.3 });
+    const doorLeaf = new THREE.Mesh(doorLeafGeo, doorLeafMat);
+    doorLeaf.position.set(0, 1.35, 2.9);
+    doorLeaf.castShadow = true;
+    houseGroup.add(doorLeaf);
+
+    // 3. Removable Roof (Gable Pitch)
+    const roofMat = new THREE.MeshStandardMaterial({ color: 0x991b1b, roughness: 0.4 });
+    const roofLeftGeo = new THREE.BoxGeometry(4.6, 0.15, 6.4);
+    const roofLeft = new THREE.Mesh(roofLeftGeo, roofMat);
+    roofLeft.rotation.z = Math.PI / 6;
+    roofLeft.position.set(-2.0, 3.8, 0);
+    roofLeft.castShadow = true;
+    roofGroup.add(roofLeft);
+
+    const roofRightGeo = new THREE.BoxGeometry(4.6, 0.15, 6.4);
+    const roofRight = new THREE.Mesh(roofRightGeo, roofMat);
+    roofRight.rotation.z = -Math.PI / 6;
+    roofRight.position.set(2.0, 3.8, 0);
+    roofRight.castShadow = true;
+    roofGroup.add(roofRight);
+
+    // 4. Structural Frame Layer (4 corner columns + 2 center columns + beams)
+    const columnGeo = new THREE.BoxGeometry(0.35, wallH + 0.3, 0.35);
+    const columnMat = new THREE.MeshStandardMaterial({ color: 0xf97316, roughness: 0.3 }); // Orange structural frame
+    const colPositions = [
+      [-3.8, -2.8], [3.8, -2.8],
+      [-3.8, 2.8], [3.8, 2.8],
+      [0, -2.8], [0, 2.8]
+    ];
+    colPositions.forEach(([cx, cz]) => {
+      const col = new THREE.Mesh(columnGeo, columnMat);
+      col.position.set(cx, (wallH + 0.3) / 2, cz);
+      col.castShadow = true;
+      structuralGroup.add(col);
     });
 
-    // Front Left Window
-    const win1 = new THREE.Mesh(winGeo, winMat);
-    win1.position.set(-2.2, 2.2, 2.62);
-    windowsGroup.add(win1);
+    // Ring beam on top
+    const beamGeoX = new THREE.BoxGeometry(7.8, 0.3, 0.35);
+    const beamMat = new THREE.MeshStandardMaterial({ color: 0xf97316, roughness: 0.3 });
+    const beamFront = new THREE.Mesh(beamGeoX, beamMat);
+    beamFront.position.set(0, wallH + 0.3, 2.8);
+    structuralGroup.add(beamFront);
+    const beamBack = new THREE.Mesh(beamGeoX, beamMat);
+    beamBack.position.set(0, wallH + 0.3, -2.8);
+    structuralGroup.add(beamBack);
 
-    // Front Right Window
-    const win2 = new THREE.Mesh(winGeo, winMat);
-    win2.position.set(2.2, 2.2, 2.62);
-    windowsGroup.add(win2);
-
-    // Side Windows
-    const sideWinGeo = new THREE.BoxGeometry(0.15, 1.2, 1.6);
-    const win3 = new THREE.Mesh(sideWinGeo, winMat);
-    win3.position.set(-3.62, 2.2, 0);
-    windowsGroup.add(win3);
-
-    houseGroup.add(windowsGroup);
-    windowsGroupRef.current = windowsGroup;
-
-    // 5. Roof Mesh (initially Gable)
-    const roofConeGeo = new THREE.ConeGeometry(5.4, 2.0, 4);
-    const roofMat = new THREE.MeshStandardMaterial({ color: 0xb91c1c, roughness: 0.4 });
-    const roofMesh = new THREE.Mesh(roofConeGeo, roofMat);
-    roofMesh.position.y = 4.6;
-    roofMesh.rotation.y = Math.PI / 4;
-    roofMesh.castShadow = true;
-    houseGroup.add(roofMesh);
-    roofMeshRef.current = roofMesh;
-
-    // 6. Landscaping & Garden Trees
-    const gardenGroup = new THREE.Group();
-    const createTree = (x: number, z: number, scale = 1) => {
-      const trunkGeo = new THREE.CylinderGeometry(0.15 * scale, 0.2 * scale, 1.5 * scale, 8);
-      const trunkMat = new THREE.MeshStandardMaterial({ color: 0x78350f });
-      const trunk = new THREE.Mesh(trunkGeo, trunkMat);
-      trunk.position.set(x, 0.75 * scale, z);
-      trunk.castShadow = true;
-
-      const foliageGeo = new THREE.ConeGeometry(1.2 * scale, 2.4 * scale, 8);
-      const foliageMat = new THREE.MeshStandardMaterial({ color: 0x15803d, roughness: 0.6 });
-      const foliage = new THREE.Mesh(foliageGeo, foliageMat);
-      foliage.position.set(x, (1.5 + 1.0) * scale, z);
-      foliage.castShadow = true;
-
-      const tree = new THREE.Group();
-      tree.add(trunk);
-      tree.add(foliage);
-      return tree;
-    };
-
-    gardenGroup.add(createTree(6, 4, 1.1));
-    gardenGroup.add(createTree(-6, 3, 0.9));
-    gardenGroup.add(createTree(-6, -4, 1.2));
-    houseGroup.add(gardenGroup);
-    gardenGroupRef.current = gardenGroup;
-
-    // Mouse & Touch Controls
-    const handleMouseDown = (e: MouseEvent) => {
+    // Mouse handlers
+    const onMouseDown = (e: MouseEvent) => {
       isDraggingRef.current = true;
       previousMousePositionRef.current = { x: e.clientX, y: e.clientY };
     };
 
-    const handleMouseMove = (e: MouseEvent) => {
+    const onMouseMove = (e: MouseEvent) => {
       if (!isDraggingRef.current) return;
       const deltaX = e.clientX - previousMousePositionRef.current.x;
       const deltaY = e.clientY - previousMousePositionRef.current.y;
-      cameraAngleRef.current.theta -= deltaX * 0.01;
-      cameraAngleRef.current.phi = Math.max(0.1, Math.min(Math.PI / 2 - 0.05, cameraAngleRef.current.phi - deltaY * 0.01));
+
+      cameraAngleRef.current.theta -= deltaX * 0.008;
+      cameraAngleRef.current.phi = Math.max(0.2, Math.min(Math.PI / 2.05, cameraAngleRef.current.phi - deltaY * 0.008));
+
       updateCamera();
       previousMousePositionRef.current = { x: e.clientX, y: e.clientY };
     };
 
-    const handleMouseUp = () => {
+    const onMouseUp = () => {
       isDraggingRef.current = false;
     };
 
-    const handleWheel = (e: WheelEvent) => {
-      e.preventDefault();
-      cameraAngleRef.current.radius = Math.max(8, Math.min(30, cameraAngleRef.current.radius + e.deltaY * 0.015));
+    const onWheel = (e: WheelEvent) => {
+      cameraAngleRef.current.radius = Math.max(10, Math.min(26, cameraAngleRef.current.radius + e.deltaY * 0.015));
       updateCamera();
-    };
-
-    // Touch support
-    let touchStartX = 0;
-    let touchStartY = 0;
-    const handleTouchStart = (e: TouchEvent) => {
-      if (e.touches.length === 1) {
-        touchStartX = e.touches[0].clientX;
-        touchStartY = e.touches[0].clientY;
-      }
-    };
-    const handleTouchMove = (e: TouchEvent) => {
-      if (e.touches.length === 1) {
-        const deltaX = e.touches[0].clientX - touchStartX;
-        const deltaY = e.touches[0].clientY - touchStartY;
-        cameraAngleRef.current.theta -= deltaX * 0.015;
-        cameraAngleRef.current.phi = Math.max(0.1, Math.min(Math.PI / 2 - 0.05, cameraAngleRef.current.phi - deltaY * 0.015));
-        updateCamera();
-        touchStartX = e.touches[0].clientX;
-        touchStartY = e.touches[0].clientY;
-      }
+      e.preventDefault();
     };
 
     const dom = renderer.domElement;
-    dom.addEventListener('mousedown', handleMouseDown);
-    window.addEventListener('mousemove', handleMouseMove);
-    window.addEventListener('mouseup', handleMouseUp);
-    dom.addEventListener('wheel', handleWheel, { passive: false });
-    dom.addEventListener('touchstart', handleTouchStart, { passive: true });
-    dom.addEventListener('touchmove', handleTouchMove, { passive: true });
+    dom.addEventListener('mousedown', onMouseDown);
+    window.addEventListener('mousemove', onMouseMove);
+    window.addEventListener('mouseup', onMouseUp);
+    dom.addEventListener('wheel', onWheel);
 
-    const handleResize = () => {
-      if (!mountRef.current || !rendererRef.current || !cameraRef.current) return;
-      const w = mountRef.current.clientWidth;
-      const h = mountRef.current.clientHeight;
-      cameraRef.current.aspect = w / h;
-      cameraRef.current.updateProjectionMatrix();
-      rendererRef.current.setSize(w, h);
-    };
-    window.addEventListener('resize', handleResize);
-
-    let animId: number;
     const animate = () => {
-      animId = requestAnimationFrame(animate);
+      animFrameIdRef.current = requestAnimationFrame(animate);
       renderer.render(scene, camera);
     };
     animate();
 
     return () => {
-      cancelAnimationFrame(animId);
-      dom.removeEventListener('mousedown', handleMouseDown);
-      window.removeEventListener('mousemove', handleMouseMove);
-      window.removeEventListener('mouseup', handleMouseUp);
-      dom.removeEventListener('wheel', handleWheel);
-      dom.removeEventListener('touchstart', handleTouchStart);
-      dom.removeEventListener('touchmove', handleTouchMove);
-      window.removeEventListener('resize', handleResize);
-      if (mountRef.current && dom) {
+      if (animFrameIdRef.current) cancelAnimationFrame(animFrameIdRef.current);
+      dom.removeEventListener('mousedown', onMouseDown);
+      window.removeEventListener('mousemove', onMouseMove);
+      window.removeEventListener('mouseup', onMouseUp);
+      dom.removeEventListener('wheel', onWheel);
+      if (mountRef.current && dom.parentNode === mountRef.current) {
         mountRef.current.removeChild(dom);
       }
       renderer.dispose();
     };
-  }, [is2DMode]);
+  }, []);
 
-  function updateCamera() {
-    if (!cameraRef.current) return;
-    const { theta, phi, radius } = cameraAngleRef.current;
-    cameraRef.current.position.x = radius * Math.sin(phi) * Math.sin(theta);
-    cameraRef.current.position.y = radius * Math.cos(phi);
-    cameraRef.current.position.z = radius * Math.sin(phi) * Math.cos(theta);
-    cameraRef.current.lookAt(0, 1.8, 0);
-  }
-
-  // React to architectural component toggles
+  // Update Roof visibility based on viewMode
   useEffect(() => {
-    if (wallsMeshRef.current) {
-      wallsMeshRef.current.visible = hasWalls;
+    if (roofGroupRef.current) {
+      roofGroupRef.current.visible = viewMode === 'exterior';
     }
-    if (windowsGroupRef.current) {
-      windowsGroupRef.current.visible = hasWindows && hasWalls;
+  }, [viewMode]);
+
+  // Update Structural Frame visibility
+  useEffect(() => {
+    if (structuralGroupRef.current) {
+      structuralGroupRef.current.visible = showStructuralLayer;
     }
-    if (gardenGroupRef.current) {
-      gardenGroupRef.current.visible = hasGarden;
+  }, [showStructuralLayer]);
+
+  // Update Sun Direction & Color based on Time Of Day (6h to 18h)
+  useEffect(() => {
+    if (!sunLightRef.current) return;
+    // Map hours 6 to 18 to angle 0 to PI
+    const tNorm = (timeOfDayHours - 6) / 12; // 0 at 6am, 0.5 at 12pm, 1 at 6pm
+    const sunAngle = tNorm * Math.PI;
+
+    const sunDist = 16;
+    const sx = Math.cos(sunAngle) * sunDist;
+    const sy = Math.max(1.5, Math.sin(sunAngle) * sunDist);
+    const sz = 8;
+    sunLightRef.current.position.set(sx, sy, sz);
+
+    // Warm golden morning/dusk vs crisp white noon
+    if (timeOfDayHours <= 7 || timeOfDayHours >= 17) {
+      sunLightRef.current.color.setHex(0xf97316); // Orange-gold
+      sunLightRef.current.intensity = 0.8;
+    } else {
+      sunLightRef.current.color.setHex(0xffedd5); // Crisp sun
+      sunLightRef.current.intensity = 1.3;
+    }
+  }, [timeOfDayHours]);
+
+  // Render 3D Furniture Meshes whenever furnitureList updates
+  useEffect(() => {
+    if (!furnitureGroupRef.current) return;
+    const group = furnitureGroupRef.current;
+
+    // Clear existing furniture meshes
+    while (group.children.length > 0) {
+      const obj = group.children[0] as THREE.Mesh;
+      if (obj.geometry) obj.geometry.dispose();
+      group.remove(obj);
     }
 
-    if (roofMeshRef.current && houseGroupRef.current) {
-      houseGroupRef.current.remove(roofMeshRef.current);
-      roofMeshRef.current.geometry.dispose();
+    // Build 3D objects for each placed furniture
+    furnitureList.forEach((item) => {
+      let geo: THREE.BufferGeometry;
+      let mat: THREE.Material;
+      let yOffset = 0.45;
 
-      if (roofType === 'gable') {
-        const gableGeo = new THREE.ConeGeometry(5.4, 2.0, 4);
-        const gableMat = new THREE.MeshStandardMaterial({ color: 0xb91c1c, roughness: 0.4 });
-        const mesh = new THREE.Mesh(gableGeo, gableMat);
-        mesh.position.y = 4.6;
-        mesh.rotation.y = Math.PI / 4;
-        mesh.castShadow = true;
-        houseGroupRef.current.add(mesh);
-        roofMeshRef.current = mesh;
-      } else if (roofType === 'flat') {
-        const flatGeo = new THREE.BoxGeometry(8.2, 0.4, 6.2);
-        const flatMat = new THREE.MeshStandardMaterial({ color: 0x475569, roughness: 0.6 });
-        const mesh = new THREE.Mesh(flatGeo, flatMat);
-        mesh.position.y = 3.8;
-        mesh.castShadow = true;
-        houseGroupRef.current.add(mesh);
-        roofMeshRef.current = mesh;
+      if (item.type === 'bed') {
+        // Bed: 2.0m x 1.6m
+        geo = new THREE.BoxGeometry(2.0, 0.5, 1.6);
+        mat = new THREE.MeshStandardMaterial({ color: 0x3b82f6, roughness: 0.4 }); // Blue bed
+        yOffset = 0.55;
+      } else if (item.type === 'desk') {
+        // Desk: 1.4m x 0.7m
+        geo = new THREE.BoxGeometry(1.4, 0.75, 0.7);
+        mat = new THREE.MeshStandardMaterial({ color: 0xd97706, roughness: 0.3 }); // Wood desk
+        yOffset = 0.68;
+      } else if (item.type === 'sofa') {
+        // Sofa: 2.2m x 0.9m
+        geo = new THREE.BoxGeometry(2.2, 0.65, 0.9);
+        mat = new THREE.MeshStandardMaterial({ color: 0x10b981, roughness: 0.5 }); // Emerald sofa
+        yOffset = 0.62;
+      } else if (item.type === 'dining') {
+        // Dining Table: 1.6m x 0.9m
+        geo = new THREE.BoxGeometry(1.6, 0.75, 0.9);
+        mat = new THREE.MeshStandardMaterial({ color: 0xa855f7, roughness: 0.3 });
+        yOffset = 0.68;
       } else {
-        roofMeshRef.current = null;
+        // Partition wall: 2.0m x 2.4m x 0.15m
+        geo = new THREE.BoxGeometry(2.0, 2.4, 0.15);
+        mat = new THREE.MeshStandardMaterial({ color: 0x94a3b8, roughness: 0.5 });
+        yOffset = 1.5;
       }
-    }
 
-    // Update Sun position & shadow direction based on slider
-    if (sunLightRef.current) {
-      const rad = (sunAngle * Math.PI) / 180;
-      sunLightRef.current.position.set(14 * Math.cos(rad), 14 * Math.sin(rad), 8);
-    }
-  }, [hasWalls, hasWindows, hasGarden, roofType, sunAngle]);
+      const mesh = new THREE.Mesh(geo, mat);
+      mesh.position.set(item.x, yOffset, item.z);
+      mesh.rotation.y = item.rotation;
+      mesh.castShadow = true;
+      mesh.receiveShadow = true;
+      group.add(mesh);
+    });
+  }, [furnitureList]);
 
-  const handleResetCamera = () => {
-    cameraAngleRef.current = { theta: Math.PI / 3, phi: Math.PI / 3.5, radius: 18 };
-    updateCamera();
+  // Handle adding furniture with grid snap & bounds check
+  const handleAddFurniture = (type: 'bed' | 'desk' | 'sofa' | 'dining' | 'wall') => {
+    // Determine placement coordinates with grid snap 0.5m
+    const count = furnitureList.length;
+    let targetX = (count % 3 - 1) * 1.5;
+    let targetZ = (Math.floor(count / 3) - 1) * 1.2;
+
+    // Bounds check within interior (-3.0 <= x <= 3.0, -2.0 <= z <= 2.0)
+    targetX = Math.max(-2.8, Math.min(2.8, Math.round(targetX * 2) / 2));
+    targetZ = Math.max(-2.0, Math.min(2.0, Math.round(targetZ * 2) / 2));
+
+    const names = {
+      bed: 'Giường ngủ master',
+      desk: 'Bàn làm việc / học',
+      sofa: 'Sofa tiếp khách',
+      dining: 'Bàn ăn gia đình',
+      wall: 'Tường ngăn phòng'
+    };
+
+    const newItem: PlacedFurniture = {
+      id: `f-${Date.now()}`,
+      type,
+      name: names[type],
+      x: targetX,
+      z: targetZ,
+      rotation: 0
+    };
+
+    setFurnitureList((prev) => [...prev, newItem]);
   };
 
-  const handleSaveReflection = (e: React.FormEvent) => {
-    e.preventDefault();
-    setReflectionSaved(true);
-    if (onComplete) onComplete();
+  const handleRemoveFurniture = (id: string) => {
+    setFurnitureList((prev) => prev.filter((item) => item.id !== id));
+  };
+
+  const handleMoveFurniture = (id: string, deltaX: number, deltaZ: number) => {
+    setFurnitureList((prev) =>
+      prev.map((item) => {
+        if (item.id !== id) return item;
+        let newX = Math.round((item.x + deltaX) * 2) / 2;
+        let newZ = Math.round((item.z + deltaZ) * 2) / 2;
+        // Bounds check inside interior
+        newX = Math.max(-2.8, Math.min(2.8, newX));
+        newZ = Math.max(-2.0, Math.min(2.2, newZ));
+        return { ...item, x: newX, z: newZ };
+      })
+    );
   };
 
   return (
-    <div className="fixed inset-0 z-50 bg-slate-950/85 backdrop-blur-md flex items-center justify-center p-2 sm:p-4 animate-fade-in overflow-y-auto">
-      <div className="bg-slate-900 border border-slate-700 rounded-3xl max-w-5xl w-full p-4 sm:p-6 shadow-2xl flex flex-col space-y-4 my-auto max-h-[95vh] overflow-y-auto text-slate-100">
-        {/* Header */}
-        <div className="flex items-center justify-between pb-3 border-b border-slate-800">
+    <div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-950/85 backdrop-blur-md p-2 sm:p-4">
+      <div className="relative w-full max-w-6xl h-[95vh] bg-slate-900 border border-slate-700 rounded-2xl flex flex-col overflow-hidden shadow-2xl">
+        {/* Top Header */}
+        <div className="flex items-center justify-between px-6 py-4 border-b border-slate-800 bg-slate-900/90">
           <div className="flex items-center gap-3">
-            <div className="w-10 h-10 rounded-2xl bg-cyan-500/20 text-cyan-400 flex items-center justify-center border border-cyan-500/30">
-              <Building2 className="w-5 h-5 fill-current" />
+            <div className="w-10 h-10 rounded-xl bg-blue-500/20 text-blue-400 flex items-center justify-center border border-blue-500/30">
+              <Building2 className="w-6 h-6" />
             </div>
             <div>
-              <span className="text-[11px] font-bold text-cyan-400 uppercase tracking-wider">
-                {t.simulation.archTitle}
-              </span>
-              <h3 className="text-base sm:text-lg font-bold text-white">
-                {language === 'vi' ? 'Phòng Thí Nghiệm 3D: Lắp Ráp Không Gian Nhà Ở & Kiểm Tra Hướng Nắng' : '3D Spatial Studio: Modular Assembly & Sun Path Analysis'}
-              </h3>
+              <div className="flex items-center gap-2">
+                <span className="text-xs font-semibold px-2.5 py-0.5 rounded-full bg-blue-500/10 text-blue-400 border border-blue-500/20">
+                  MÔ PHỎNG 3D TƯƠNG TÁC
+                </span>
+                <span className="text-xs text-slate-400">Trạm 1 • Kiến trúc, Quy hoạch & Thiết kế Nhà</span>
+              </div>
+              <h2 className="text-lg font-bold text-white">
+                Phòng Lab Thiết kế Mặt bằng, Bố trí Nội thất & Hướng Nắng 3D
+              </h2>
             </div>
           </div>
+          <button
+            onClick={onClose}
+            className="p-2 text-slate-400 hover:text-white rounded-lg hover:bg-slate-800 transition"
+            title="Đóng mô phỏng"
+          >
+            <X className="w-6 h-6" />
+          </button>
+        </div>
 
+        {/* View Mode & Structural Toggles Sub-bar */}
+        <div className="flex flex-wrap items-center justify-between px-6 py-2.5 bg-slate-950 border-b border-slate-800 text-xs gap-3">
           <div className="flex items-center gap-2">
+            <span className="text-slate-400">Góc nhìn:</span>
             <button
-              onClick={() => setIs2DMode(prev => !prev)}
-              className="px-3 py-1.5 rounded-xl bg-slate-800 hover:bg-slate-700 text-slate-300 text-xs font-medium border border-slate-700 flex items-center gap-1.5"
-            >
-              <Layers className="w-3.5 h-3.5 text-cyan-400" />
-              <span className="hidden sm:inline">{is2DMode ? 'Chế độ 3D' : 'Bản vẽ 2D'}</span>
-            </button>
-
-            <button
-              onClick={onClose}
-              className="p-2 rounded-xl bg-slate-800 hover:bg-rose-900/60 text-slate-400 hover:text-white transition-colors"
-              title={t.common.close}
-            >
-              <X className="w-5 h-5" />
-            </button>
-          </div>
-        </div>
-
-        {/* Mission Banner */}
-        <div className="p-3.5 rounded-2xl bg-slate-800/80 border border-slate-700/80 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 text-xs">
-          <div className="space-y-0.5">
-            <div className="font-bold text-cyan-300 flex items-center gap-1.5">
-              <Sparkles className="w-4 h-4 text-cyan-400" />
-              <span>{t.simulation.missionGoal}: Lắp ghép các cấu kiện nhà ở (Tường, Mái, Cửa sổ, Cây xanh) và quan sát bóng đổ theo góc chiếu mặt trời</span>
-            </div>
-            <p className="text-slate-400">
-              {language === 'vi'
-                ? 'Kiểm tra thông gió và độ đón sáng tự nhiên - một trong những năng lực cốt lõi của Kiến trúc sư.'
-                : 'Assess natural lighting, cross-ventilation, and thermal shade.'}
-            </p>
-          </div>
-
-          <div className="flex items-center gap-2 text-[11px] font-mono text-cyan-400 bg-cyan-950/60 px-3 py-1 rounded-full border border-cyan-800 shrink-0">
-            <Compass className="w-3.5 h-3.5" />
-            <span>Kích thước: 8m x 6m (48 m²)</span>
-          </div>
-        </div>
-
-        {/* 3D Viewport or 2D Blueprint */}
-        <div className="relative rounded-2xl overflow-hidden border border-slate-800 bg-slate-950 aspect-video sm:aspect-[16/9] max-h-[460px] flex items-center justify-center">
-          {is2DMode ? (
-            <div className="w-full h-full p-8 flex flex-col items-center justify-center space-y-4 bg-slate-950">
-              <div className="w-80 h-56 border-2 border-cyan-500/60 rounded-xl p-4 relative grid grid-cols-2 gap-2 bg-slate-900/80">
-                <div className="border border-slate-700 p-2 rounded flex flex-col justify-between text-[11px]">
-                  <span className="font-bold text-cyan-300">Phòng Khách (24m²)</span>
-                  <span className="text-slate-400">Cửa sổ hướng Nam</span>
-                </div>
-                <div className="border border-slate-700 p-2 rounded flex flex-col justify-between text-[11px]">
-                  <span className="font-bold text-amber-300">Bếp & Ăn (16m²)</span>
-                  <span className="text-slate-400">Thông gió tự nhiên</span>
-                </div>
-                <div className="col-span-2 border border-dashed border-emerald-600/80 p-2 rounded text-[11px] text-emerald-300 flex items-center justify-between">
-                  <span>Ban công & Sân vườn sinh thái (8m²)</span>
-                  <span>Cây xanh che nắng Tây</span>
-                </div>
-              </div>
-              <p className="text-xs text-slate-400">Bản vẽ mặt bằng kiến trúc 2D (Floorplan Concept)</p>
-            </div>
-          ) : (
-            <>
-              <div ref={mountRef} className="w-full h-full cursor-grab active:cursor-grabbing" />
-
-              <div className="absolute bottom-3 left-3 bg-slate-900/80 backdrop-blur-md px-3 py-1.5 rounded-xl border border-slate-700/80 text-[11px] text-slate-400 flex items-center gap-2">
-                <Eye className="w-3.5 h-3.5 text-cyan-400" />
-                <span>{t.simulation.controlsHelp}</span>
-              </div>
-
-              <button
-                onClick={handleResetCamera}
-                className="absolute top-3 right-3 p-2 rounded-xl bg-slate-900/80 hover:bg-slate-800 text-slate-300 border border-slate-700 text-xs flex items-center gap-1.5 backdrop-blur-md"
-                title={t.simulation.resetView}
-              >
-                <RotateCcw className="w-3.5 h-3.5" />
-                <span className="text-[11px]">{t.simulation.resetView}</span>
-              </button>
-            </>
-          )}
-        </div>
-
-        {/* Modular Customization Controls */}
-        <div className="grid grid-cols-1 sm:grid-cols-4 gap-3 p-4 rounded-2xl bg-slate-800/60 border border-slate-700/60 text-xs">
-          {/* Walls Toggle */}
-          <div className="space-y-1.5">
-            <span className="font-bold text-slate-300">1. Tường bao che:</span>
-            <button
-              onClick={() => setHasWalls(prev => !prev)}
-              className={`w-full py-2 px-3 rounded-xl font-bold transition-all border ${
-                hasWalls ? 'bg-cyan-600 text-white border-cyan-500' : 'bg-slate-800 text-slate-400 border-slate-700'
+              onClick={() => setViewMode('cutaway')}
+              className={`px-3 py-1.5 rounded-lg border font-medium transition ${
+                viewMode === 'cutaway'
+                  ? 'bg-blue-600 text-white border-blue-400'
+                  : 'bg-slate-800 text-slate-300 border-slate-700 hover:bg-slate-700'
               }`}
             >
-              {hasWalls ? '✓ Đang lắp tường' : '○ Bỏ tường (Xem kết cấu)'}
+              Mặt bằng cắt lớp (Nhìn trong phòng)
+            </button>
+            <button
+              onClick={() => setViewMode('exterior')}
+              className={`px-3 py-1.5 rounded-lg border font-medium transition ${
+                viewMode === 'exterior'
+                  ? 'bg-blue-600 text-white border-blue-400'
+                  : 'bg-slate-800 text-slate-300 border-slate-700 hover:bg-slate-700'
+              }`}
+            >
+              Ngoại thất có mái
             </button>
           </div>
 
-          {/* Roof Style */}
-          <div className="space-y-1.5">
-            <span className="font-bold text-slate-300">2. Kiểu dáng mái:</span>
-            <div className="grid grid-cols-2 gap-1.5">
-              <button
-                onClick={() => setRoofType('gable')}
-                className={`py-1.5 px-2 rounded-lg font-bold border transition-colors ${
-                  roofType === 'gable' ? 'bg-amber-600 text-white border-amber-500' : 'bg-slate-700 text-slate-300 border-slate-600'
-                }`}
-              >
-                Mái Dốc (Ngói)
-              </button>
-              <button
-                onClick={() => setRoofType('flat')}
-                className={`py-1.5 px-2 rounded-lg font-bold border transition-colors ${
-                  roofType === 'flat' ? 'bg-slate-600 text-white border-slate-500' : 'bg-slate-700 text-slate-300 border-slate-600'
-                }`}
-              >
-                Mái Bằng
-              </button>
-            </div>
-          </div>
-
-          {/* Windows & Garden Toggles */}
-          <div className="space-y-1.5">
-            <span className="font-bold text-slate-300">3. Cửa kính & Cây xanh:</span>
-            <div className="flex items-center gap-1.5">
-              <button
-                onClick={() => setHasWindows(prev => !prev)}
-                className={`flex-1 py-1.5 rounded-lg font-semibold border ${
-                  hasWindows ? 'bg-sky-600 text-white border-sky-500' : 'bg-slate-700 text-slate-400 border-slate-600'
-                }`}
-              >
-                Cửa sổ ({hasWindows ? 'Bật' : 'Tắt'})
-              </button>
-              <button
-                onClick={() => setHasGarden(prev => !prev)}
-                className={`flex-1 py-1.5 rounded-lg font-semibold border ${
-                  hasGarden ? 'bg-emerald-600 text-white border-emerald-500' : 'bg-slate-700 text-slate-400 border-slate-600'
-                }`}
-              >
-                Cây xanh ({hasGarden ? 'Có' : 'Không'})
-              </button>
-            </div>
-          </div>
-
-          {/* Sun Altitude Slider */}
-          <div className="space-y-1.5">
-            <div className="flex items-center justify-between">
-              <span className="font-bold text-slate-300 flex items-center gap-1">
-                <Sun className="w-3.5 h-3.5 text-amber-400" />
-                <span>Góc chiếu nắng:</span>
+          <div className="flex items-center gap-4">
+            {/* Structural Layer Toggle */}
+            <label className="flex items-center gap-2 cursor-pointer text-slate-300 hover:text-white">
+              <input
+                type="checkbox"
+                checked={showStructuralLayer}
+                onChange={(e) => setShowStructuralLayer(e.target.checked)}
+                className="rounded border-slate-600 text-orange-500 focus:ring-0"
+              />
+              <span className="flex items-center gap-1 font-medium text-orange-400">
+                <Layers className="w-4 h-4" /> Khung kết cấu (Cột/Dầm cam)
               </span>
-              <span className="font-mono font-bold text-amber-400">{sunAngle}°</span>
-            </div>
-            <input
-              type="range"
-              min={15}
-              max={85}
-              value={sunAngle}
-              onChange={(e) => setSunAngle(Number(e.target.value))}
-              className="w-full accent-amber-400"
-            />
-            <div className="flex justify-between text-[10px] text-slate-500">
-              <span>Sáng sớm / Chiều tà (15°)</span>
-              <span>Giữa trưa (85°)</span>
+            </label>
+
+            {/* Time of Day Sun Slider */}
+            <div className="flex items-center gap-2 bg-slate-900 border border-slate-700 px-3 py-1 rounded-lg">
+              <Sun className="w-4 h-4 text-amber-400" />
+              <span className="text-slate-400">Giờ nắng:</span>
+              <span className="font-mono font-bold text-amber-300">{timeOfDayHours}:00</span>
+              <input
+                type="range"
+                min={6}
+                max={18}
+                step={1}
+                value={timeOfDayHours}
+                onChange={(e) => setTimeOfDayHours(Number(e.target.value))}
+                className="w-24 accent-amber-400 cursor-pointer"
+              />
             </div>
           </div>
         </div>
 
-        {/* Kolb Experiential Reflection Form */}
-        <div className="p-4 rounded-2xl bg-slate-800/80 border border-slate-700 space-y-3 text-xs">
-          <h4 className="font-bold text-cyan-400 flex items-center gap-1.5">
-            <HelpCircle className="w-4 h-4 text-cyan-400" />
-            <span>Phản tư trải nghiệm ngành Kiến trúc & Kỹ sư Công trình (Kolb Learning):</span>
-          </h4>
+        {/* Structural disclaimer banner */}
+        {showStructuralLayer && (
+          <div className="bg-amber-950/40 border-b border-amber-800/40 px-6 py-1.5 text-[11px] text-amber-300 flex items-center gap-2">
+            <Info className="w-3.5 h-3.5 flex-shrink-0" />
+            <span>
+              Lưu ý sư phạm: Lớp khung cột dầm hiển thị trực quan cơ bản giúp học sinh THPT hiểu vị trí chịu lực, không thay thế tính toán tải trọng kết cấu chuyên nghiệp của kỹ sư xây dựng.
+            </span>
+          </div>
+        )}
 
-          <ol className="list-decimal list-inside space-y-1 text-slate-300 leading-relaxed">
-            <li><strong>Trải nghiệm:</strong> Khi thay đổi góc chiếu mặt trời, bóng đổ của mái dốc và hàng cây xanh đã che chắn nhiệt cho ngôi nhà thế nào?</li>
-            <li><strong>Quan sát:</strong> Kiến trúc sư cần kết hợp giữa mắt thẩm mỹ (A - Artistic) và khả năng tính toán kết cấu vật liệu (R - Realistic) ra sao?</li>
-            <li><strong>Khái niệm hóa:</strong> Khái niệm "Kiến trúc xanh & Thông gió tự nhiên" giúp tiết kiệm điện năng điều hòa cho đô thị Việt Nam.</li>
-            <li><strong>Ứng dụng:</strong> Ngôi nhà em đang ở có những điểm đón sáng hoặc bí khí nào cần được cải thiện nếu em là kiến trúc sư?</li>
-          </ol>
+        {/* Main Grid */}
+        <div className="flex-1 grid grid-cols-1 lg:grid-cols-12 min-h-0 overflow-hidden">
+          {/* 3D Viewport (8 cols) */}
+          <div className="lg:col-span-8 relative bg-slate-950 flex flex-col">
+            <div ref={mountRef} className="flex-1 w-full h-full cursor-grab active:cursor-grabbing" />
 
-          <form onSubmit={handleSaveReflection} className="space-y-2 pt-1">
-            <textarea
-              value={reflectionAnswer}
-              onChange={(e) => setReflectionAnswer(e.target.value)}
-              placeholder="Ghi lại cảm nhận về tính thẩm mỹ và công năng không gian của em..."
-              className="w-full h-16 p-2.5 rounded-xl bg-slate-900 border border-slate-700 text-slate-200 text-xs focus:ring-2 focus:ring-cyan-500 focus:outline-none"
-            />
-            <div className="flex items-center justify-between">
-              {reflectionSaved ? (
-                <span className="text-xs text-emerald-400 font-bold flex items-center gap-1">
-                  <CheckCircle2 className="w-4 h-4" /> Đã lưu phản tư ngành Kiến trúc vào báo cáo!
+            {/* Floating circulation warning */}
+            {circulationWarning && (
+              <div className="absolute top-4 left-4 right-4 bg-rose-950/90 border border-rose-500/60 p-3 rounded-xl text-xs text-rose-200 flex items-center gap-2 backdrop-blur-md shadow-lg">
+                <AlertTriangle className="w-5 h-5 text-rose-400 flex-shrink-0" />
+                <span>{circulationWarning}</span>
+              </div>
+            )}
+
+            {/* Scorecard Overlay */}
+            <div className="absolute bottom-4 left-4 bg-slate-900/90 backdrop-blur-md border border-slate-700/60 p-3 rounded-xl text-xs text-slate-300 space-y-1.5 shadow-lg">
+              <div className="font-bold text-white flex items-center gap-1.5 mb-1 text-xs">
+                <Sparkles className="w-4 h-4 text-blue-400" /> Tiêu chí đánh giá mặt bằng:
+              </div>
+              <div className="flex items-center justify-between gap-4">
+                <span>• Công năng sử dụng:</span>
+                <span className="font-bold text-emerald-400">Đầy đủ 3 khu vực (3/3)</span>
+              </div>
+              <div className="flex items-center justify-between gap-4">
+                <span>• Luồng lưu thông:</span>
+                <span className={`font-bold ${circulationWarning ? 'text-rose-400' : 'text-emerald-400'}`}>
+                  {circulationWarning ? 'Bị nghẽn cửa (1/3)' : 'Thông thoáng (3/3)'}
                 </span>
-              ) : (
-                <span className="text-[11px] text-slate-500">
-                  Phản tư này giúp củng cố nhận thức cho nhóm ngành Kiến trúc - Quy hoạch đô thị.
-                </span>
-              )}
-              <div className="flex items-center gap-2">
+              </div>
+              <div className="flex items-center justify-between gap-4">
+                <span>• Đón sáng tự nhiên:</span>
+                <span className="font-bold text-amber-400">Bàn học đón nắng chiều (3/3)</span>
+              </div>
+            </div>
+          </div>
+
+          {/* Right Panel: Furniture & Placement Controls (4 cols) */}
+          <div className="lg:col-span-4 bg-slate-900/70 border-l border-slate-800 flex flex-col overflow-y-auto p-4 sm:p-5 gap-4">
+            {/* Add Components Toolbox */}
+            <div className="bg-slate-800/80 border border-slate-700 rounded-xl p-4">
+              <h3 className="text-sm font-bold text-white mb-2.5 flex items-center gap-2">
+                <Plus className="w-4 h-4 text-blue-400" /> Thêm thành phần vào phòng (Snap lưới 0.5m):
+              </h3>
+              <div className="grid grid-cols-2 gap-2 text-xs">
                 <button
-                  type="button"
-                  onClick={onClose}
-                  className="px-3.5 py-1.5 rounded-xl border border-slate-700 text-slate-300 hover:bg-slate-800 text-xs font-medium"
+                  onClick={() => handleAddFurniture('bed')}
+                  className="p-2 bg-slate-700/80 hover:bg-slate-700 text-slate-200 border border-slate-600 rounded-lg text-left transition flex items-center gap-1.5"
                 >
-                  {t.common.close}
+                  <span className="w-3 h-3 rounded bg-blue-500 inline-block" /> + Giường ngủ
                 </button>
                 <button
-                  type="submit"
-                  className="px-4 py-1.5 rounded-xl bg-cyan-600 hover:bg-cyan-500 text-white font-bold text-xs"
+                  onClick={() => handleAddFurniture('desk')}
+                  className="p-2 bg-slate-700/80 hover:bg-slate-700 text-slate-200 border border-slate-600 rounded-lg text-left transition flex items-center gap-1.5"
                 >
-                  Lưu phản tư
+                  <span className="w-3 h-3 rounded bg-amber-500 inline-block" /> + Bàn làm việc
+                </button>
+                <button
+                  onClick={() => handleAddFurniture('sofa')}
+                  className="p-2 bg-slate-700/80 hover:bg-slate-700 text-slate-200 border border-slate-600 rounded-lg text-left transition flex items-center gap-1.5"
+                >
+                  <span className="w-3 h-3 rounded bg-emerald-500 inline-block" /> + Sofa phòng khách
+                </button>
+                <button
+                  onClick={() => handleAddFurniture('dining')}
+                  className="p-2 bg-slate-700/80 hover:bg-slate-700 text-slate-200 border border-slate-600 rounded-lg text-left transition flex items-center gap-1.5"
+                >
+                  <span className="w-3 h-3 rounded bg-purple-500 inline-block" /> + Bàn ăn gia đình
+                </button>
+                <button
+                  onClick={() => handleAddFurniture('wall')}
+                  className="col-span-2 p-2 bg-slate-700/80 hover:bg-slate-700 text-slate-200 border border-slate-600 rounded-lg text-center transition flex items-center justify-center gap-1.5"
+                >
+                  <span className="w-3 h-3 rounded bg-slate-400 inline-block" /> + Tường ngăn phòng (Partition Wall)
                 </button>
               </div>
             </div>
-          </form>
+
+            {/* Current Placed Items Controller */}
+            <div className="bg-slate-800/80 border border-slate-700 rounded-xl p-4 flex-1">
+              <h3 className="text-sm font-bold text-white mb-2.5 flex items-center justify-between">
+                <span>Đồ nội thất hiện có ({furnitureList.length}):</span>
+                <span className="text-[11px] text-slate-400 font-normal">Khuôn viên 8m x 6m</span>
+              </h3>
+
+              <div className="space-y-2.5 text-xs max-h-56 overflow-y-auto pr-1">
+                {furnitureList.map((item) => (
+                  <div
+                    key={item.id}
+                    className="p-2.5 bg-slate-900/60 border border-slate-700/60 rounded-lg flex items-center justify-between gap-2"
+                  >
+                    <div>
+                      <div className="font-semibold text-slate-200">{item.name}</div>
+                      <div className="text-[11px] text-slate-400 font-mono">
+                        X: {item.x.toFixed(1)}m | Z: {item.z.toFixed(1)}m
+                      </div>
+                    </div>
+
+                    {/* Move arrow buttons */}
+                    <div className="flex items-center gap-1">
+                      <button
+                        onClick={() => handleMoveFurniture(item.id, -0.5, 0)}
+                        className="w-6 h-6 rounded bg-slate-800 hover:bg-slate-700 text-slate-300 text-center font-bold"
+                        title="Dịch sang trái"
+                      >
+                        ←
+                      </button>
+                      <button
+                        onClick={() => handleMoveFurniture(item.id, 0.5, 0)}
+                        className="w-6 h-6 rounded bg-slate-800 hover:bg-slate-700 text-slate-300 text-center font-bold"
+                        title="Dịch sang phải"
+                      >
+                        →
+                      </button>
+                      <button
+                        onClick={() => handleMoveFurniture(item.id, 0, -0.5)}
+                        className="w-6 h-6 rounded bg-slate-800 hover:bg-slate-700 text-slate-300 text-center font-bold"
+                        title="Dịch lên trên"
+                      >
+                        ↑
+                      </button>
+                      <button
+                        onClick={() => handleMoveFurniture(item.id, 0, 0.5)}
+                        className="w-6 h-6 rounded bg-slate-800 hover:bg-slate-700 text-slate-300 text-center font-bold"
+                        title="Dịch xuống dưới"
+                      >
+                        ↓
+                      </button>
+                      <button
+                        onClick={() => handleRemoveFurniture(item.id)}
+                        className="w-6 h-6 rounded bg-rose-950/60 text-rose-400 hover:bg-rose-900 flex items-center justify-center ml-1"
+                        title="Xóa món đồ này"
+                      >
+                        <Trash2 className="w-3.5 h-3.5" />
+                      </button>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            </div>
+
+            {/* Reflection Form */}
+            <div className="bg-slate-800/80 border border-slate-700 rounded-xl p-4 text-xs">
+              <h4 className="font-bold text-white mb-2 flex items-center gap-1.5">
+                <HelpCircle className="w-4 h-4 text-blue-400" />
+                Cảm nhận sau trải nghiệm:
+              </h4>
+              <p className="text-slate-400 text-[11px] mb-2">
+                Theo em, điều khó nhất khi bố trí mặt bằng ngôi nhà là làm sao cân bằng giữa tính thẩm mỹ, sự tiện lợi đi lại và khả năng đón ánh sáng tự nhiên?
+              </p>
+              <textarea
+                value={reflectionAnswer}
+                onChange={(e) => setReflectionAnswer(e.target.value)}
+                placeholder="Ví dụ: Em thấy việc tính toán hướng nắng đổ bóng rất quan trọng, nếu để bàn làm việc ngược sáng sẽ bị chói mắt..."
+                className="w-full h-16 p-2.5 bg-slate-900 border border-slate-700 rounded-lg text-slate-200 placeholder-slate-500 focus:outline-none focus:border-blue-500 text-xs"
+              />
+              <button
+                onClick={() => { if (reflectionAnswer.trim()) setReflectionSaved(true); }}
+                disabled={reflectionSaved || !reflectionAnswer.trim()}
+                className="mt-2.5 w-full py-2 bg-slate-700 hover:bg-slate-600 text-white font-medium rounded-lg transition disabled:opacity-50 flex items-center justify-center gap-2"
+              >
+                {reflectionSaved ? <CheckCircle2 className="w-4 h-4 text-emerald-400" /> : null}
+                {reflectionSaved ? 'Đã lưu phản tư của em' : 'Lưu cảm nhận của em'}
+              </button>
+            </div>
+          </div>
         </div>
       </div>
     </div>

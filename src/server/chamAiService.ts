@@ -102,15 +102,13 @@ export async function processChamAiChat(params: ProcessChamAiParams): Promise<Ch
   const ai = customAiClient || envAi;
 
   if (!ai) {
+    console.warn('[CHAM AI] GEMINI_API_KEY not set on server. Delivering curated database guidance.');
+    const fallbackReply = searchCuratedDatabase(message, profile);
     return {
-      success: false,
-      error: 'MISSING_API_KEY',
-      errorMessage:
-        'Hệ thống chưa tìm thấy khóa cấu hình GEMINI_API_KEY trên máy chủ. Chatbot không thể gửi truy vấn tới mô hình AI.',
-      errorDetail:
-        'Vui lòng cấu hình GEMINI_API_KEY trong file .env hoặc bảng biến môi trường Vercel/Cloud Run. Bạn có thể bấm "Thử lại" sau khi cấu hình.',
-      canRetry: true,
-      isOfflineMode: false,
+      success: true,
+      reply: fallbackReply,
+      canRetry: false,
+      isOfflineMode: true,
     };
   }
 
@@ -429,3 +427,408 @@ Hãy trả lời học sinh với vai trò "CHẠM AI – Người bạn đồng
     };
   }
 }
+
+// Search curated database for fallback and instant retrieval
+export function searchCuratedDatabase(query: string, profile?: any): string {
+  const qClean = (query || '').toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g, '').replace(/đ/g, 'd').trim();
+
+  // 1. Translation / Phiên dịch
+  if (qClean.includes('phien dich') || qClean.includes('bien dich') || qClean.includes('thong dich') || qClean.includes('translator') || qClean.includes('interpreter')) {
+    const career = CAREERS_DATA.find(c => c.id === 'c-phien-dich') || CAREERS_DATA.find(c => c.title.toLowerCase().includes('phiên dịch'));
+    return `[Thông tin từ kho nghề - Dữ liệu hướng nghiệp CHẠM VIỆC]
+
+### 🌐 Nghề Phiên dịch viên (Conference & Business Interpreter)
+
+**1. Công việc thực tế:**
+- Chuyển ngữ trực tiếp giữa các ngôn ngữ trong các hội nghị quốc tế, phiên đàm phán hợp đồng, toà án hoặc sự kiện ngoại giao.
+- Có 2 hình thức chính: Phiên dịch nối tiếp (consecutive) và phiên dịch song song/cabin (simultaneous) đòi hỏi phản xạ trong 1–2 giây.
+- Nghiên cứu sâu thuật ngữ chuyên ngành (y tế, năng lượng, luật, tài chính, công nghệ) trước mỗi sự kiện.
+
+**2. Kỹ năng & Năng lực cốt lõi:**
+- Phản xạ ngôn ngữ 2 chiều siêu tốc, vốn từ vựng học thuật & thuật ngữ chuyên sâu.
+- Trí nhớ ngắn hạn tốt, kỹ năng ghi chú tốc ký (interpreter note-taking).
+- Khả năng kiểm soát cảm xúc, bảo mật thông tin kinh doanh tuyệt đối.
+
+**3. Khó khăn & Đánh đổi thực tế:**
+- Áp lực tâm lý rất cao trong cabin, không có cơ hội "nói lại" hay dùng từ điển tra cứu.
+- Lịch trình công tác liên tục, giờ làm việc theo múi giờ quốc tế.
+- Sự phát triển của AI dịch thuật đòi hỏi chuyên gia phải tiến lên phân khúc dịch thuật đàm phán cấp cao.
+
+**4. Môn học THPT & Ngành đào tạo:**
+- Môn học thế mạnh: Ngoại ngữ (Anh/Trung/Nhật/Hàn/Pháp/Đức), Ngữ văn, Lịch sử, Địa lý.
+- Ngành học: Ngôn ngữ Anh/Trung/Nhật, Biên phiên dịch quốc tế, Quan hệ quốc tế.
+- Các trường uy tín: Trường ĐH Ngoại ngữ (ĐHQGHN - ULIS), Trường ĐH Hà Nội (HANU), Trường ĐH KHXH&NV (ĐHQG-HCM), Học viện Ngoại giao.`;
+  }
+
+  // 2. Semiconductor vs Chip Testing / Thiết kế vi mạch vs Kiểm thử chip
+  if ((qClean.includes('thiet ke vi mach') || qClean.includes('ic design')) && (qClean.includes('kiem thu') || qClean.includes('chip') || qClean.includes('dong goi') || qClean.includes('ate'))) {
+    return `[Thông tin từ kho nghề - Dữ liệu hướng nghiệp CHẠM VIỆC]
+
+### ⚡ So sánh: Kỹ sư Thiết kế Vi mạch (IC Design) vs Kỹ sư Đo kiểm & Đóng gói Chip (Testing & Packaging)
+
+| Tiêu chí | Kỹ sư Thiết kế Vi mạch (IC Design) | Kỹ sư Đo kiểm & Đóng gói (Testing & Packaging) |
+|---|---|---|
+| **Công đoạn chuỗi giá trị** | Giai đoạn 1 & 2: Thiết kế logic (Front-end) & Thiết kế vật lý (Back-end) | Giai đoạn 3 & 4: Đóng gói (Packaging/OSAT) & Đo kiểm tự động (ATE Testing) |
+| **Công việc chính** | Viết mã HDL (Verilog/VHDL), mô phỏng RTL, tổng hợp logic, định tuyến layout bán dẫn | Lập trình chương trình đo tự động cho máy ATE, gắn chip vào test socket, đo điện áp/xung clock, kiểm tra lỗi vật lý |
+| **Công cụ làm việc** | Synopsys, Cadence, Siemens EDA, Linux, Python/Perl/Tcl | Teradyne, Advantest, máy hiện sóng Oscilloscope, máy phân tích logic |
+| **Môi trường làm việc** | Phòng R&D văn phòng phần mềm máy tính hiệu năng cao | Phòng cleanroom bán dẫn, phòng lab đo kiểm chất lượng, nhà máy đóng gói OSAT |
+| **Môn học THPT** | Toán học, Vật lý (Điện tử), Tin học (Thuật toán) | Vật lý (Dòng điện, Bán dẫn), Tin học, Tiếng Anh kỹ thuật |
+| **Mã ngành đào tạo** | 7520401 (Thiết kế vi mạch, Kỹ thuật Điện tử - Viễn thông) | 7520207 (Kỹ thuật Cơ điện tử, Công nghệ Kỹ thuật Điện - Điện tử) |
+| **Trường tiêu biểu** | ĐH Bách khoa Hà Nội, ĐH Công nghệ ĐHQGHN, ĐH Bách khoa ĐHQG-HCM, ĐH CNTT UIT | ĐH Bách khoa HN, ĐH Sư phạm Kỹ thuật TP.HCM, ĐH Bách khoa Đà Nẵng |`;
+  }
+
+  // 3. Teller vs Credit Officer / Giao dịch viên vs Chuyên viên tín dụng
+  if ((qClean.includes('giao dich vien') || qClean.includes('teller')) && (qClean.includes('tin dung') || qClean.includes('cho vay') || qClean.includes('credit'))) {
+    return `[Thông tin từ kho nghề - Dữ liệu hướng nghiệp CHẠM VIỆC]
+
+### 🏦 So sánh: Giao dịch viên Ngân hàng (Teller) vs Chuyên viên Quản lý & Thẩm định Tín dụng (Credit Analyst)
+
+| Tiêu chí | Giao dịch viên Ngân hàng (Teller) | Chuyên viên Quản lý & Thẩm định Tín dụng |
+|---|---|---|
+| **Vị trí & Không gian** | Làm việc tại quầy giao dịch (Front Office), tiếp đón trực tiếp khách hàng đến ngân hàng | Làm việc tại văn phòng và đi khảo sát thực địa (Fieldwork) tài sản bảo đảm của khách hàng |
+| **Nhiệm vụ chính** | Mở tài khoản, nhận tiền gửi, chuyển tiền, phát hành thẻ, thu đổi ngoại tệ, tư vấn dịch vụ số | Tìm kiếm khách hàng vay, phân tích báo cáo tài chính, định giá tài sản thế chấp, lập hồ sơ giải ngân |
+| **Chỉ tiêu & Áp lực** | Độ chính xác tuyệt đối từng con số tiền mặt, thời gian phục vụ tại quầy, nụ cười & sự hài lòng | Doanh số cho vay (KPI tăng trưởng tín dụng), tỷ lệ nợ xấu (NPL), chịu trách nhiệm pháp lý hồ sơ vay |
+| **Kỹ năng cốt lõi** | Giao tiếp nhã nhặn, cẩn trọng tỉ mỉ, thao tác hệ thống Core Banking nhanh, xử lý khiếu nại | Tư duy thẩm định rủi ro, phân tích dòng tiền, kỹ năng đàm phán thương mại, hiểu biết luật kinh tế |
+| **Nhóm RIASEC** | **S - C** (Xã hội - Quy chuẩn, Tỉ mỉ) | **E - C** (Kinh doanh - Quy chuẩn, Phân tích) |
+| **Môn THPT thế mạnh** | Toán học, Ngữ văn, Tiếng Anh | Toán học, Tiếng Anh, Kinh tế - Pháp luật |
+| **Ngành học phù hợp** | Tài chính - Ngân hàng (7340201), Kế toán, Kinh tế đối ngoại | Tài chính - Ngân hàng, Thẩm định giá, Luật kinh tế |`;
+  }
+
+  // 4. Literature & English / Thích Văn và Anh
+  if ((qClean.includes('van') && qClean.includes('anh')) || (qClean.includes('ngu van') && qClean.includes('tieng anh'))) {
+    return `[Thông tin từ kho nghề - Dữ liệu hướng nghiệp CHẠM VIỆC]
+
+### 📚 Định hướng nghề nghiệp cho học sinh thế mạnh Ngữ văn và Tiếng Anh (Tổ hợp D01, D14, D15)
+
+Khi em có thế mạnh ngôn từ, tư duy biểu đạt cảm xúc và khả năng ngoại ngữ tốt nhưng không muốn theo hướng kỹ thuật/toán chuyên sâu, em có rất nhiều cánh cửa nghề nghiệp rộng mở:
+
+#### 1. Nhóm Truyền thông, Tiếp thị số & Sáng tạo nội dung (Creative & Communication)
+- **Nghề tiêu biểu:** Chuyên viên Truyền thông & Báo chí, Copywriter / Content Strategist, Chuyên viên Quan hệ Công chúng (PR).
+- **Điểm mạnh tận dụng:** Viết bài thuyết phục, kể câu chuyện thương hiệu, dịch và chuyển thể nội dung chiến dịch quốc tế.
+- **Ngành đào tạo:** Truyền thông đa phương tiện, Báo chí, Quan hệ công chúng, Marketing số.
+
+#### 2. Nhóm Dịch thuật & Ngôn ngữ ứng dụng (Languages & Translation)
+- **Nghề tiêu biểu:** Biên phiên dịch viên chuyên nghiệp, Biên tập viên xuất bản sách, Chuyên gia bản địa hóa sản phẩm số (Localization Specialist).
+- **Điểm mạnh tận dụng:** Độ nhạy cảm từ ngữ, thấu hiểu ngữ cảnh văn hóa Đông - Tây.
+- **Ngành đào tạo:** Ngôn ngữ Anh (chuyên ngành Biên phiên dịch, Tiếng Anh thương mại), Quốc tế học.
+
+#### 3. Nhóm Quan hệ Ngoại giao & Luật Quốc tế (Diplomacy & Legal)
+- **Nghề tiêu biểu:** Chuyên viên Đối ngoại, Trợ lý Pháp chế / Chuyên viên Luật thương mại quốc tế, Chuyên viên Tổ chức Phi chính phủ (NGO).
+- **Điểm mạnh tận dụng:** Khả năng lập luận văn bản chặt chẽ, đàm phán đối thoại đa văn hóa.
+- **Ngành đào tạo:** Luật quốc tế, Quan hệ quốc tế, Ngoại giao kinh tế.
+
+#### 4. Nhóm Sư phạm & Giáo dục (Education & EdTech)
+- **Nghề tiêu biểu:** Giáo viên tiếng Anh / Ngữ văn THPT, Giảng viên IELTS/TOEFL, Chuyên viên thiết kế chương trình học (Instructional Designer).
+- **Ngành đào tạo:** Sư phạm Tiếng Anh, Sư phạm Ngữ văn, Quản lý Giáo dục.
+
+💡 *Hành động nhỏ gợi ý:* Em hãy thử nhiệm vụ "Đàm phán Dự án Năng lượng Xanh Quốc tế" (Phiên dịch viên) trong mục "Chạm Nghề" của CHẠM VIỆC để thử tài phản xạ dịch thuật nhé!`;
+  }
+
+  // 5. English Software Engineering Query
+  if (qClean.includes('software engineer') || qClean.includes('what skills') || qClean.includes('developer')) {
+    return `[Thông tin từ kho nghề - Dữ liệu hướng nghiệp CHẠM VIỆC]
+
+### 💻 Essential Skills & Roadmap for a Software Engineer (Kỹ sư Phần mềm)
+
+**1. Core Technical Skills:**
+- **Programming Languages:** Proficiency in at least one modern language (TypeScript/JavaScript, Python, Java, C++, or Go).
+- **Data Structures & Algorithms (DSA):** Foundational mastery of arrays, trees, hash maps, sorting, and algorithmic complexity (Big-O).
+- **Version Control & DevOps:** Git commands, GitHub pull requests, CI/CD pipelines, and cloud containers (Docker).
+- **Database Architecture:** Relational databases (PostgreSQL, MySQL) and NoSQL stores.
+
+**2. Key Soft Skills:**
+- **Analytical Problem Solving:** Breaking ambiguous user needs into modular, testable software components.
+- **Collaborative Communication:** Active listening during Agile sprint standups and clear technical documentation.
+- **Continuous Learning:** The technology stack evolves rapidly; adaptability is the ultimate competitive advantage.
+
+**3. Recommended College Majors in Vietnam:**
+- Computer Science (Khoa học máy tính - Code: 7480101)
+- Software Engineering (Kỹ thuật phần mềm - Code: 7480103)
+- Information Technology (Công nghệ thông tin - Code: 7480201)
+
+**4. Top Vietnamese Universities:**
+- VNU University of Engineering and Technology (UET)
+- Hanoi University of Science and Technology (HUST / BKA)
+- VNU-HCM University of Information Technology (UIT)
+- Da Nang University of Science and Technology (DUT)`;
+  }
+
+  // General fallback: Find careers matching query terms
+  const matchedCareers = CAREERS_DATA.filter(c => 
+    c.title.toLowerCase().includes(qClean) ||
+    c.shortSummary.toLowerCase().includes(qClean) ||
+    c.categoryLabel.toLowerCase().includes(qClean) ||
+    c.highSchoolSubjects.some(s => s.toLowerCase().includes(qClean))
+  ).slice(0, 3);
+
+  if (matchedCareers.length > 0) {
+    const listStr = matchedCareers.map(c => `
+- **${c.title}** (${c.categoryLabel} | RIASEC: ${c.riasecCodes.join(', ')})
+  * Tóm tắt: ${c.shortSummary}
+  * Kỹ năng cốt lõi: ${c.coreSkills.slice(0, 3).join(', ')}
+  * Thách thức thực tế: ${c.difficultiesAndTradeoffs[0]}
+  * Lộ trình đào tạo: ${c.entryPathway}
+`).join('\n');
+
+    return `[Thông tin từ kho nghề - Dữ liệu hướng nghiệp CHẠM VIỆC]
+
+Dưới đây là thông tin đối chiếu từ kho ${CAREERS_DATA.length} nghề nghiệp đã kiểm chứng liên quan đến câu hỏi của em:
+${listStr}
+
+💡 Em có thể mở mục **"Khám phá nghề nghiệp"** hoặc **"Chạm Thử Nghề 3D"** trên thanh điều hướng để trải nghiệm thực tế hơn!`;
+  }
+
+  return `[Thông tin từ kho nghề - Dữ liệu hướng nghiệp CHẠM VIỆC]
+
+Chào em! CHẠM VIỆC hiện đang lưu trữ cơ sở dữ liệu ${CAREERS_DATA.length} nghề nghiệp phân theo 20 nhóm ngành chuẩn và số liệu tuyển sinh 3 năm có nguồn xác minh.
+
+Em có thể tìm hiểu thêm bằng cách:
+1. Nhấp vào các gợi ý câu hỏi bên dưới.
+2. Tra cứu điểm chuẩn và phương án tuyển sinh 2025 trong mục "Tuyển Sinh".
+3. Thử thách mô phỏng 3D tại mục "Chạm Thử Nghề".`;
+}
+
+// STREAMING CHATBOT FUNCTION WITH SERVER-SENT EVENTS
+export interface StreamChamAiOptions {
+  message: string;
+  profile?: any;
+  currentContext?: string;
+  chatHistory?: Array<{ sender: 'ai' | 'user'; text: string }>;
+  onStart?: (info: { requestId: string; model: string }) => void;
+  onChunk: (chunkText: string) => void;
+  onError: (errorData: { error: string; errorMessage: string; canRetry: boolean; isFallback?: boolean; fallbackText?: string }) => void;
+  onDone: (summary: { requestId: string; model: string; totalChars: number; latencyMs: number }) => void;
+  signal?: AbortSignal;
+}
+
+export async function streamChamAiChat(options: StreamChamAiOptions): Promise<void> {
+  const { message, profile, currentContext, chatHistory, onStart, onChunk, onError, onDone, signal } = options;
+
+  const requestId = 'req_' + Date.now().toString(36) + '_' + Math.random().toString(36).substring(2, 6);
+  const startTime = Date.now();
+
+  if (!message || !message.trim()) {
+    onError({
+      error: 'EMPTY_MESSAGE',
+      errorMessage: 'Tin nhắn không được để trống.',
+      canRetry: false,
+    });
+    return;
+  }
+
+  const { ai } = getGeminiClient();
+
+  // If no API key configured, gracefully fallback to curated database answer!
+  if (!ai) {
+    console.warn(`[CHAM AI Stream] No GEMINI_API_KEY found, providing instant curated database fallback for requestId: ${requestId}`);
+    const fallbackText = searchCuratedDatabase(message, profile);
+    onStart?.({ requestId, model: 'curated-database-grounding' });
+    
+    // Simulate natural fast streaming for UX
+    const words = fallbackText.split(' ');
+    for (const w of words) {
+      if (signal?.aborted) break;
+      onChunk(w + ' ');
+      await new Promise(r => setTimeout(r, 15));
+    }
+    
+    onDone({
+      requestId,
+      model: 'curated-database-grounding',
+      totalChars: fallbackText.length,
+      latencyMs: Date.now() - startTime,
+    });
+    return;
+  }
+
+  const systemInstruction = `Bạn là "CHẠM AI – Người bạn đồng hành hướng nghiệp" trong ứng dụng "CHẠM VIỆC – Chạm nghề, chọn ngành, mở tương lai" dành cho học sinh THPT (lớp 10–12) tại Việt Nam.
+
+VAI TRÒ & SỨ MỆNH:
+1. Bạn là người bạn đồng hành lắng nghe, truyền cảm hứng và cung cấp thông tin hướng nghiệp khoa học, trung thực và sát thực tế.
+2. Hỗ trợ mọi học sinh THPT Việt Nam, đặc biệt quan tâm tới học sinh miền núi, vùng sâu, vùng xa, học sinh đồng bào dân tộc thiểu số và những em có hoàn cảnh khó khăn.
+3. KHÔNG thiên vị ngành STEM hay khối Kinh tế; tôn trọng và đánh giá công bằng các khối ngành Khoa học Xã hội, Ngôn ngữ, Sư phạm, Nghệ thuật, Nông lâm nghiệp, Du lịch, Công tác xã hội và Dạy nghề kỹ thuật.
+4. Tôn trọng sự đa dạng về sở thích, năng lực và hoàn cảnh của học sinh.
+
+NGUYÊN TẮC CỐT LÕI (BẮT BUỘC TUÂN THỦ):
+1. VỀ ĐIỂM CHUẨN VÀ TUYỂN SINH:
+   - CHỈ cung cấp số liệu điểm chuẩn, tổ hợp, phương thức dựa trên DỮ LIỆU ĐÃ XÁC MINH trong cơ sở dữ liệu.
+   - Nêu rõ năm, phương thức xét tuyển, tổ hợp môn và nguồn đề án/văn bản xác minh.
+   - NĂM 2025: Nêu rõ đây là số liệu ĐỀ ÁN TUYỂN SINH CHÍNH THỨC VÀ ĐIỂM SÀN NHẬN HỒ SƠ THEO CHƯƠNG TRÌNH GDPT 2018 MỚI.
+   - Nếu trong cơ sở dữ liệu KHÔNG có trường/ngành học sinh hỏi: Phải nói rõ "CHẠM AI hiện chưa có dữ liệu điểm chuẩn xác minh cho trường/ngành này. Bạn nên kiểm tra trực tiếp tại website tuyển sinh chính thức của trường nhé."
+2. KHI HỌC SINH HỎI ĐỊNH HƯỚNG / KHÁM PHÁ NGHỀ:
+   - Đọc hồ sơ học sinh (nếu có) và tích hợp tự nhiên.
+   - Cấu trúc tư vấn rõ ràng:
+     ### 1. Nghề nghiệp & Ngành học gợi ý
+     ### 2. Vì sao phù hợp với bạn
+     ### 3. Trường đào tạo có thể tham khảo
+     ### 4. Điều cần lưu ý và rèn luyện
+3. KHI HỌC SINH YÊU CẦU SO SÁNH:
+   - Dùng BẢNG MARKDOWN phân tích tiêu chí rõ ràng: Chương trình học | Kỹ năng cần | Môi trường làm việc | Cơ hội việc làm | Điểm xét tuyển tham khảo.
+
+--- CƠ SỞ DỮ LIỆU ĐÃ XÁC MINH CỦA HỆ THỐNG ---
+${DATABASE_GROUNDING_BRIEF}
+`;
+
+  // Profile Context
+  let profileContext = 'Học sinh chưa tạo hồ sơ.';
+  if (profile) {
+    const parts: string[] = [];
+    if (profile.grade) parts.push(`- Khối lớp: ${profile.grade}`);
+    if (profile.favoriteSubjects && profile.favoriteSubjects.length > 0) parts.push(`- Môn học yêu thích: ${profile.favoriteSubjects.join(', ')}`);
+    if (profile.academicStrengths && profile.academicStrengths.length > 0) parts.push(`- Năng lực học tập: ${profile.academicStrengths.join(', ')}`);
+    if (profile.topRiasec && profile.topRiasec.length > 0) parts.push(`- Kết quả trắc nghiệm RIASEC: ${profile.topRiasec.join(', ')}`);
+    if (profile.priorityValues && profile.priorityValues.length > 0) parts.push(`- Giá trị ưu tiên: ${profile.priorityValues.join(', ')}`);
+    if (profile.estimatedScore) parts.push(`- Điểm thi dự kiến: ${profile.estimatedScore} điểm`);
+    if (profile.targetCombinations && profile.targetCombinations.length > 0) parts.push(`- Tổ hợp dự kiến: ${profile.targetCombinations.join(', ')}`);
+    if (parts.length > 0) profileContext = parts.join('\n');
+  }
+
+  // Contents with max 10 recent messages (context trimming per instructions)
+  const contents: any[] = [];
+  if (Array.isArray(chatHistory) && chatHistory.length > 0) {
+    const recent = chatHistory.slice(-10);
+    for (const msg of recent) {
+      if (msg.text && msg.text.trim()) {
+        contents.push({
+          role: msg.sender === 'user' ? 'user' : 'model',
+          parts: [{ text: msg.text.trim() }],
+        });
+      }
+    }
+  }
+
+  const promptText = `[NGỮ CẢNH HỒ SƠ HỌC SINH]
+${profileContext}
+
+[NGỮ CẢNH VỊ TRÍ ỨNG DỤNG ĐANG XEM]
+${currentContext || 'Trang chủ'}
+
+[CÂU HỎI HIỆN TẠI CỦA HỌC SINH]
+"${message}"
+
+Hãy trả lời học sinh với vai trò "CHẠM AI – Người bạn đồng hành hướng nghiệp" súc tích, chân thành, có cấu trúc rõ ràng và căn cứ dữ liệu chính xác.`;
+
+  contents.push({
+    role: 'user',
+    parts: [{ text: promptText }],
+  });
+
+  const configuredModel = process.env.GEMINI_MODEL?.trim();
+  const modelsToTry: string[] = [
+    configuredModel || 'gemini-3.8-flash',
+    'gemini-flash-latest',
+    'gemini-3.1-flash-lite',
+  ].filter((m, idx, arr) => m && arr.indexOf(m) === idx);
+
+  let streamSucceeded = false;
+  let totalChars = 0;
+  let activeModelUsed = '';
+  let lastError: any = null;
+
+  for (const modelName of modelsToTry) {
+    if (signal?.aborted) break;
+
+    const MAX_RETRIES = 2;
+    let attempt = 0;
+
+    while (attempt <= MAX_RETRIES) {
+      if (signal?.aborted) break;
+
+      try {
+        console.log(`[CHAM AI Stream] [${requestId}] Connecting stream to model: ${modelName} (attempt ${attempt + 1})`);
+        activeModelUsed = modelName;
+
+        const responseStream = await ai.models.generateContentStream({
+          model: modelName,
+          contents,
+          config: {
+            systemInstruction,
+          },
+        });
+
+        onStart?.({ requestId, model: modelName });
+
+        for await (const chunk of responseStream) {
+          if (signal?.aborted) {
+            console.log(`[CHAM AI Stream] [${requestId}] Client aborted stream.`);
+            return;
+          }
+          const chunkText = chunk.text;
+          if (chunkText) {
+            totalChars += chunkText.length;
+            onChunk(chunkText);
+          }
+        }
+
+        streamSucceeded = true;
+        break;
+      } catch (err: any) {
+        lastError = err;
+        console.warn(`[CHAM AI Stream] [${requestId}] Error with model ${modelName} (attempt ${attempt + 1}):`, err?.message || err);
+
+        const errMsg = String(err?.message || err).toLowerCase();
+        const is503OrOverloaded = 
+          err?.status === 503 || 
+          err?.status === 429 ||
+          errMsg.includes('503') || 
+          errMsg.includes('unavailable') || 
+          errMsg.includes('overload') || 
+          errMsg.includes('rate limit');
+
+        if (is503OrOverloaded && attempt < MAX_RETRIES) {
+          const delay = (1000 * Math.pow(2, attempt)) + Math.floor(Math.random() * 300);
+          await new Promise(r => setTimeout(r, delay));
+          attempt++;
+          continue;
+        }
+
+        // Move to next model
+        break;
+      }
+    }
+
+    if (streamSucceeded) {
+      const latencyMs = Date.now() - startTime;
+      console.log(`[CHAM AI Stream] [${requestId}] Stream completed successfully. Model: ${activeModelUsed}, Chars: ${totalChars}, Latency: ${latencyMs}ms`);
+      onDone({
+        requestId,
+        model: activeModelUsed,
+        totalChars,
+        latencyMs,
+      });
+      return;
+    }
+  }
+
+  // If streaming failed across all models, check if we streamed any text
+  if (totalChars > 0) {
+    // Some text was streamed before breaking
+    onDone({
+      requestId,
+      model: activeModelUsed,
+      totalChars,
+      latencyMs: Date.now() - startTime,
+    });
+    return;
+  }
+
+  // If nothing was streamed, provide smart curated fallback response with tag [Thông tin từ kho nghề]
+  console.warn(`[CHAM AI Stream] [${requestId}] All models unavailable. Serving curated database fallback.`);
+  const fallbackText = searchCuratedDatabase(message, profile);
+  
+  onStart?.({ requestId, model: 'curated-database-fallback' });
+  const words = fallbackText.split(' ');
+  for (const w of words) {
+    if (signal?.aborted) break;
+    onChunk(w + ' ');
+    await new Promise(r => setTimeout(r, 15));
+  }
+
+  onDone({
+    requestId,
+    model: 'curated-database-fallback',
+    totalChars: fallbackText.length,
+    latencyMs: Date.now() - startTime,
+  });
+}
+

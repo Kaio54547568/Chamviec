@@ -103,7 +103,7 @@ export function generateRecommendations(profile: StudentProfile): Recommendation
       missing.push('Chưa thử nhiệm vụ mô phỏng thực tế của nghề này để kiểm chứng cảm nhận.');
     }
 
-    const linkedMajors = MAJORS_DATA.filter((m) => career.linkedMajorIds.includes(m.id));
+    const linkedMajors = MAJORS_DATA.filter((m) => (career.linkedMajorIds || []).includes(m.id));
     const taskObj = SIMULATION_TASKS.find((t) => t.id === career.simulationTaskId);
     const suggestedTask = taskObj
       ? { id: taskObj.id, title: taskObj.title }

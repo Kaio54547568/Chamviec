@@ -1,6 +1,7 @@
 {
   "version": 2,
   "rewrites": [
+    { "source": "/api/cham-ai/stream", "destination": "/api/cham-ai-stream" },
     { "source": "/api/cham-ai/chat", "destination": "/api/cham-ai" },
     { "source": "/api/cham-ai", "destination": "/api/cham-ai" },
     { "source": "/api/phuong-chat", "destination": "/api/cham-ai" },

@@ -29,7 +29,7 @@ app.use((req, res, next) => {
   next();
 });
 
-import { processChamAiChat } from './src/server/chamAiService.ts';
+import { processChamAiChat, streamChamAiChat } from './src/server/chamAiService.ts';
 
 const apiKey = process.env.GEMINI_API_KEY;
 const ai = apiKey
@@ -338,6 +338,66 @@ Mình có thể hỗ trợ bạn tra cứu chi tiết về:
 
 Bạn có thể chọn một trong các câu hỏi gợi ý bên dưới hoặc hỏi thêm chi tiết nhé!`;
 }
+
+// SSE STREAMING ENDPOINT: /api/cham-ai/stream
+app.post('/api/cham-ai/stream', async (req, res) => {
+  const { message, profile, currentContext, chatHistory } = req.body;
+
+  if (!message || !message.trim()) {
+    return res.status(400).json({
+      success: false,
+      error: 'EMPTY_MESSAGE',
+      errorMessage: 'Tin nhắn không được để trống.',
+    });
+  }
+
+  // Set SSE headers
+  res.setHeader('Content-Type', 'text/event-stream');
+  res.setHeader('Cache-Control', 'no-cache, no-transform');
+  res.setHeader('Connection', 'keep-alive');
+  res.setHeader('X-Accel-Buffering', 'no');
+  res.flushHeaders?.();
+
+  const abortController = new AbortController();
+  req.on('close', () => {
+    abortController.abort();
+  });
+
+  try {
+    await streamChamAiChat({
+      message,
+      profile,
+      currentContext,
+      chatHistory,
+      signal: abortController.signal,
+      onStart: (info) => {
+        res.write(`data: ${JSON.stringify({ type: 'start', ...info })}\n\n`);
+      },
+      onChunk: (chunkText) => {
+        res.write(`data: ${JSON.stringify({ type: 'chunk', text: chunkText })}\n\n`);
+      },
+      onError: (errData) => {
+        res.write(`data: ${JSON.stringify({ type: 'error', ...errData })}\n\n`);
+        res.end();
+      },
+      onDone: (summary) => {
+        res.write(`data: ${JSON.stringify({ type: 'done', ...summary })}\n\n`);
+        res.end();
+      },
+    });
+  } catch (err: any) {
+    console.error('Unhandled stream error:', err);
+    res.write(
+      `data: ${JSON.stringify({
+        type: 'error',
+        error: 'AI_OVERLOADED_503',
+        errorMessage: 'AI đang bận, em vui lòng thử lại sau ít phút.',
+        canRetry: true,
+      })}\n\n`
+    );
+    res.end();
+  }
+});
 
 // MAIN CHATBOT ENDPOINT: /api/cham-ai & /api/cham-ai/chat
 app.post(['/api/cham-ai', '/api/cham-ai/chat'], async (req, res) => {

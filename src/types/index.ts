@@ -69,23 +69,37 @@ export interface ReflectionRecord {
   nextMicroAction: string;
 }
 
+export interface CareerPathwayItem {
+  level: 'Đại học' | 'Cao đẳng' | 'Trung cấp' | 'Đào tạo nghề' | 'Thực hành tự do';
+  description: string;
+}
+
 export interface Career {
   id: string;
   title: string;
-  category: 'CongNghe' | 'YTe' | 'GiaoDuc' | 'KyThuat' | 'KinhDoanh' | 'TruyenThong' | 'NongNghiep' | 'Luat' | 'DichVu' | 'KhoaHoc' | 'XaHoi';
+  englishTitle?: string;
+  synonyms?: string[];
+  group?: string;
+  category: string;
   categoryLabel: string;
   riasecCodes: RiasecCode[];
   shortSummary: string;
-  dailyRoutine: string[];
+  dailyRoutine?: string[];
   typicalTasks: string[];
+  deliverables?: string[]; // Sản phẩm đầu ra
   toolsUsed: string[];
   workEnvironment: string;
   difficultiesAndTradeoffs: string[];
   coreSkills: string[];
   highSchoolSubjects: string[];
   entryPathway: string;
-  linkedMajorIds: string[];
-  simulationTaskId?: string;
+  entryPathways?: CareerPathwayItem[]; // Đa dạng đường học tập
+  trialActivity?: string; // Hoạt động thử sức THPT
+  linkedMajorIds?: string[];
+  simulationTaskId?: string | null;
+  has3D?: boolean;
+  experienceType?: '3D_INTERACTIVE' | 'SCENARIO_SIMULATION' | 'CAREER_PROFILE';
+  status?: 'HOAN_THANH' | 'NHAP';
   imageUrl?: string;
   imageAlt?: string;
   dataSource: string;

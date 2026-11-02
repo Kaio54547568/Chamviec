@@ -25,12 +25,42 @@ export default function App() {
   const { t, language } = useLanguage();
   const [profile, setProfile] = useState<StudentProfile>(() => loadStudentProfile());
 
-  const [currentTab, setCurrentTab] = useState<string>('home');
+  const [currentTab, setCurrentTab] = useState<string>(() => {
+    if (typeof window !== 'undefined') {
+      const urlParams = new URLSearchParams(window.location.search);
+      const tab = urlParams.get('tab');
+      if (tab) return tab;
+    }
+    return 'home';
+  });
   const [selectedTaskId, setSelectedTaskId] = useState<string | null>(null);
   const [selectedMajorFilter, setSelectedMajorFilter] = useState<string | null>(null);
   const [isAssistantOpen, setIsAssistantOpen] = useState(false);
   const [isChamAiOpen, setIsChamAiOpen] = useState(false);
   const [chamAiInitialPrompt, setChamAiInitialPrompt] = useState<string | null>(null);
+
+  // Synchronize tab state with URL query without losing lang parameter
+  const handleNavigateTab = (tab: string) => {
+    setCurrentTab(tab);
+    if (typeof window !== 'undefined') {
+      const url = new URL(window.location.href);
+      url.searchParams.set('tab', tab);
+      window.history.pushState({}, '', url.toString());
+    }
+    window.scrollTo({ top: 0, behavior: 'smooth' });
+  };
+
+  useEffect(() => {
+    const handlePopState = () => {
+      if (typeof window !== 'undefined') {
+        const urlParams = new URLSearchParams(window.location.search);
+        const tab = urlParams.get('tab') || 'home';
+        setCurrentTab(tab);
+      }
+    };
+    window.addEventListener('popstate', handlePopState);
+    return () => window.removeEventListener('popstate', handlePopState);
+  }, []);
 
   useEffect(() => {
     // Keep local storage synced on change
@@ -39,14 +69,12 @@ export default function App() {
 
   const handleOpenTask = (taskId: string) => {
     setSelectedTaskId(taskId);
-    setCurrentTab('tasks');
-    window.scrollTo({ top: 0, behavior: 'smooth' });
+    handleNavigateTab('tasks');
   };
 
   const handleSelectMajor = (majorId: string) => {
     setSelectedMajorFilter(majorId);
-    setCurrentTab('admissions');
-    window.scrollTo({ top: 0, behavior: 'smooth' });
+    handleNavigateTab('admissions');
   };
 
   const handleAskChamAi = (question: string) => {
@@ -59,10 +87,7 @@ export default function App() {
       {/* Top Navigation */}
       <Navbar
         currentTab={currentTab}
-        setCurrentTab={(tab) => {
-          setCurrentTab(tab);
-          window.scrollTo({ top: 0, behavior: 'smooth' });
-        }}
+        setCurrentTab={handleNavigateTab}
         profile={profile}
         onOpenAssistant={() => setIsChamAiOpen(true)}
       />
@@ -71,10 +96,7 @@ export default function App() {
       <main className="flex-1 max-w-7xl w-full mx-auto px-4 sm:px-6 lg:px-8 pt-6 sm:pt-8">
         {currentTab === 'home' && (
           <HomeView
-            setCurrentTab={(tab) => {
-              setCurrentTab(tab);
-              window.scrollTo({ top: 0, behavior: 'smooth' });
-            }}
+            setCurrentTab={handleNavigateTab}
             profile={profile}
             onOpenTask={handleOpenTask}
           />
@@ -84,10 +106,7 @@ export default function App() {
           <ProfileView
             profile={profile}
             setProfile={setProfile}
-            onGoToRecommendations={() => {
-              setCurrentTab('recommendations');
-              window.scrollTo({ top: 0, behavior: 'smooth' });
-            }}
+            onGoToRecommendations={() => handleNavigateTab('recommendations')}
           />
         )}
 
@@ -169,51 +188,43 @@ export default function App() {
                   alt="CHẠM VIỆC Logo" 
                   className="w-7 h-7 rounded-lg object-contain bg-white p-0.5 border border-slate-200 shadow-2xs" 
                 />
-                <span>CHẠM VIỆC — Hướng Nghiệp & Tuyển Sinh Dành Cho Học Sinh Việt Nam</span>
+                <span>{t.footer.subtitle}</span>
               </div>
               <p className="mt-1 text-slate-500">
-                Thông điệp: <strong>Chạm trải nghiệm – Hiểu bản thân – Chọn hướng đi.</strong>
+                {language === 'vi' ? 'Thông điệp: ' : 'Motto: '}
+                <strong>{t.footer.message}</strong>
               </p>
             </div>
 
             <div className="flex items-center gap-4 text-xs">
               <button
-                onClick={() => {
-                  setCurrentTab('profile');
-                  window.scrollTo({ top: 0, behavior: 'smooth' });
-                }}
-                className="hover:text-teal-700 underline"
+                onClick={() => handleNavigateTab('profile')}
+                className="hover:text-teal-700 underline font-medium"
               >
-                Khám phá bản thân
+                {t.footer.selfExplore}
               </button>
               <button
-                onClick={() => {
-                  setCurrentTab('admissions');
-                  window.scrollTo({ top: 0, behavior: 'smooth' });
-                }}
-                className="hover:text-teal-700 underline"
+                onClick={() => handleNavigateTab('admissions')}
+                className="hover:text-teal-700 underline font-medium"
               >
-                Điểm chuẩn đại học
+                {t.footer.cutoffs}
               </button>
               <button
-                onClick={() => {
-                  setCurrentTab('admin');
-                  window.scrollTo({ top: 0, behavior: 'smooth' });
-                }}
-                className="hover:text-teal-700 underline"
+                onClick={() => handleNavigateTab('admin')}
+                className="hover:text-teal-700 underline font-medium"
               >
-                Kiểm duyệt dữ liệu
+                {t.footer.audit}
               </button>
             </div>
           </div>
 
           <div className="pt-4 border-t border-slate-100 flex flex-col sm:flex-row sm:items-center justify-between gap-2 text-[11px] text-slate-400">
             <div>
-              Lưu ý: Điểm chuẩn các năm chỉ để tham khảo xu hướng. Thí sinh luôn cần kiểm tra đề án và thông báo chính thức tại website trường đại học năm đăng ký.
+              {t.footer.disclaimer}
             </div>
-            <div className="flex items-center gap-1">
+            <div className="flex items-center gap-1 shrink-0">
               <ShieldCheck className="w-3.5 h-3.5 text-emerald-600" />
-              <span>Dữ liệu nháp lưu an toàn trên thiết bị của em</span>
+              <span>{t.footer.privacyNote}</span>
             </div>
           </div>
         </div>

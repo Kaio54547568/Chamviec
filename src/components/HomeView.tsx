@@ -74,7 +74,7 @@ export const HomeView: React.FC<HomeViewProps> = ({
   ];
 
   const careerCategories = [
-    { id: 'ALL', label: 'Tất cả 13 ngành nghề' },
+    { id: 'ALL', label: `Tất cả ${CAREERS_DATA.length} ngành nghề` },
     { id: 'CongNghe', label: 'Công nghệ thông tin' },
     { id: 'YTe', label: 'Y tế & Sức khỏe' },
     { id: 'KyThuat', label: 'Kỹ thuật & Cơ khí' },
@@ -274,7 +274,7 @@ export const HomeView: React.FC<HomeViewProps> = ({
           <div>
             <div className="inline-flex items-center gap-2 text-xs font-bold text-teal-800 bg-teal-50 px-3 py-1 rounded-full border border-teal-200">
               <Compass className="w-3.5 h-3.5 text-teal-600" />
-              <span>Dữ liệu thực chứng · 13 Ngành nghề tiêu biểu</span>
+              <span>Dữ liệu thực chứng · {CAREERS_DATA.length} Ngành nghề tiêu biểu</span>
             </div>
             <h2 className="text-2xl sm:text-3xl font-extrabold text-slate-900 tracking-tight mt-2">
               Khám phá môi trường làm việc thực tế

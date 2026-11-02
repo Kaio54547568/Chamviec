@@ -759,5 +759,186 @@ export const SIMULATION_TASKS: CareerTask[] = [
       { criterion: 'Giao tiếp thấu cảm và giữ bình tĩnh', description: 'Xoa dịu cảm xúc lo âu của thân nhân người bệnh một cách văn minh, chuyên nghiệp.' },
       { criterion: 'Phản tư tinh thần phụng sự ngành y', description: 'Cảm nhận sự thiêng liêng và áp lực tột bực của công việc bảo vệ tính mạng con người.' }
     ]
+  },
+  // 9. PHIÊN DỊCH VIÊN HỘI NGHỊ (MÔ PHỎNG TÌNH HUỐNG THỰC TẾ)
+  {
+    id: 'task-phien-dich',
+    careerId: 'phien-dich-vien-hoi-nghi',
+    careerTitle: 'Phiên dịch hội nghị & thương mại quốc tế',
+    title: 'Thử thách Phiên dịch: Đàm phán Dự án Năng lượng Xanh Quốc tế',
+    durationMinutes: 15,
+    scenario: 'Em đảm nhận vai trò phiên dịch viên đồng hành cùng phái đoàn đầu tư năng lượng sạch châu Âu trong buổi đàm phán hợp tác chuyển giao công nghệ điện gió ngoài khơi với lãnh đạo doanh nghiệp Việt Nam. Nhiệm vụ của em là truyền tải thuật ngữ kỹ thuật, giải quyết bất đồng thuật ngữ và ứng biến với các thành ngữ văn hóa.',
+    instructions: [
+      'Giai đoạn 1: Chuẩn bị bảng chú giải thuật ngữ chuyên ngành (Glossary) trước giờ họp.',
+      'Giai đoạn 2: Ứng biến khi đối tác nước ngoài nói nhanh và dùng thành ngữ tiếng Anh địa phương.',
+      'Giai đoạn 3: Xử lý sự cố micro rè và đính chính số liệu tài chính quan trọng tức thì.'
+    ],
+    stages: [
+      {
+        stageNumber: 1,
+        title: 'Giai đoạn 1: Chuẩn bị thuật ngữ chuyên ngành (Glossary preparation)',
+        description: 'Trước cuộc họp 30 phút, tài liệu kỹ thuật dài 40 trang về "Carbon Offset & PPA Contracts" mới được chuyển đến. Em ưu tiên làm gì?',
+        options: [
+          {
+            id: 'pd-opt-1',
+            label: 'Phương án A: Tra cứu nhanh các thuật ngữ then chốt (PPA - Hợp đồng mua bán điện, Levelized Cost of Electricity, Carbon Credit) và ghi chú vào sổ tay.',
+            reasoning: 'Chuẩn bị từ khóa chuyên môn cốt lõi là chìa khóa sống còn của phiên dịch viên, giúp tránh ngắc ngứ khi diễn giả đi vào phần kỹ thuật.',
+            outcomeDescription: 'Xuất sắc! Khi diễn giả nhắc đến thuật ngữ PPA và Net Zero, em chuyển ngữ trơn tru và chính xác, tạo niềm tin lớn cho cả hai bên.',
+            feedbackTone: 'positive',
+            scoreDelta: 3
+          },
+          {
+            id: 'pd-opt-2',
+            label: 'Phương án B: Bỏ qua tài liệu vì nghĩ rằng vốn tiếng Anh giao tiếp IELTS 8.0 của mình đã đủ để dịch ứng biến mọi thứ.',
+            reasoning: 'Tiếng Anh giao tiếp thông thường không bao gồm các thuật ngữ hợp đồng năng lượng chuyên biệt, dễ dẫn đến hiểu nhầm tai hại.',
+            outcomeDescription: 'Em bị lúng túng mất 10 giây khi đối tác nói về "Levelized Cost of Electricity", dịch nhầm thành "chi phí san bằng điện".',
+            feedbackTone: 'warning',
+            scoreDelta: 1
+          }
+        ]
+      },
+      {
+        stageNumber: 2,
+        title: 'Giai đoạn 2: Xử lý thành ngữ và lối nói ẩn dụ văn hóa',
+        description: 'Trưởng phái đoàn nước ngoài mỉm cười nói: "We need to address the elephant in the room regarding the grid curtailment before signing." Em chuyển ngữ như thế nào?',
+        options: [
+          {
+            id: 'pd-opt-3',
+            label: 'Phương án C: "Chúng ta cần giải quyết vấn đề lớn hiển nhiên nhưng ai cũng đang né tránh về việc cắt giảm công suất lưới điện trước khi ký kết."',
+            reasoning: 'Hiểu đúng thành ngữ "elephant in the room" (vấn đề lớn ai cũng thấy nhưng né tránh) và diễn đạt thoát ý mượt mà bằng tiếng Việt.',
+            outcomeDescription: 'Tuyệt vời! Cả hai bên đều gật đầu tán thành vì thông điệp được chuyển tải sắc sảo, đúng trọng tâm và giữ trọn ngữ khí của diễn giả.',
+            feedbackTone: 'positive',
+            scoreDelta: 3
+          },
+          {
+            id: 'pd-opt-4',
+            label: 'Phương án D: Dịch nguyên văn từng chữ: "Chúng ta cần giải quyết con voi trong phòng liên quan đến cắt giảm lưới điện."',
+            reasoning: 'Dịch word-by-word (từng chữ) khiến người nghe hoang mang không hiểu tại sao lại có con voi nào trong phòng họp.',
+            outcomeDescription: 'Phía Việt Nam ngơ ngác nhìn quanh phòng họp, cuộc đàm phán bị gián đoạn vì sự ngượng ngùng.',
+            feedbackTone: 'warning',
+            scoreDelta: 0
+          }
+        ]
+      },
+      {
+        stageNumber: 3,
+        title: 'Giai đoạn 3: Đính chính số liệu tài chính quan trọng',
+        description: 'Diễn giả đọc nhanh: "The initial Capex is fourteen point five million dollars", nhưng vừa nói xong em nhận ra mình dịch nhầm thành "bốn mươi lăm triệu USD" (forty-five). Em làm gì?',
+        options: [
+          {
+            id: 'pd-opt-5',
+            label: 'Phương án E: Ngay lập tức xin phép ngắt lời nhã nhặn: "Xin phép đính chính, số vốn đầu tư ban đầu chính xác là mười bốn phẩy năm (14.5) triệu USD."',
+            reasoning: 'Đạo đức phiên dịch tối cao là sự trung thực và chính xác. Sửa sai ngay lập tức bảo vệ hàng triệu USD của các bên.',
+            outcomeDescription: 'Cả hai đoàn đánh giá rất cao tính chuyên nghiệp, trách nhiệm và sự trung thực của phiên dịch viên.',
+            feedbackTone: 'positive',
+            scoreDelta: 3
+          },
+          {
+            id: 'pd-opt-6',
+            label: 'Phương án F: Im lặng bỏ qua vì sợ mọi người biết mình dịch nhầm và mất uy tín cá nhân.',
+            reasoning: 'Sai lệch số liệu từ 14.5 triệu lên 45 triệu USD có thể làm đổ vỡ toàn bộ thương vụ đàm phán.',
+            outcomeDescription: 'Khi đối tác phát hiện số liệu trong hợp đồng lệch với lời dịch, họ dừng cuộc họp và yêu cầu đổi phiên dịch viên khác.',
+            feedbackTone: 'warning',
+            scoreDelta: 0
+          }
+        ]
+      }
+    ],
+    rubric: [
+      { criterion: 'Phản xạ ngôn ngữ và độ nhạy thuật ngữ', description: 'Chuyển ngữ chính xác các thuật ngữ chuyên ngành năng lượng và kinh tế.' },
+      { criterion: 'Xử lý thành ngữ và rào cản văn hóa', description: 'Diễn đạt thoát ý tự nhiên, không dịch cứng nhắc từng chữ.' },
+      { criterion: 'Đạo đức nghề nghiệp và sự trung thực', description: 'Dũng cảm đính chính sai sót tức thì để bảo vệ lợi ích của các bên.' }
+    ]
+  },
+  // 10. GIAO DỊCH VIÊN & TƯ VẤN TÀI CHÍNH NGÂN HÀNG (MÔ PHỎNG TÌNH HUỐNG THỰC TẾ)
+  {
+    id: 'task-ngan-hang',
+    careerId: 'giao-dich-vien-ngan-hang',
+    careerTitle: 'Giao dịch viên & Tư vấn tài chính ngân hàng',
+    title: 'Thử thách Ngân hàng: Xử lý Tình huống Quầy Giao dịch Giờ Cao điểm',
+    durationMinutes: 15,
+    scenario: 'Em là Giao dịch viên tại quầy số 2 của chi nhánh ngân hàng vào buổi sáng đầu tuần. Em đối mặt với tình huống một khách hàng lớn tuổi đang lo lắng đòi rút sạch sổ tiết kiệm dưỡng già để chuyển vào một tài khoản cá nhân lạ, nghi vấn có dấu hiệu lừa đảo viễn thông giả danh công an.',
+    instructions: [
+      'Giai đoạn 1: Tiếp đón, quan sát tâm lý và nhận diện dấu hiệu lừa đảo công nghệ cao.',
+      'Giai đoạn 2: Khéo léo trì hoãn giao dịch bằng sự ân cần, phối hợp cùng kiểm soát viên bảo vệ tiền của khách.',
+      'Giai đoạn 3: Đối chiếu số dư quỹ tiền mặt cuối ngày và xử lý tình huống lệch sổ quỹ.'
+    ],
+    stages: [
+      {
+        stageNumber: 1,
+        title: 'Giai đoạn 1: Nhận diện dấu hiệu lừa đảo tài chính',
+        description: 'Bác Hoa (68 tuổi) run rẩy bước vào quầy, vừa cầm điện thoại nghe liên tục vừa yêu cầu tất toán sổ tiết kiệm 500 triệu đồng còn hạn 6 tháng để chuyển ngay vào một số tài khoản lạ mang tên cá nhân. Em xử lý thế nào?',
+        options: [
+          {
+            id: 'nh-opt-1',
+            label: 'Phương án A: Mời bác ngồi, rót một cốc nước ấm, ân cần hỏi thăm: "Bác ơi, sổ này của bác còn 6 tháng nữa là nhận hơn 30 triệu tiền lãi, bác rút trước hạn sẽ chỉ được lãi không kỳ hạn vài chục nghìn thôi tiếc lắm. Bác đang cần chuyển gấp việc gì gia đình hay có ai gọi điện dọa nạt bác không ạ?"',
+            reasoning: 'Kỹ năng lắng nghe thấu cảm, quan sát tâm lý lo âu của khách hàng và chỉ ra thiệt hại tài chính để làm chậm lại hành động bốc đồng của nạn nhân.',
+            outcomeDescription: 'Bác Hoa ngập ngừng, đưa điện thoại cho em xem: đầu dây bên kia đang tự xưng là cán bộ điều tra yêu cầu nộp tiền phong tỏa tài khoản.',
+            feedbackTone: 'positive',
+            scoreDelta: 3
+          },
+          {
+            id: 'nh-opt-2',
+            label: 'Phương án B: Lập tức in phiếu rút tiền 500 triệu đưa bác ký vì cho rằng đó là quyền cá nhân của khách hàng, ngân hàng không có quyền can thiệp.',
+            reasoning: 'Thiếu trách nhiệm bảo vệ tài sản của khách hàng, vô tình tiếp tay cho tội phạm lừa đảo chiếm đoạt toàn bộ tiền dưỡng già của cụ bà.',
+            outcomeDescription: 'Số tiền 500 triệu bị chuyển đi và kẻ lừa đảo rút sạch sau 2 phút. Bác Hoa khóc ngất tại chỗ khi nhận ra mình bị lừa.',
+            feedbackTone: 'warning',
+            scoreDelta: 0
+          }
+        ]
+      },
+      {
+        stageNumber: 2,
+        title: 'Giai đoạn 2: Phối hợp bảo vệ an toàn tài sản',
+        description: 'Đối tượng trong điện thoại thúc giục bác chuyển tiền ngay nếu không sẽ bị bắt giam. Bác Hoa lại hoảng loạn. Em hành động ra sao?',
+        options: [
+          {
+            id: 'nh-opt-3',
+            label: 'Phương án C: Nháy tín hiệu khẩn cấp cho Kiểm soát viên trưởng quầy và gọi bảo vệ/công an phường hỗ trợ; nhẹ nhàng giải thích với bác rằng cơ quan công an không bao giờ yêu cầu chuyển tiền qua điện thoại.',
+            reasoning: 'Quy trình chuẩn phối hợp bảo vệ khách hàng khỏi tội phạm lừa đảo mạo danh cơ quan tư pháp.',
+            outcomeDescription: 'Kiểm soát viên và công an phường có mặt kịp thời giải thích, bảo toàn nguyên vẹn 500 triệu đồng tiền tiết kiệm dưỡng già của bác Hoa.',
+            feedbackTone: 'positive',
+            scoreDelta: 3
+          },
+          {
+            id: 'nh-opt-4',
+            label: 'Phương án D: Giật lấy điện thoại của khách hàng và mắng chửi đối tượng lừa đảo qua máy.',
+            reasoning: 'Hành động bột phát, thiếu kiềm chế cảm xúc và không đúng chuẩn mực giao tiếp của nhân viên ngân hàng.',
+            outcomeDescription: 'Kẻ lừa đảo cúp máy, khách hàng càng thêm hoang mang lo sợ và phòng giao dịch trở nên ồn ào mất trật tự.',
+            feedbackTone: 'warning',
+            scoreDelta: 1
+          }
+        ]
+      },
+      {
+        stageNumber: 3,
+        title: 'Giai đoạn 3: Cân đối quỹ tiền mặt cuối ngày',
+        description: '17h00 đóng cửa quầy, em kiểm đếm tiền mặt tại két và đối chiếu với số dư trên phần mềm Core Banking thì phát hiện két thực tế thiếu 500.000 đồng so với sổ sách. Em làm gì?',
+        options: [
+          {
+            id: 'nh-opt-5',
+            label: 'Phương án E: Báo cáo ngay cho Kiểm soát viên, rà soát lại từng giao dịch nộp/rút tiền mặt trong ngày, kiểm tra lại khay máy đếm tiền và camera tại quầy để tìm nguyên nhân.',
+            reasoning: 'Tuân thủ nguyên tắc minh bạch tài chính. Việc lệch sổ quỹ có thể do kẹt tiền trong máy đếm hoặc đếm nhầm tiền trả khách, cần rà soát có chứng kiến.',
+            outcomeDescription: 'Khi soi lại camera và máy đếm tiền, phát hiện 1 tờ 500.000đ bị dính kẹt dưới khe đáy máy đếm tiền. Quỹ cân đối khớp 100%.',
+            feedbackTone: 'positive',
+            scoreDelta: 3
+          },
+          {
+            id: 'nh-opt-6',
+            label: 'Phương án F: Tự lấy 500.000đ trong ví cá nhân bù vào két để kịp về nhà sớm và không bị ghi lỗi vào báo cáo ca.',
+            reasoning: 'Vi phạm quy chế quản lý kho quỹ ngân hàng. Việc tự bù tiền che giấu sai lệch có thể tạo tiền lệ xấu và không tìm ra nguyên nhân cốt lõi.',
+            outcomeDescription: 'Hệ thống kiểm toán nội bộ phát hiện dấu vết số liệu bất thường, giao dịch viên bị lập biên bản nhắc nhở vì vi phạm quy trình quỹ.',
+            feedbackTone: 'warning',
+            scoreDelta: 1
+          }
+        ]
+      }
+    ],
+    rubric: [
+      { criterion: 'Kỹ năng quan sát tâm lý và thấu cảm khách hàng', description: 'Phát hiện sớm dấu hiệu bất thường của khách hàng để bảo vệ tài sản.' },
+      { criterion: 'Phản ứng nghiệp vụ an toàn và chuẩn quy trình', description: 'Phối hợp nhịp nhàng với cấp trên và cơ quan chức năng bảo vệ người dân.' },
+      { criterion: 'Tính kỷ luật và sự trung thực với tiền mặt', description: 'Tuân thủ nguyên tắc quản lý kho quỹ, không giấu giếm sai sót.' }
+    ]
   }
 ];
+

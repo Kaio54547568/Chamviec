@@ -33,12 +33,14 @@ import {
   PracticeExamSet,
   PracticeQuestion
 } from '../data/admissions2026';
+import { useLanguage } from '../i18n/LanguageContext';
 
 interface Admission2026CenterProps {
   onOpenChamAi?: (question: string) => void;
 }
 
 export const Admission2026Center: React.FC<Admission2026CenterProps> = ({ onOpenChamAi }) => {
+  const { t, language } = useLanguage();
   // Navigation inside Admission 2026 Center
   const [activeSubTab, setActiveSubTab] = useState<'regulations' | 'exam_repo' | 'eie_gift' | 'practice_arena'>('regulations');
 
@@ -225,10 +227,10 @@ export const Admission2026Center: React.FC<Admission2026CenterProps> = ({ onOpen
               <span>Chính sách đồng hành miễn phí 100% cho học sinh THPT</span>
             </div>
             <h2 className="text-2xl sm:text-3xl font-extrabold tracking-tight text-white">
-              Tuyển sinh 2026 — Quy chế, Thư viện đề ĐGNL & Quà tặng EIE Education
+              {language === 'vi' ? 'Tuyển sinh 2026 — Quy chế, Thư viện đề ĐGNL & Quà tặng EIE Education' : 'Admissions 2026 — Regulations, Exam Library & EIE Education Gift'}
             </h2>
             <p className="text-xs sm:text-sm text-teal-100/90 leading-relaxed">
-              CHẠM VIỆC tặng học sinh cẩm nang tuyển sinh, thư viện đề tham khảo chính thức và các bài luyện tư duy miễn phí, giúp các em chủ động chuẩn bị cho lựa chọn tương lai.
+              {language === 'vi' ? 'CHẠM VIỆC tặng học sinh cẩm nang tuyển sinh, thư viện đề tham khảo chính thức và các bài luyện tư duy miễn phí, giúp các em chủ động chuẩn bị cho lựa chọn tương lai.' : 'CHẠM VIỆC provides students with enrollment handbooks, verified standardized exam libraries, and free thinking skills practice to prepare proactively for their future.'}
             </p>
           </div>
 
@@ -240,8 +242,8 @@ export const Admission2026Center: React.FC<Admission2026CenterProps> = ({ onOpen
               <Gift className="w-6 h-6 text-slate-950" />
             </div>
             <div className="text-left">
-              <div className="text-[11px] uppercase tracking-wider text-slate-900 font-bold">Đồng hành bởi EIE Education</div>
-              <div className="text-sm font-black">Nhận Tài Khoản Tiếng Anh Miễn Phí</div>
+              <div className="text-[11px] uppercase tracking-wider text-slate-900 font-bold">{language === "vi" ? "Đồng hành bởi EIE Education" : "Partnered with EIE Education"}</div>
+              <div className="text-sm font-black">{language === "vi" ? "Nhận Tài Khoản Tiếng Anh Miễn Phí" : "Get Free English Prep Account"}</div>
             </div>
           </button>
         </div>
@@ -257,7 +259,7 @@ export const Admission2026Center: React.FC<Admission2026CenterProps> = ({ onOpen
             }`}
           >
             <FileText className="w-4 h-4" />
-            <span>Quy chế & Kế hoạch Bộ GD&ĐT 2026</span>
+            <span>{language === 'vi' ? 'Quy chế & Kế hoạch Bộ GD&ĐT 2026' : 'MOET 2026 Regulations & Timeline'}</span>
           </button>
 
           <button

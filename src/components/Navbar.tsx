@@ -67,7 +67,7 @@ export const Navbar: React.FC<NavbarProps> = ({
                   CHẠM VIỆC
                 </span>
                 <span className="text-[10px] font-semibold uppercase tracking-wider bg-teal-50 text-teal-700 px-2 py-0.5 rounded-full border border-teal-200">
-                  Lớp 10–12
+                  {t.brand.gradeBadge}
                 </span>
               </div>
               <p className="text-xs text-slate-500 font-medium hidden sm:block">

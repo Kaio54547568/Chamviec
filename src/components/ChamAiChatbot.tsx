@@ -7,15 +7,20 @@ import {
   ShieldCheck, 
   RotateCcw, 
   Maximize2, 
-  Minimize2,
-  RefreshCw,
-  AlertCircle,
-  HelpCircle,
-  Check,
-  ChevronDown
+  Minimize2, 
+  RefreshCw, 
+  AlertCircle, 
+  HelpCircle, 
+  Check, 
+  ChevronDown,
+  Square,
+  BookOpen,
+  ArrowRight
 } from 'lucide-react';
 import { StudentProfile } from '../types';
 import { useLanguage } from '../i18n/LanguageContext';
+
+export type ChatStatus = 'idle' | 'sending' | 'streaming' | 'completed' | 'interrupted' | 'error';
 
 interface ChamAiChatbotProps {
   isOpen: boolean;
@@ -37,6 +42,7 @@ interface ChatMessage {
   errorDetail?: string;
   failedPrompt?: string;
   canRetry?: boolean;
+  isFallback?: boolean;
 }
 
 export const ChamAiChatbot: React.FC<ChamAiChatbotProps> = ({
@@ -79,21 +85,34 @@ I am here to assist you with:
     },
   ]);
   const [inputText, setInputText] = useState('');
-  const [isLoading, setIsLoading] = useState(false);
-  const [loadingStatus, setLoadingStatus] = useState('Đang suy nghĩ...');
+  const [chatStatus, setChatStatus] = useState<ChatStatus>('idle');
+  const [loadingStatus, setLoadingStatus] = useState('Đang kết nối...');
   const [isExpanded, setIsExpanded] = useState(false);
   const [showClearConfirm, setShowClearConfirm] = useState(false);
 
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const textareaRef = useRef<HTMLTextAreaElement>(null);
+  const abortControllerRef = useRef<AbortController | null>(null);
 
   const quickPrompts = language === 'vi' ? [
     {
-      label: '📚 Giỏi Văn, Sử, Anh nên học gì?',
-      text: 'Em học giỏi môn Văn, Lịch sử và tiếng Anh nhưng không thích môn Toán thì nên học ngành gì và có những cơ hội việc làm nào?',
+      label: '🌐 Nghề phiên dịch viên làm gì?',
+      text: 'Nghề phiên dịch làm gì? Công việc thực tế, kỹ năng cần có và khó khăn của nghề này ra sao?',
     },
     {
-      label: '🚀 Thống kê các ngành tuyển sinh 2025',
+      label: '⚡ Thiết kế vi mạch vs Kiểm thử chip',
+      text: 'Thiết kế vi mạch khác kiểm thử chip thế nào? Hãy so sánh chi tiết công việc, kỹ năng và trường đào tạo.',
+    },
+    {
+      label: '🏦 Giao dịch viên vs Chuyên viên tín dụng',
+      text: 'So sánh giao dịch viên và chuyên viên tín dụng ngân hàng theo tiêu chí: công việc, môi trường, áp lực KPI và nhóm RIASEC.',
+    },
+    {
+      label: '📚 Giỏi Văn và Anh nên chọn nghề gì?',
+      text: 'Em thích Văn và Anh nhưng chưa biết chọn nghề gì phù hợp, hãy tư vấn cho em các hướng ngành phát triển triển vọng.',
+    },
+    {
+      label: '🚀 Thống kê tuyển sinh 2025 mới',
       text: 'Hãy thống kê chi tiết các ngành và phương án tuyển sinh năm 2025 theo chương trình GDPT mới trong hệ thống dữ liệu?',
     },
     {
@@ -104,38 +123,26 @@ I am here to assist you with:
       label: '🏔️ Học sinh miền núi / DTTS',
       text: 'Em là học sinh miền núi / dân tộc thiểu số, điều kiện kinh tế gia đình còn khó khăn thì có những chính sách hỗ trợ, học bổng và các trường nào phù hợp?',
     },
-    {
-      label: '⚖️ So sánh ngành Marketing vs CNTT',
-      text: 'Hãy so sánh ngành Marketing và Công nghệ thông tin theo bảng tiêu chí cụ thể: Học gì, Công việc, Kỹ năng, Môi trường làm việc, Cơ hội việc làm.',
-    },
-    {
-      label: '📊 Điểm chuẩn trường đại học',
-      text: `Với mức điểm tốt nghiệp THPT dự kiến khoảng ${profile.estimatedScore || 24} điểm, em có thể tham khảo những trường và ngành nào có trong dữ liệu xác minh?`,
-    },
-    {
-      label: '🧭 Đang mất phương hướng',
-      text: 'Em đang cảm thấy hoang mang và chưa biết mình thích gì hay hợp nghề nào, bạn có thể gợi ý các bước khám phá bản thân cho em được không?',
-    },
   ] : [
     {
-      label: '📚 Good at Humanities & Languages?',
-      text: 'I excel in Literature, History, and English but dislike advanced Math. What college majors and career pathways best suit my strengths?',
+      label: '💻 Skills for Software Engineer?',
+      text: 'What skills are needed for a software engineer? Outline technical foundations, soft skills, and degree programs.',
     },
     {
-      label: '🚀 2025 Admission Reforms Summary',
-      text: 'Provide a breakdown of the new 2025 admission schemes and CS K01 combination under the new Vietnamese curriculum.',
+      label: '🌐 Translation & Interpretation Careers',
+      text: 'What does an international conference interpreter do? What skills and trade-offs are involved?',
+    },
+    {
+      label: '⚡ IC Design vs Semiconductor Testing',
+      text: 'Compare IC Design and Chip Testing/Packaging in the semiconductor value chain.',
     },
     {
       label: '🎯 Career Recommendations for My Profile',
       text: 'Based on my RIASEC profile and strengths, which career fields suit me best? Outline: Suggested Careers, Why Suitable, Academic Majors, Universities, and Trade-offs.',
     },
     {
-      label: '⚖️ Compare Marketing vs CS',
-      text: 'Compare Marketing and Computer Science in a Markdown table: Curricula, Core Skills, Work Environment, and Career Opportunities.',
-    },
-    {
-      label: '📊 University Cutoff Query',
-      text: `With an estimated high school graduation score of around ${profile.estimatedScore || 24} points, which verified universities and majors should I consider?`,
+      label: '🚀 2025 Admission Reforms Summary',
+      text: 'Provide a breakdown of the new 2025 admission schemes and CS K01 combination under the new Vietnamese curriculum.',
     },
   ];
 
@@ -146,8 +153,7 @@ I am here to assist you with:
 
   useEffect(() => {
     scrollToBottom();
-  }, [messages, isLoading]);
-
+  }, [messages, chatStatus]);
 
   // Adjust textarea height dynamically
   useEffect(() => {
@@ -166,9 +172,18 @@ I am here to assist you with:
     }
   }, [initialPrompt]);
 
+  // Stop Generation handler (AbortController)
+  const handleStopGeneration = () => {
+    if (abortControllerRef.current) {
+      abortControllerRef.current.abort();
+      abortControllerRef.current = null;
+    }
+    setChatStatus('interrupted');
+  };
+
   const handleSendMessage = async (textToSend?: string) => {
     const text = (textToSend || inputText).trim();
-    if (!text || isLoading) return;
+    if (!text || chatStatus === 'sending' || chatStatus === 'streaming') return;
 
     // Add user message immediately
     const userMsg: ChatMessage = {
@@ -183,13 +198,16 @@ I am here to assist you with:
     if (textareaRef.current) {
       textareaRef.current.style.height = 'auto';
     }
-    setIsLoading(true);
+
+    setChatStatus('sending');
     setLoadingStatus('CHẠM AI đang suy nghĩ...');
 
-    // Rotate status messages to reassure user
-    const statusTimer = setTimeout(() => {
-      setLoadingStatus('Đang đối chiếu dữ liệu ngành và điểm chuẩn tuyển sinh...');
-    }, 2000);
+    const controller = new AbortController();
+    abortControllerRef.current = controller;
+
+    // Prepare assistant message placeholder
+    const aiMsgId = 'ai_' + Date.now();
+    let accumulatedText = '';
 
     try {
       // Build top RIASEC summary if completed
@@ -199,109 +217,175 @@ I am here to assist you with:
         .slice(0, 3)
         .map(([code, val]) => `Nhóm ${code} (${val} điểm)`);
 
-      // Format recent chat history (exclude errors)
+      // Format recent chat history (exclude errors, max 10 turns)
       const chatHistory = messages
-        .filter((m) => !m.isError)
-        .slice(-6)
+        .filter((m) => !m.isError && m.text.trim())
+        .slice(-10)
         .map((m) => ({
           sender: m.sender,
           text: m.text,
         }));
 
-      const controller = new AbortController();
-      const timeoutId = setTimeout(() => controller.abort(), 25000);
-
-      const response = await fetch('/api/cham-ai', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        signal: controller.signal,
-        body: JSON.stringify({
-          message: text,
-          profile: {
-            grade: profile.grade,
-            favoriteSubjects: profile.favoriteSubjects,
-            academicStrengths: profile.academicStrengths,
-            activities: profile.activities,
-            topRiasec: topRiasecList,
-            riasecScores: profile.riasecScores,
-            priorityValues: profile.priorityValues,
-            savedCareers: profile.savedCareers,
-            savedMajors: profile.savedMajors,
-            preferredRegions: profile.preferredRegions,
-            preferredProvinces: profile.preferredProvinces,
-            budgetRange: profile.budgetRange,
-            scholarshipInterest: profile.scholarshipInterest,
-            estimatedScore: profile.estimatedScore,
-            targetCombinations: profile.targetCombinations,
-          },
-          currentContext,
-          chatHistory,
-        }),
-      });
-
-      clearTimeout(timeoutId);
-      clearTimeout(statusTimer);
-
-      let data: any = null;
+      // Try SSE Streaming endpoint first (/api/cham-ai/stream)
+      let streamWorked = false;
       try {
-        data = await response.json();
-      } catch (jsonParseErr) {
-        // In case server returned non-JSON (e.g. 503 HTML page)
-        data = {
-          success: false,
-          error: 'AI_OVERLOADED_503',
-          errorMessage: 'AI đang bận, em vui lòng thử lại sau ít phút.',
-        };
+        const streamResponse = await fetch('/api/cham-ai/stream', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          signal: controller.signal,
+          body: JSON.stringify({
+            message: text,
+            profile: {
+              grade: profile.grade,
+              favoriteSubjects: profile.favoriteSubjects,
+              academicStrengths: profile.academicStrengths,
+              activities: profile.activities,
+              topRiasec: topRiasecList,
+              riasecScores: profile.riasecScores,
+              priorityValues: profile.priorityValues,
+              savedCareers: profile.savedCareers,
+              savedMajors: profile.savedMajors,
+              preferredRegions: profile.preferredRegions,
+              preferredProvinces: profile.preferredProvinces,
+              budgetRange: profile.budgetRange,
+              scholarshipInterest: profile.scholarshipInterest,
+              estimatedScore: profile.estimatedScore,
+              targetCombinations: profile.targetCombinations,
+            },
+            currentContext,
+            chatHistory,
+          }),
+        });
+
+        if (streamResponse.ok && streamResponse.body) {
+          const reader = streamResponse.body.getReader();
+          const decoder = new TextDecoder();
+          let buffer = '';
+          setChatStatus('streaming');
+
+          // Add blank assistant message placeholder
+          setMessages((prev) => [
+            ...prev,
+            {
+              id: aiMsgId,
+              sender: 'ai',
+              text: '',
+              timestamp: new Date().toLocaleTimeString('vi-VN', { hour: '2-digit', minute: '2-digit' }),
+            },
+          ]);
+
+          while (true) {
+            const { done, value } = await reader.read();
+            if (done) break;
+
+            buffer += decoder.decode(value, { stream: true });
+            const lines = buffer.split('\n');
+            buffer = lines.pop() || '';
+
+            for (const line of lines) {
+              const trimmedLine = line.trim();
+              if (trimmedLine.startsWith('data: ')) {
+                const dataJson = trimmedLine.slice(6).trim();
+                if (!dataJson) continue;
+                try {
+                  const event = JSON.parse(dataJson);
+                  if (event.type === 'chunk' && event.text) {
+                    accumulatedText += event.text;
+                    streamWorked = true;
+                    setMessages((prev) =>
+                      prev.map((m) => (m.id === aiMsgId ? { ...m, text: accumulatedText } : m))
+                    );
+                  } else if (event.type === 'error') {
+                    throw new Error(event.errorMessage || 'AI đang bận, em vui lòng thử lại sau ít phút.');
+                  }
+                } catch (e: any) {
+                  if (e.message && e.message.includes('AI đang bận')) throw e;
+                }
+              }
+            }
+          }
+
+          if (accumulatedText.trim().length > 0) {
+            setChatStatus('completed');
+            abortControllerRef.current = null;
+            return;
+          }
+        }
+      } catch (streamErr: any) {
+        if (controller.signal.aborted) {
+          setChatStatus('interrupted');
+          return;
+        }
+        console.warn('[CHAM AI] Streaming attempt failed or not supported, falling back to non-streaming:', streamErr);
       }
 
-      if (!response.ok || data?.success === false) {
-        // Strictly sanitize: NEVER show technical JSON or status codes to students
-        const rawMsg = String(data?.errorMessage || data?.errorDetail || '');
-        const isTechOr503 = 
-          response.status === 503 ||
-          response.status === 429 ||
-          data?.error === 'AI_OVERLOADED_503' ||
-          rawMsg.includes('{') ||
-          rawMsg.includes('503') ||
-          rawMsg.includes('UNAVAILABLE') ||
-          rawMsg.includes('overload') ||
-          rawMsg.includes('rate limit');
+      // Non-streaming fallback: /api/cham-ai
+      if (!streamWorked) {
+        const response = await fetch('/api/cham-ai', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          signal: controller.signal,
+          body: JSON.stringify({
+            message: text,
+            profile: {
+              grade: profile.grade,
+              favoriteSubjects: profile.favoriteSubjects,
+              academicStrengths: profile.academicStrengths,
+              activities: profile.activities,
+              topRiasec: topRiasecList,
+              riasecScores: profile.riasecScores,
+              priorityValues: profile.priorityValues,
+              savedCareers: profile.savedCareers,
+              savedMajors: profile.savedMajors,
+              preferredRegions: profile.preferredRegions,
+              preferredProvinces: profile.preferredProvinces,
+              budgetRange: profile.budgetRange,
+              scholarshipInterest: profile.scholarshipInterest,
+              estimatedScore: profile.estimatedScore,
+              targetCombinations: profile.targetCombinations,
+            },
+            currentContext,
+            chatHistory,
+          }),
+        });
 
-        const studentFriendlyMessage = isTechOr503
-          ? 'AI đang bận, em vui lòng thử lại sau ít phút.'
-          : (data?.errorMessage || 'AI đang bận, em vui lòng thử lại sau ít phút.');
+        const data = await response.json();
 
-        const errorReply: ChatMessage = {
-          id: 'err_' + Date.now(),
+        if (!response.ok || data?.success === false) {
+          const studentFriendlyMessage = 'AI đang bận, em vui lòng thử lại sau ít phút.';
+          const errorReply: ChatMessage = {
+            id: 'err_' + Date.now(),
+            sender: 'ai',
+            text: '',
+            isError: true,
+            errorMessage: studentFriendlyMessage,
+            failedPrompt: text,
+            canRetry: true,
+            timestamp: new Date().toLocaleTimeString('vi-VN', { hour: '2-digit', minute: '2-digit' }),
+          };
+          setMessages((prev) => prev.filter((m) => m.id !== aiMsgId).concat(errorReply));
+          setChatStatus('error');
+          return;
+        }
+
+        const replyText = data.reply || 'AI đang bận, em vui lòng thử lại sau ít phút.';
+        const aiReply: ChatMessage = {
+          id: 'ai_' + Date.now(),
           sender: 'ai',
-          text: '',
-          isError: true,
-          errorMessage: studentFriendlyMessage,
-          failedPrompt: text,
-          canRetry: true,
+          text: replyText,
           timestamp: new Date().toLocaleTimeString('vi-VN', { hour: '2-digit', minute: '2-digit' }),
         };
-        setMessages((prev) => [...prev, errorReply]);
+
+        setMessages((prev) => prev.filter((m) => m.id !== aiMsgId).concat(aiReply));
+        setChatStatus('completed');
+      }
+    } catch (err: any) {
+      if (controller.signal.aborted) {
+        setChatStatus('interrupted');
         return;
       }
-
-      const aiReplyText =
-        data.reply ||
-        'CHẠM AI đã tiếp nhận câu hỏi của bạn nhưng chưa nhận được nội dung phản hồi. Bạn vui lòng bấm nút "Thử lại câu hỏi này".';
-
-      const aiReply: ChatMessage = {
-        id: 'ai_' + Date.now(),
-        sender: 'ai',
-        text: aiReplyText,
-        timestamp: new Date().toLocaleTimeString('vi-VN', { hour: '2-digit', minute: '2-digit' }),
-      };
-
-      setMessages((prev) => [...prev, aiReply]);
-    } catch (err: any) {
-      clearTimeout(statusTimer);
       console.error('[CHAM AI Client fetch error]', err);
 
-      // Student-friendly message without technical JSON
       const errorReply: ChatMessage = {
         id: 'err_' + Date.now(),
         sender: 'ai',
@@ -312,15 +396,15 @@ I am here to assist you with:
         canRetry: true,
         timestamp: new Date().toLocaleTimeString('vi-VN', { hour: '2-digit', minute: '2-digit' }),
       };
-      setMessages((prev) => [...prev, errorReply]);
+      setMessages((prev) => prev.filter((m) => m.id !== aiMsgId).concat(errorReply));
+      setChatStatus('error');
     } finally {
-      setIsLoading(false);
+      abortControllerRef.current = null;
     }
   };
 
   const handleRetry = (failedPrompt?: string) => {
     if (!failedPrompt) return;
-    // Remove the error message that has failedPrompt
     setMessages((prev) => prev.filter((m) => !(m.isError && m.failedPrompt === failedPrompt)));
     handleSendMessage(failedPrompt);
   };
@@ -328,7 +412,6 @@ I am here to assist you with:
   const handleEditFailedPrompt = (failedPrompt?: string) => {
     if (!failedPrompt) return;
     setInputText(failedPrompt);
-    // Remove the error message
     setMessages((prev) => prev.filter((m) => !(m.isError && m.failedPrompt === failedPrompt)));
     if (textareaRef.current) {
       textareaRef.current.focus();
@@ -336,6 +419,9 @@ I am here to assist you with:
   };
 
   const handleClearConversation = () => {
+    if (abortControllerRef.current) {
+      abortControllerRef.current.abort();
+    }
     setMessages([
       {
         id: 'welcome_' + Date.now(),
@@ -345,6 +431,7 @@ I am here to assist you with:
       },
     ]);
     setShowClearConfirm(false);
+    setChatStatus('idle');
   };
 
   // Keyboard shortcut handler
@@ -356,10 +443,19 @@ I am here to assist you with:
   };
 
   // Markdown Parser for structured rendering
-  const renderFormattedMessage = (content: string) => {
-    if (!content) return null;
+  const renderFormattedMessage = (content: string, isStreamingThisMessage?: boolean) => {
+    if (!content) {
+      if (isStreamingThisMessage) {
+        return (
+          <span className="inline-flex items-center gap-1.5 text-xs text-teal-700 animate-pulse">
+            <span className="w-2 h-2 rounded-full bg-teal-500 animate-ping" />
+            <span>Đang phản hồi từng chữ...</span>
+          </span>
+        );
+      }
+      return null;
+    }
 
-    // Check if there are table segments (| col1 | col2 |)
     const lines = content.split('\n');
     const elements: React.ReactNode[] = [];
     let tableBuffer: string[] = [];
@@ -417,7 +513,15 @@ I am here to assist you with:
       } else {
         flushTable();
 
-        if (!trimmed) {
+        // Detect curated database fallback banner
+        if (trimmed.includes('[Thông tin từ kho nghề')) {
+          elements.push(
+            <div key={'curated_' + idx} className="my-2 p-2.5 rounded-xl bg-teal-50 border border-teal-300 text-teal-900 text-xs font-bold flex items-center gap-2">
+              <BookOpen className="w-4 h-4 text-teal-600 shrink-0" />
+              <span>Dữ liệu đối chiếu từ Kho Nghề & Điểm Tuyển Sinh CHẠM VIỆC</span>
+            </div>
+          );
+        } else if (!trimmed) {
           elements.push(<div key={'sp_' + idx} className="h-2" />);
         } else if (trimmed.startsWith('### ')) {
           elements.push(
@@ -460,10 +564,16 @@ I am here to assist you with:
 
     flushTable();
 
-    return <div className="space-y-0.5">{elements}</div>;
+    return (
+      <div className="space-y-0.5">
+        {elements}
+        {isStreamingThisMessage && (
+          <span className="inline-block w-1.5 h-3.5 bg-teal-600 ml-1 animate-pulse align-middle" />
+        )}
+      </div>
+    );
   };
 
-  // Helper for inline **bold** and *italic* styling
   const parseInlineStyles = (str: string) => {
     const parts = str.split(/(\*\*.*?\*\*|\*.*?\*)/g);
     return parts.map((part, i) => {
@@ -485,9 +595,11 @@ I am here to assist you with:
     });
   };
 
+  const isBusy = chatStatus === 'sending' || chatStatus === 'streaming';
+
   return (
     <>
-      {/* FLOATING TRIGGER BUTTON (Always visible at bottom right) */}
+      {/* FLOATING TRIGGER BUTTON */}
       {!isOpen && (
         <button
           onClick={onOpen}
@@ -534,6 +646,11 @@ I am here to assist you with:
                     <span className="text-[9px] font-bold bg-amber-400 text-slate-950 px-2 py-0.5 rounded-full uppercase tracking-wider">
                       Người bạn đồng hành
                     </span>
+                    {chatStatus === 'streaming' && (
+                      <span className="text-[9px] font-mono text-teal-300 bg-teal-800/80 px-2 py-0.2 rounded-full border border-teal-500/40">
+                        Đang truyền dữ liệu...
+                      </span>
+                    )}
                   </div>
                   <p className="text-[10px] text-teal-200 truncate max-w-[240px] sm:max-w-none">
                     Dữ liệu tuyển sinh chính thức • Hiểu năng lực cá nhân
@@ -608,74 +725,81 @@ I am here to assist you with:
 
             {/* Chat Messages scroll area */}
             <div className="flex-1 overflow-y-auto p-3.5 sm:p-4 space-y-3.5 bg-slate-50/60">
-              {messages.map((m) => (
-                <div
-                  key={m.id}
-                  className={`flex flex-col ${
-                    m.sender === 'user' ? 'items-end' : 'items-start'
-                  }`}
-                >
-                  {/* Normal message */}
-                  {!m.isError && (
-                    <div
-                      className={`max-w-[92%] sm:max-w-[85%] rounded-2xl p-3 sm:p-3.5 text-xs sm:text-[13px] leading-relaxed shadow-2xs ${
-                        m.sender === 'user'
-                          ? 'bg-gradient-to-r from-teal-600 to-teal-700 text-white rounded-br-xs font-medium'
-                          : 'bg-white text-slate-800 rounded-bl-xs border border-slate-200/90'
-                      }`}
-                    >
-                      {m.sender === 'ai' ? renderFormattedMessage(m.text) : m.text}
-                    </div>
-                  )}
+              {messages.map((m, idx) => {
+                const isLatestAi = m.sender === 'ai' && idx === messages.length - 1;
+                const isCurrentlyStreaming = isLatestAi && chatStatus === 'streaming';
 
-                  {/* Error message bubble: strictly student-friendly, no JSON tech dump, retains question */}
-                  {m.isError && (
-                    <div className="max-w-[92%] sm:max-w-[85%] rounded-2xl p-3.5 sm:p-4 text-xs bg-amber-50/90 border border-amber-200 text-slate-800 rounded-bl-xs shadow-2xs space-y-3">
-                      <div className="flex items-start gap-2.5">
-                        <AlertCircle className="w-4 h-4 text-amber-600 shrink-0 mt-0.5" />
-                        <div className="space-y-1">
-                          <p className="font-bold text-slate-900 text-xs sm:text-sm">
-                            {m.errorMessage || 'AI đang bận, em vui lòng thử lại sau ít phút.'}
-                          </p>
-                          {m.failedPrompt && (
-                            <div className="text-[11px] text-slate-600 bg-white/80 p-2 rounded-xl border border-amber-200/60 mt-1">
-                              <span className="font-semibold text-slate-700 block text-[10px] uppercase tracking-wider text-teal-800">
-                                Câu hỏi của em được giữ nguyên:
-                              </span>
-                              <span className="italic line-clamp-3 mt-0.5">"{m.failedPrompt}"</span>
-                            </div>
-                          )}
-                        </div>
+                return (
+                  <div
+                    key={m.id}
+                    className={`flex flex-col ${
+                      m.sender === 'user' ? 'items-end' : 'items-start'
+                    }`}
+                  >
+                    {/* Normal message */}
+                    {!m.isError && (
+                      <div
+                        className={`max-w-[92%] sm:max-w-[85%] rounded-2xl p-3 sm:p-3.5 text-xs sm:text-[13px] leading-relaxed shadow-2xs ${
+                          m.sender === 'user'
+                            ? 'bg-gradient-to-r from-teal-600 to-teal-700 text-white rounded-br-xs font-medium'
+                            : 'bg-white text-slate-800 rounded-bl-xs border border-slate-200/90'
+                        }`}
+                      >
+                        {m.sender === 'ai'
+                          ? renderFormattedMessage(m.text, isCurrentlyStreaming)
+                          : m.text}
                       </div>
+                    )}
 
-                      {m.canRetry && m.failedPrompt && (
-                        <div className="pt-1 flex flex-wrap items-center gap-2">
-                          <button
-                            onClick={() => handleRetry(m.failedPrompt)}
-                            className="flex items-center gap-1.5 px-3.5 py-1.5 rounded-xl bg-teal-700 hover:bg-teal-800 text-white font-bold text-[11px] shadow-xs active:scale-95 transition-all"
-                          >
-                            <RefreshCw className="w-3.5 h-3.5" />
-                            <span>Thử lại câu hỏi này</span>
-                          </button>
-                          <button
-                            onClick={() => handleEditFailedPrompt(m.failedPrompt)}
-                            className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-white hover:bg-slate-100 text-slate-700 font-medium text-[11px] border border-slate-200 transition-all"
-                          >
-                            <span>Sửa lại câu hỏi</span>
-                          </button>
+                    {/* Error message bubble */}
+                    {m.isError && (
+                      <div className="max-w-[92%] sm:max-w-[85%] rounded-2xl p-3.5 sm:p-4 text-xs bg-amber-50/90 border border-amber-200 text-slate-800 rounded-bl-xs shadow-2xs space-y-3">
+                        <div className="flex items-start gap-2.5">
+                          <AlertCircle className="w-4 h-4 text-amber-600 shrink-0 mt-0.5" />
+                          <div className="space-y-1">
+                            <p className="font-bold text-slate-900 text-xs sm:text-sm">
+                              {m.errorMessage || 'AI đang bận, em vui lòng thử lại sau ít phút.'}
+                            </p>
+                            {m.failedPrompt && (
+                              <div className="text-[11px] text-slate-600 bg-white/80 p-2 rounded-xl border border-amber-200/60 mt-1">
+                                <span className="font-semibold text-slate-700 block text-[10px] uppercase tracking-wider text-teal-800">
+                                  Câu hỏi của em được giữ nguyên:
+                                </span>
+                                <span className="italic line-clamp-3 mt-0.5">"{m.failedPrompt}"</span>
+                              </div>
+                            )}
+                          </div>
                         </div>
-                      )}
+
+                        {m.canRetry && m.failedPrompt && (
+                          <div className="pt-1 flex flex-wrap items-center gap-2">
+                            <button
+                              onClick={() => handleRetry(m.failedPrompt)}
+                              className="flex items-center gap-1.5 px-3.5 py-1.5 rounded-xl bg-teal-700 hover:bg-teal-800 text-white font-bold text-[11px] shadow-xs active:scale-95 transition-all"
+                            >
+                              <RefreshCw className="w-3.5 h-3.5" />
+                              <span>Thử lại ngay</span>
+                            </button>
+                            <button
+                              onClick={() => handleEditFailedPrompt(m.failedPrompt)}
+                              className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-white hover:bg-slate-100 text-slate-700 font-medium text-[11px] border border-slate-200 transition-all"
+                            >
+                              <span>Chỉnh sửa câu hỏi</span>
+                            </button>
+                          </div>
+                        )}
+                      </div>
+                    )}
+
+                    <div className="flex items-center gap-1 mt-1 text-[9px] text-slate-400 px-1">
+                      <span>{m.timestamp}</span>
                     </div>
-                  )}
-
-                  <div className="flex items-center gap-1 mt-1 text-[9px] text-slate-400 px-1">
-                    <span>{m.timestamp}</span>
                   </div>
-                </div>
-              ))}
+                );
+              })}
 
-              {/* Loading thinking state */}
-              {isLoading && (
+              {/* Sending status when no chunk arrived yet */}
+              {chatStatus === 'sending' && (
                 <div className="flex items-center gap-2.5 p-3 rounded-2xl bg-white border border-teal-200 text-xs text-teal-800 w-fit shadow-2xs animate-pulse">
                   <div className="flex gap-1">
                     <span className="w-2 h-2 rounded-full bg-teal-600 animate-bounce"></span>
@@ -686,17 +810,29 @@ I am here to assist you with:
                 </div>
               )}
 
+              {chatStatus === 'interrupted' && (
+                <div className="p-2.5 rounded-xl bg-slate-100 border border-slate-200 text-slate-600 text-xs flex items-center justify-between">
+                  <span>Đã dừng câu trả lời theo yêu cầu của em.</span>
+                  <button
+                    onClick={() => handleRetry(messages[messages.length - 1]?.text)}
+                    className="text-teal-700 font-bold hover:underline"
+                  >
+                    Tiếp tục hỏi →
+                  </button>
+                </div>
+              )}
+
               <div ref={messagesEndRef} />
             </div>
 
             {/* Quick Prompts Chips */}
             <div className="px-3 py-2 bg-slate-50 border-t border-slate-200 overflow-x-auto scrollbar-none flex items-center gap-1.5 shrink-0">
-              <span className="text-[10px] text-slate-500 font-bold shrink-0 hidden sm:inline">Gợi ý:</span>
+              <span className="text-[10px] text-slate-500 font-bold shrink-0 hidden sm:inline">Gợi ý câu hỏi:</span>
               {quickPrompts.map((btn, idx) => (
                 <button
                   key={idx}
                   onClick={() => handleSendMessage(btn.text)}
-                  disabled={isLoading}
+                  disabled={isBusy}
                   className="px-2.5 py-1 rounded-full bg-white hover:bg-teal-50 hover:text-teal-900 hover:border-teal-300 border border-slate-200 text-[11px] font-medium text-slate-700 whitespace-nowrap transition-colors shadow-2xs cursor-pointer disabled:opacity-50"
                 >
                   {btn.label}
@@ -704,7 +840,7 @@ I am here to assist you with:
               ))}
             </div>
 
-            {/* Input Form with Multiline Textarea and Shift+Enter */}
+            {/* Input Form with Stop / Send toggle */}
             <div className="p-3 bg-white border-t border-slate-200 shrink-0">
               <div className="flex items-end gap-2">
                 <textarea
@@ -713,22 +849,41 @@ I am here to assist you with:
                   value={inputText}
                   onChange={(e) => setInputText(e.target.value)}
                   onKeyDown={handleKeyDown}
-                  placeholder="Nhập câu hỏi... (Nhấn Enter để gửi, Shift+Enter xuống dòng)"
-                  className="flex-1 px-3.5 py-2.5 rounded-2xl border border-slate-300 text-xs sm:text-[13px] focus:ring-2 focus:ring-teal-500 focus:border-teal-500 focus:outline-none resize-none max-h-28 overflow-y-auto leading-relaxed"
+                  placeholder={
+                    isBusy
+                      ? 'AI đang phản hồi... bấm nút Dừng bên cạnh nếu muốn ngừng lại'
+                      : 'Nhập câu hỏi... (Nhấn Enter để gửi, Shift+Enter xuống dòng)'
+                  }
+                  disabled={isBusy}
+                  className="flex-1 px-3.5 py-2.5 rounded-2xl border border-slate-300 text-xs sm:text-[13px] focus:ring-2 focus:ring-teal-500 focus:border-teal-500 focus:outline-none resize-none max-h-28 overflow-y-auto leading-relaxed disabled:bg-slate-50"
                 />
-                <button
-                  type="button"
-                  onClick={() => handleSendMessage()}
-                  disabled={!inputText.trim() || isLoading}
-                  aria-label="Gửi tin nhắn"
-                  className="w-10 h-10 rounded-2xl bg-teal-600 hover:bg-teal-700 disabled:opacity-40 text-white flex items-center justify-center shrink-0 shadow-xs transition-colors cursor-pointer active:scale-95"
-                >
-                  <Send className="w-4 h-4" />
-                </button>
+
+                {isBusy ? (
+                  <button
+                    type="button"
+                    onClick={handleStopGeneration}
+                    aria-label="Dừng phản hồi"
+                    className="px-3.5 h-10 rounded-2xl bg-rose-600 hover:bg-rose-700 text-white font-bold text-xs flex items-center gap-1.5 shrink-0 shadow-xs active:scale-95 transition-all cursor-pointer"
+                    title="Dừng phản hồi"
+                  >
+                    <Square className="w-3.5 h-3.5 fill-current" />
+                    <span>Dừng</span>
+                  </button>
+                ) : (
+                  <button
+                    type="button"
+                    onClick={() => handleSendMessage()}
+                    disabled={!inputText.trim()}
+                    aria-label="Gửi tin nhắn"
+                    className="w-10 h-10 rounded-2xl bg-teal-600 hover:bg-teal-700 disabled:opacity-40 text-white flex items-center justify-center shrink-0 shadow-xs transition-colors cursor-pointer active:scale-95"
+                  >
+                    <Send className="w-4 h-4" />
+                  </button>
+                )}
               </div>
               <div className="mt-1 flex items-center justify-between text-[10px] text-slate-400 px-1">
                 <span>Shift + Enter để xuống dòng</span>
-                <span>CHẠM AI • Đồng hành cùng học sinh Việt Nam</span>
+                <span>CHẠM AI • Đồng hành hướng nghiệp</span>
               </div>
             </div>
           </div>

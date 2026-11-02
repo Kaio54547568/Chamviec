@@ -23,6 +23,7 @@ interface SimulationTasksViewProps {
   setProfile: React.Dispatch<React.SetStateAction<StudentProfile>>;
 }
 
+import { SemiconductorSimulation3D } from './simulations/SemiconductorSimulation3D';
 import { CircuitSimulation3D } from './simulations/CircuitSimulation3D';
 import { ArchitectureSimulation3D } from './simulations/ArchitectureSimulation3D';
 import { AgricultureSimulation3D } from './simulations/AgricultureSimulation3D';
@@ -39,7 +40,7 @@ export const SimulationTasksView: React.FC<SimulationTasksViewProps> = ({
   const currentTask = SIMULATION_TASKS.find((t) => t.id === selectedTaskId) || null;
 
   // Active 3D simulation modal state
-  const [active3DModal, setActive3DModal] = useState<'circuit' | 'architecture' | 'agriculture' | 'automotive' | null>(null);
+  const [active3DModal, setActive3DModal] = useState<'semiconductor' | 'circuit' | 'architecture' | 'agriculture' | 'automotive' | null>(null);
   const [activeTab, setActiveTab] = useState<'3D' | '2D'>('3D');
 
   // Task active states
@@ -114,6 +115,9 @@ export const SimulationTasksView: React.FC<SimulationTasksViewProps> = ({
   return (
     <div className="space-y-8 pb-16">
       {/* 3D Modals */}
+      {active3DModal === 'semiconductor' && (
+        <SemiconductorSimulation3D onClose={() => setActive3DModal(null)} />
+      )}
       {active3DModal === 'circuit' && (
         <CircuitSimulation3D onClose={() => setActive3DModal(null)} />
       )}
@@ -154,7 +158,7 @@ export const SimulationTasksView: React.FC<SimulationTasksViewProps> = ({
           >
             <Sparkles className="w-3.5 h-3.5 text-cyan-400" />
             <span>{t.simulation.tab3D}</span>
-            <span className="text-[10px] px-1.5 py-0.2 rounded-full bg-cyan-500/30 text-cyan-300 font-mono">4 Labs 3D</span>
+            <span className="text-[10px] px-1.5 py-0.2 rounded-full bg-cyan-500/30 text-cyan-300 font-mono">{language === 'vi' ? '4 Labs 3D WebGL' : '4 3D WebGL Labs'}</span>
           </button>
 
           <button
@@ -167,7 +171,7 @@ export const SimulationTasksView: React.FC<SimulationTasksViewProps> = ({
           >
             <Award className="w-3.5 h-3.5 text-amber-500" />
             <span>{t.simulation.tab2D}</span>
-            <span className="text-[10px] px-1.5 py-0.2 rounded-full bg-amber-500/30 text-amber-800 font-mono">6 Cases</span>
+            <span className="text-[10px] px-1.5 py-0.2 rounded-full bg-amber-500/30 text-amber-800 font-mono">{language === 'vi' ? '8 Tình huống' : '8 Scenarios'}</span>
           </button>
         </div>
       </div>
@@ -176,7 +180,7 @@ export const SimulationTasksView: React.FC<SimulationTasksViewProps> = ({
       {activeTab === '3D' && !currentTask && (
         <div className="space-y-4">
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-5">
-            {/* Lab 1: Circuit */}
+            {/* Lab 1: Semiconductor & IC Packaging */}
             <div className="bg-slate-900 text-white rounded-3xl p-5 border border-slate-800 hover:border-amber-400 transition-all flex flex-col justify-between space-y-4 group">
               <div className="space-y-3">
                 <div className="w-12 h-12 rounded-2xl bg-amber-500/20 text-amber-400 flex items-center justify-center border border-amber-500/40">
@@ -187,23 +191,23 @@ export const SimulationTasksView: React.FC<SimulationTasksViewProps> = ({
                     Three.js WebGL Lab 01
                   </span>
                   <h3 className="font-bold text-white text-lg group-hover:text-amber-300 transition-colors">
-                    {t.simulation.circuitTitle}
+                    {language === 'vi' ? 'Kỹ Thuật Bán Dẫn & Đóng Gói Vi Mạch 3D' : '3D Semiconductor & IC Packaging Lab'}
                   </h3>
                 </div>
                 <p className="text-xs text-slate-400 leading-relaxed">
-                  {t.simulation.circuitDesc}
+                  {language === 'vi' ? 'Trải nghiệm quy trình kiểm thử ATE, xoay định vị Pin 1 notch chip bán dẫn, gắn socket kiểm thử, cắm que đo và chạy chẩn đoán lỗi vi mạch.' : 'Experience ATE automated testing, rotate Pin 1 notch alignment, insert into test socket, connect probes, and run circuit diagnostics.'}
                 </p>
                 <div className="text-[11px] text-slate-400 space-y-1 pt-2 border-t border-slate-800">
-                  <div>• Tương tác: Cầu dao, pin DC 12V, bóng đèn dây tóc</div>
-                  <div>• Năng lực rèn luyện: Tư duy logic kỹ thuật (R - Realistic)</div>
+                  <div>{language === 'vi' ? '• Mô hình: Wafer 300mm, Bare Die, Đế BGA & Test Socket' : '• Model: 300mm Wafer, Bare Die, BGA Substrate & Test Socket'}</div>
+                  <div>{language === 'vi' ? '• Năng lực: Tư duy công nghệ cao & đo kiểm vi mạch (R & I)' : '• Competency: High-tech diagnostics & microcircuit testing (R & I)'}</div>
                 </div>
               </div>
 
               <button
-                onClick={() => setActive3DModal('circuit')}
+                onClick={() => setActive3DModal('semiconductor')}
                 className="w-full py-2.5 rounded-xl bg-amber-500 hover:bg-amber-400 text-slate-950 font-bold text-xs transition-colors shadow-md flex items-center justify-center gap-2"
               >
-                <span>Vào phòng Lab 3D Điện tử</span>
+                <span>{language === 'vi' ? 'Vào Lab Bán Dẫn 3D' : 'Enter 3D Semiconductor Lab'}</span>
                 <ArrowRight className="w-4 h-4" />
               </button>
             </div>
@@ -226,8 +230,8 @@ export const SimulationTasksView: React.FC<SimulationTasksViewProps> = ({
                   {t.simulation.archDesc}
                 </p>
                 <div className="text-[11px] text-slate-400 space-y-1 pt-2 border-t border-slate-800">
-                  <div>• Tương tác: Lắp ghép modular tường, mái dốc, bóng đổ mặt trời</div>
-                  <div>• Năng lực rèn luyện: Cảm quan không gian & thẩm mỹ (A & R)</div>
+                  <div>{language === 'vi' ? '• Tương tác: Lắp ghép modular tường, mái dốc, bóng đổ mặt trời' : '• Interaction: Modular wall snapping, roof framing, solar sun path'}</div>
+                  <div>{language === 'vi' ? '• Năng lực rèn luyện: Cảm quan không gian & thẩm mỹ (A & R)' : '• Competency: Spatial awareness & aesthetic design (A & R)'}</div>
                 </div>
               </div>
 
@@ -235,7 +239,7 @@ export const SimulationTasksView: React.FC<SimulationTasksViewProps> = ({
                 onClick={() => setActive3DModal('architecture')}
                 className="w-full py-2.5 rounded-xl bg-cyan-500 hover:bg-cyan-400 text-slate-950 font-bold text-xs transition-colors shadow-md flex items-center justify-center gap-2"
               >
-                <span>Vào phòng Studio Kiến trúc</span>
+                <span>{language === 'vi' ? 'Vào phòng Studio Kiến trúc' : 'Enter 3D Architecture Studio'}</span>
                 <ArrowRight className="w-4 h-4" />
               </button>
             </div>
@@ -258,8 +262,8 @@ export const SimulationTasksView: React.FC<SimulationTasksViewProps> = ({
                   {t.simulation.agriDesc}
                 </p>
                 <div className="text-[11px] text-slate-400 space-y-1 pt-2 border-t border-slate-800">
-                  <div>• Tương tác: Cảm biến ánh sáng Lux, độ ẩm tưới nhỏ giọt, EC</div>
-                  <div>• Năng lực rèn luyện: Nghiên cứu khoa học cây trồng (I & R)</div>
+                  <div>{language === 'vi' ? '• Tương tác: Cảm biến ánh sáng Lux, độ ẩm tưới nhỏ giọt, EC' : '• Interaction: Lux sensor tuning, soil drip moisture, nutrient EC'}</div>
+                  <div>{language === 'vi' ? '• Năng lực rèn luyện: Nghiên cứu khoa học cây trồng (I & R)' : '• Competency: Plant science & agricultural research (I & R)'}</div>
                 </div>
               </div>
 
@@ -267,7 +271,7 @@ export const SimulationTasksView: React.FC<SimulationTasksViewProps> = ({
                 onClick={() => setActive3DModal('agriculture')}
                 className="w-full py-2.5 rounded-xl bg-emerald-500 hover:bg-emerald-400 text-slate-950 font-bold text-xs transition-colors shadow-md flex items-center justify-center gap-2"
               >
-                <span>Vào Nhà kính Nông nghiệp 4.0</span>
+                <span>{language === 'vi' ? 'Vào Nhà kính Nông nghiệp 4.0' : 'Enter 4.0 Smart Greenhouse'}</span>
                 <ArrowRight className="w-4 h-4" />
               </button>
             </div>
@@ -283,15 +287,15 @@ export const SimulationTasksView: React.FC<SimulationTasksViewProps> = ({
                     Three.js WebGL Lab 04
                   </span>
                   <h3 className="font-bold text-white text-lg group-hover:text-teal-300 transition-colors">
-                    Kỹ Thuật Viên Sửa Chữa Ô Tô 3D
+                    {language === 'vi' ? 'Kỹ Thuật Viên Sửa Chữa Ô Tô 3D' : '3D Automotive Repair Technician'}
                   </h3>
                 </div>
                 <p className="text-xs text-slate-400 leading-relaxed">
-                  Tương tác trực tiếp khoang máy 3D: kiểm tra ắc quy 12V, thay lọc gió, đo điện cực bugi, bổ sung nước giải nhiệt và nổ máy thử nghiệm.
+                  {language === 'vi' ? 'Tương tác trực tiếp khoang máy 3D: kiểm tra ắc quy 12V, thay lọc gió, đo điện cực bugi, bổ sung nước giải nhiệt và nổ máy thử nghiệm.' : 'Interact with live 3D engine bay: inspect 12V battery, replace air filter, check spark plug gap, top up coolant, and crank engine.'}
                 </p>
                 <div className="text-[11px] text-slate-400 space-y-1 pt-2 border-t border-slate-800">
-                  <div>• Tương tác: Ắc quy, bugi, lọc gió, que dầu, nổ máy RPM</div>
-                  <div>• Năng lực rèn luyện: Chẩn đoán & an toàn kỹ thuật (R - Realistic)</div>
+                  <div>{language === 'vi' ? '• Tương tác: Ắc quy, bugi, lọc gió, que dầu, nổ máy RPM' : '• Interaction: Battery, spark plug, air filter, dipstick, RPM crank'}</div>
+                  <div>{language === 'vi' ? '• Năng lực rèn luyện: Chẩn đoán & an toàn kỹ thuật (R - Realistic)' : '• Competency: Diagnostics & workshop safety (R - Realistic)'}</div>
                 </div>
               </div>
 
@@ -299,7 +303,7 @@ export const SimulationTasksView: React.FC<SimulationTasksViewProps> = ({
                 onClick={() => setActive3DModal('automotive')}
                 className="w-full py-2.5 rounded-xl bg-teal-500 hover:bg-teal-400 text-slate-950 font-extrabold text-xs transition-colors shadow-md flex items-center justify-center gap-2"
               >
-                <span>Vào Xưởng Chẩn Đoán Ô Tô 3D</span>
+                <span>{language === 'vi' ? 'Vào Xưởng Chẩn Đoán Ô Tô 3D' : 'Enter 3D Auto Workshop'}</span>
                 <ArrowRight className="w-4 h-4" />
               </button>
             </div>
@@ -323,7 +327,7 @@ export const SimulationTasksView: React.FC<SimulationTasksViewProps> = ({
                     <span className="font-bold text-amber-800 bg-amber-50 px-2.5 py-1 rounded-full border border-amber-200">
                       {task.careerTitle}
                     </span>
-                    <span className="text-slate-400 font-medium">~{task.durationMinutes} phút</span>
+                    <span className="text-slate-400 font-medium">~{task.durationMinutes} {t.common.minutes}</span>
                   </div>
 
                   <h3 className="font-bold text-slate-900 text-base leading-snug">
@@ -335,7 +339,7 @@ export const SimulationTasksView: React.FC<SimulationTasksViewProps> = ({
                   </p>
 
                   <div className="text-[11px] text-slate-500 pt-2 border-t border-slate-100 space-y-1">
-                    <div className="font-semibold text-slate-700">Các giai đoạn thử thách:</div>
+                    <div className="font-semibold text-slate-700">{language === 'vi' ? 'Các giai đoạn thử thách:' : 'Challenge Stages:'}</div>
                     {task.instructions.slice(0, 2).map((ins, i) => (
                       <div key={i} className="line-clamp-1 text-slate-500">• {ins}</div>
                     ))}
@@ -346,10 +350,10 @@ export const SimulationTasksView: React.FC<SimulationTasksViewProps> = ({
                   <span className="text-xs">
                     {isDone ? (
                       <span className="text-emerald-600 font-bold flex items-center gap-1">
-                        <CheckCircle2 className="w-4 h-4" /> Đã làm
+                        <CheckCircle2 className="w-4 h-4" /> {language === 'vi' ? 'Đã làm' : 'Completed'}
                       </span>
                     ) : (
-                      <span className="text-slate-400">Chưa thử nghiệm</span>
+                      <span className="text-slate-400">{language === 'vi' ? 'Chưa thử nghiệm' : 'Not Attempted'}</span>
                     )}
                   </span>
 
@@ -358,7 +362,7 @@ export const SimulationTasksView: React.FC<SimulationTasksViewProps> = ({
                     className="px-4 py-2 rounded-xl bg-amber-500 hover:bg-amber-600 text-slate-950 font-bold text-xs shadow-xs transition-colors flex items-center gap-1.5"
                   >
                     <PlayCircle className="w-4 h-4" />
-                    <span>{isDone ? 'Làm lại nhiệm vụ' : 'Bắt đầu thử vai'}</span>
+                    <span>{isDone ? (language === 'vi' ? 'Làm lại nhiệm vụ' : 'Retake Task') : (language === 'vi' ? 'Bắt đầu thử vai' : 'Start Roleplay')}</span>
                   </button>
                 </div>
               </div>
@@ -374,10 +378,10 @@ export const SimulationTasksView: React.FC<SimulationTasksViewProps> = ({
               onClick={() => setSelectedTaskId(null)}
               className="text-xs font-bold text-slate-600 hover:text-slate-900 flex items-center gap-1.5"
             >
-              <span>← Trở về danh sách nhiệm vụ</span>
+              <span>{language === 'vi' ? '← Trở về danh sách nhiệm vụ' : '← Back to Tasks List'}</span>
             </button>
             <div className="text-xs font-semibold text-amber-800 bg-amber-50 px-3 py-1 rounded-full">
-              Thử vai: {currentTask.careerTitle}
+              {language === 'vi' ? 'Thử vai:' : 'Roleplay:'} {currentTask.careerTitle}
             </div>
           </div>
 
@@ -386,7 +390,7 @@ export const SimulationTasksView: React.FC<SimulationTasksViewProps> = ({
             <div className="bg-slate-900 text-white p-6 sm:p-8 space-y-3">
               <div className="flex items-center gap-2 text-amber-400 text-xs font-bold uppercase tracking-wider">
                 <Sparkles className="w-4 h-4" />
-                <span>Bối cảnh nhiệm vụ thực tế</span>
+                <span>{language === 'vi' ? 'Bối cảnh nhiệm vụ thực tế' : 'Mission Context'}</span>
               </div>
               <h2 className="text-xl sm:text-2xl font-bold">{currentTask.title}</h2>
               <p className="text-xs sm:text-sm text-slate-300 leading-relaxed max-w-3xl">
@@ -411,7 +415,7 @@ export const SimulationTasksView: React.FC<SimulationTasksViewProps> = ({
                         : 'bg-white text-slate-500 border border-slate-200'
                     }`}
                   >
-                    <span>Giai đoạn {stg.stageNumber}</span>
+                    <span>{language === 'vi' ? 'Giai đoạn' : 'Stage'} {stg.stageNumber}</span>
                     {isSelected && <CheckCircle2 className="w-3.5 h-3.5" />}
                   </button>
                 );
@@ -430,7 +434,7 @@ export const SimulationTasksView: React.FC<SimulationTasksViewProps> = ({
                     <div className="space-y-6">
                       <div className="space-y-2">
                         <span className="text-xs font-bold text-amber-700 uppercase tracking-wider">
-                          Bước {stage.stageNumber} trên {currentTask.stages.length}
+                          {language === 'vi' ? `Bước ${stage.stageNumber} trên ${currentTask.stages.length}` : `Step ${stage.stageNumber} of ${currentTask.stages.length}`}
                         </span>
                         <h3 className="text-lg font-bold text-slate-900">
                           {stage.title}
@@ -443,7 +447,7 @@ export const SimulationTasksView: React.FC<SimulationTasksViewProps> = ({
                       {/* Options */}
                       <div className="space-y-3">
                         <div className="text-xs font-bold text-slate-700">
-                          Em sẽ đưa ra quyết định hoặc lựa chọn nào?
+                          {language === 'vi' ? 'Em sẽ đưa ra quyết định hoặc lựa chọn nào?' : 'Which decision or course of action would you take?'}
                         </div>
                         {stage.options.map((opt) => {
                           const isPicked = chosenOptionId === opt.id;
@@ -462,11 +466,11 @@ export const SimulationTasksView: React.FC<SimulationTasksViewProps> = ({
                                   {opt.label}
                                 </span>
                                 {isPicked && (
-                                  <span className="text-xs font-bold text-amber-700 shrink-0">✓ Đã chọn</span>
+                                  <span className="text-xs font-bold text-amber-700 shrink-0">{language === 'vi' ? '✓ Đã chọn' : '✓ Selected'}</span>
                                 )}
                               </div>
                               <p className="text-xs text-slate-500">
-                                <strong>Lý giải chuyên môn:</strong> {opt.reasoning}
+                                <strong>{language === 'vi' ? 'Lý giải chuyên môn:' : 'Professional Reasoning:'}</strong> {opt.reasoning}
                               </p>
                             </button>
                           );
@@ -490,7 +494,7 @@ export const SimulationTasksView: React.FC<SimulationTasksViewProps> = ({
                             ) : (
                               <AlertTriangle className="w-4 h-4 text-rose-600" />
                             )}
-                            <span>Kết quả mô phỏng sau lựa chọn của em:</span>
+                            <span>{language === 'vi' ? 'Kết quả mô phỏng sau lựa chọn của em:' : 'Simulation Outcome After Your Choice:'}</span>
                           </div>
                           <p className="leading-relaxed pl-5">
                             {chosenOption.outcomeDescription}
@@ -505,7 +509,7 @@ export const SimulationTasksView: React.FC<SimulationTasksViewProps> = ({
                           onClick={() => setCurrentStageIdx((p) => p - 1)}
                           className="px-4 py-2 rounded-xl bg-slate-100 hover:bg-slate-200 text-slate-700 text-xs font-semibold disabled:opacity-40"
                         >
-                          Giai đoạn trước
+                          {language === 'vi' ? 'Giai đoạn trước' : 'Previous Stage'}
                         </button>
 
                         {currentStageIdx < currentTask.stages.length - 1 ? (
@@ -514,7 +518,7 @@ export const SimulationTasksView: React.FC<SimulationTasksViewProps> = ({
                             onClick={() => setCurrentStageIdx((p) => p + 1)}
                             className="px-5 py-2.5 rounded-xl bg-teal-600 hover:bg-teal-700 text-white font-bold text-xs shadow-xs disabled:opacity-40 flex items-center gap-1.5"
                           >
-                            <span>Sang giai đoạn tiếp theo</span>
+                            <span>{language === 'vi' ? 'Sang giai đoạn tiếp theo' : 'Next Stage'}</span>
                             <ArrowRight className="w-4 h-4" />
                           </button>
                         ) : (
@@ -523,7 +527,7 @@ export const SimulationTasksView: React.FC<SimulationTasksViewProps> = ({
                             onClick={() => setIsCompleted(true)}
                             className="px-5 py-2.5 rounded-xl bg-amber-500 hover:bg-amber-600 text-slate-950 font-bold text-xs shadow-xs disabled:opacity-40 flex items-center gap-1.5"
                           >
-                            <span>Hoàn thành & Sang bước phản tư</span>
+                            <span>{language === 'vi' ? 'Hoàn thành & Sang bước phản tư' : 'Complete & Start Reflection'}</span>
                             <CheckCircle2 className="w-4 h-4" />
                           </button>
                         )}
@@ -539,11 +543,11 @@ export const SimulationTasksView: React.FC<SimulationTasksViewProps> = ({
                 <div className="bg-gradient-to-br from-emerald-50 to-teal-50 rounded-2xl p-6 border border-emerald-200 space-y-4">
                   <div className="flex items-center gap-2 text-emerald-800 font-bold text-xs uppercase tracking-wider">
                     <Award className="w-4 h-4 text-emerald-600" />
-                    <span>Đánh giá theo Rubric minh bạch</span>
+                    <span>{language === 'vi' ? 'Đánh giá theo Rubric minh bạch' : 'Transparent Rubric Assessment'}</span>
                   </div>
 
                   <h3 className="text-xl font-bold text-slate-900">
-                    Em đã hoàn thành thử vai: {currentTask.title}
+                    {language === 'vi' ? `Em đã hoàn thành thử vai: ${currentTask.title}` : `You completed the roleplay challenge: ${currentTask.title}`}
                   </h3>
 
                   <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
@@ -556,7 +560,7 @@ export const SimulationTasksView: React.FC<SimulationTasksViewProps> = ({
                   </div>
 
                   <div className="text-xs text-slate-600 italic">
-                    *Nhắc nhở: Không suy ra năng khiếu nghề từ một mini-game. Việc giải quyết chưa tối ưu chỉ là cơ hội để em nhận biết những gì mình cần học thêm, không phản ánh năng lực cố định của em.
+                    {language === 'vi' ? '*Nhắc nhở: Không suy ra năng khiếu nghề từ một mini-game. Việc giải quyết chưa tối ưu chỉ là cơ hội để em nhận biết những gì mình cần học thêm, không phản ánh năng lực cố định của em.' : '*Reminder: A simulation exercise does not dictate vocational aptitude. Non-optimal choices simply highlight learning opportunities, not fixed capabilities.'}
                   </div>
                 </div>
 
@@ -565,16 +569,16 @@ export const SimulationTasksView: React.FC<SimulationTasksViewProps> = ({
                   <div className="space-y-1">
                     <h4 className="text-base font-bold text-slate-900 flex items-center gap-2">
                       <MessageSquare className="w-4 h-4 text-amber-600" />
-                      <span>Bước phản tư sau trải nghiệm (Chu trình Kolb)</span>
+                      <span>{language === 'vi' ? 'Bước phản tư sau trải nghiệm (Chu trình Kolb)' : 'Post-Experience Reflection (Kolb Cycle)'}</span>
                     </h4>
                     <p className="text-xs text-slate-500">
-                      Ghi lại cảm nhận chân thật giúp em hiểu rõ hơn bản thân sau thử thách này.
+                      {language === 'vi' ? 'Ghi lại cảm nhận chân thật giúp em hiểu rõ hơn bản thân sau thử thách này.' : 'Recording honest impressions helps deepen your self-awareness after this challenge.'}
                     </p>
                   </div>
 
                   <div className="space-y-2">
                     <label className="block text-xs font-bold text-slate-800">
-                      1. Khi giải quyết tình huống vừa rồi, em cảm thấy hứng thú ở khâu nào nhất? Cảm xúc của em ra sao?
+                      {language === 'vi' ? '1. Khi giải quyết tình huống vừa rồi, em cảm thấy hứng thú ở khâu nào nhất? Cảm xúc của em ra sao?' : '1. While tackling this challenge, which phase interested you the most? How did you feel?'}
                     </label>
                     <textarea
                       required
@@ -587,7 +591,7 @@ export const SimulationTasksView: React.FC<SimulationTasksViewProps> = ({
 
                   <div className="space-y-2">
                     <label className="block text-xs font-bold text-slate-800">
-                      2. Khó khăn nào của nghề này em cảm thấy mình sẵn sàng đối mặt và rèn luyện?
+                      {language === 'vi' ? '2. Khó khăn nào của nghề này em cảm thấy mình sẵn sàng đối mặt và rèn luyện?' : '2. Which trade-off or difficulty of this profession are you willing to embrace and cultivate?'}
                     </label>
                     <textarea
                       required
@@ -600,7 +604,7 @@ export const SimulationTasksView: React.FC<SimulationTasksViewProps> = ({
 
                   <div className="space-y-2">
                     <label className="block text-xs font-bold text-slate-800">
-                      3. Em có muốn thử tiếp một nhiệm vụ khác hay tìm hiểu sâu hơn về nghề này không? Hành động nhỏ tiếp theo là gì?
+                      {language === 'vi' ? '3. Em có muốn thử tiếp một nhiệm vụ khác hay tìm hiểu sâu hơn về nghề này không? Hành động nhỏ tiếp theo là gì?' : '3. Would you like to explore deeper or try another career task? What is your next micro-action?'}
                     </label>
                     <input
                       type="text"
@@ -616,11 +620,11 @@ export const SimulationTasksView: React.FC<SimulationTasksViewProps> = ({
                     {reflectionSaved ? (
                       <span className="text-xs font-bold text-emerald-600 flex items-center gap-1.5">
                         <CheckCircle2 className="w-4 h-4" />
-                        Đã lưu phản tư vào hồ sơ học sinh!
+                        {language === 'vi' ? 'Đã lưu phản tư vào hồ sơ học sinh!' : 'Saved reflection to your student dossier!'}
                       </span>
                     ) : (
                       <span className="text-xs text-slate-400">
-                        Bản phản tư sẽ được đưa vào Báo cáo hướng nghiệp.
+                        {language === 'vi' ? 'Bản phản tư sẽ được đưa vào Báo cáo hướng nghiệp.' : 'Reflections will be integrated into your career dossier.'}
                       </span>
                     )}
 
@@ -631,13 +635,13 @@ export const SimulationTasksView: React.FC<SimulationTasksViewProps> = ({
                         className="px-3.5 py-2 rounded-xl bg-slate-100 hover:bg-slate-200 text-slate-700 text-xs font-semibold flex items-center gap-1"
                       >
                         <RotateCcw className="w-3.5 h-3.5" />
-                        <span>Thử lại từ đầu</span>
+                        <span>{language === 'vi' ? 'Thử lại từ đầu' : 'Restart Challenge'}</span>
                       </button>
                       <button
                         type="submit"
                         className="px-5 py-2 rounded-xl bg-teal-600 hover:bg-teal-700 text-white font-bold text-xs shadow-xs"
                       >
-                        Lưu bản phản tư
+                        {language === 'vi' ? 'Lưu bản phản tư' : 'Save Reflection'}
                       </button>
                     </div>
                   </div>

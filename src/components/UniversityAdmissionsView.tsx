@@ -33,6 +33,7 @@ import { MAJORS_DATA, MAJOR_CATEGORIES } from '../data/majors';
 import { removeVietnameseTones, matchQuery, matchUniversity, matchAdmissionRecord } from '../utils/vietnameseSearch';
 import { saveStudentProfile } from '../utils/storage';
 import { Admission2026Center } from './Admission2026Center';
+import { useLanguage } from '../i18n/LanguageContext';
 
 interface UniversityAdmissionsViewProps {
   profile: StudentProfile;
@@ -47,6 +48,7 @@ export const UniversityAdmissionsView: React.FC<UniversityAdmissionsViewProps> =
   selectedMajorFilter = null,
   onAskAiAboutSchool
 }) => {
+  const { t, language } = useLanguage();
   // Search & Filters state
   const [searchQuery, setSearchQuery] = useState('');
   const [selectedRegion, setSelectedRegion] = useState<string>('all'); // Toàn quốc, Miền Bắc, Miền Trung, Miền Nam
@@ -201,7 +203,7 @@ export const UniversityAdmissionsView: React.FC<UniversityAdmissionsViewProps> =
       setComparisonList(comparisonList.filter((item) => item !== id));
     } else {
       if (comparisonList.length >= 3) {
-        alert('Bạn chỉ có thể so sánh tối đa 3 phương án cùng lúc trên một màn hình.');
+        alert(t.admissions.maxCompareAlert);
         return;
       }
       setComparisonList([...comparisonList, id]);
@@ -334,13 +336,13 @@ export const UniversityAdmissionsView: React.FC<UniversityAdmissionsViewProps> =
           <div>
             <div className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-teal-50 text-teal-800 text-xs font-bold mb-2">
               <GraduationCap className="w-3.5 h-3.5 text-teal-600" />
-              <span>Hệ thống Tuyển sinh & Điểm chuẩn Đại học Toàn quốc</span>
+              <span>{t.admissions.badge}</span>
             </div>
             <h1 className="text-2xl sm:text-3xl font-extrabold text-slate-900 tracking-tight">
-              Ngành này học ở trường nào?
+              {t.admissions.title}
             </h1>
             <p className="text-xs sm:text-sm text-slate-600 max-w-3xl mt-1 leading-relaxed">
-              Cơ sở dữ liệu chính thức theo đề án tuyển sinh của các trường đại học Việt Nam. Tìm kiếm thông minh tiếng Việt không dấu, tra cứu theo điểm dự kiến và tổ hợp môn.
+              {t.admissions.subtitle}
             </p>
           </div>
 
@@ -351,7 +353,7 @@ export const UniversityAdmissionsView: React.FC<UniversityAdmissionsViewProps> =
               title="Đặt lại các bộ lọc"
             >
               <RotateCcw className="w-3.5 h-3.5" />
-              <span>Đặt lại bộ lọc</span>
+              <span>{t.admissions.resetFilters}</span>
             </button>
           </div>
         </div>
@@ -368,7 +370,7 @@ export const UniversityAdmissionsView: React.FC<UniversityAdmissionsViewProps> =
               }`}
             >
               <Sparkles className="w-4 h-4 text-amber-300" />
-              <span>Tuyển sinh 2026 & Kho Đề (Bộ GD&ĐT & EIE)</span>
+              <span>{t.admissions.tab2026}</span>
               <span className="px-1.5 py-0.5 rounded-md bg-amber-400 text-slate-950 text-[10px] font-black">
                 MỚI
               </span>
@@ -382,7 +384,7 @@ export const UniversityAdmissionsView: React.FC<UniversityAdmissionsViewProps> =
               }`}
             >
               <Search className="w-4 h-4" />
-              <span>Tra cứu Điểm chuẩn & Ngành</span>
+              <span>{t.admissions.tabSearch}</span>
             </button>
             <button
               onClick={() => setViewMode('stats2025')}
@@ -393,7 +395,7 @@ export const UniversityAdmissionsView: React.FC<UniversityAdmissionsViewProps> =
               }`}
             >
               <BarChart3 className="w-4 h-4" />
-              <span>Thống kê Tuyển sinh 2025 ({records2025.length} ngành)</span>
+              <span>{t.admissions.tabStats2025} ({records2025.length} {language === 'vi' ? 'ngành' : 'majors'})</span>
             </button>
           </div>
 
@@ -411,11 +413,11 @@ export const UniversityAdmissionsView: React.FC<UniversityAdmissionsViewProps> =
         <div className="p-4 rounded-2xl bg-amber-50/80 border border-amber-300 text-amber-950 text-xs sm:text-sm space-y-1">
           <div className="flex items-center gap-2 font-bold text-amber-900">
             <AlertTriangle className="w-4 h-4 text-amber-700 shrink-0" />
-            <span>NGUYÊN TẮC QUAN TRỌNG VỀ DỮ LIỆU TUYỂN SINH:</span>
+            <span>{t.admissions.rulesWarningTitle}</span>
           </div>
           <p className="leading-relaxed pl-6">
-            <strong>1.</strong> Điểm chuẩn các năm trước chỉ có giá trị tham khảo và không đảm bảo kết quả tuyển sinh năm hiện tại. <br />
-            <strong>2.</strong> Mỗi phương thức xét tuyển (Thi tốt nghiệp THPT, ĐGNL, Xét học bạ) có thang điểm và quy tắc tính riêng; tuyệt đối không so sánh trực tiếp các thang điểm khác nhau.
+            <strong>1.</strong> {t.admissions.rulesWarning1} <br />
+            <strong>2.</strong> {t.admissions.rulesWarning2}
           </p>
         </div>
       </div>
