@@ -603,7 +603,7 @@ I am here to assist you with:
       {!isOpen && (
         <button
           onClick={onOpen}
-          aria-label="Mở CHẠM AI Trợ lý hướng nghiệp"
+          aria-label={language === "vi" ? "Mở CHẠM AI Trợ lý hướng nghiệp" : "Open CHẠM AI Career Assistant"}
           className="fixed bottom-5 right-5 z-50 flex items-center gap-2.5 px-4 py-3 rounded-full bg-gradient-to-r from-teal-700 via-teal-800 to-emerald-800 text-white shadow-xl hover:shadow-2xl hover:scale-105 active:scale-95 transition-all duration-200 group border border-teal-400/40 cursor-pointer"
         >
           <div className="relative w-8 h-8 rounded-full bg-white p-0.5 flex items-center justify-center shadow-xs">
@@ -617,7 +617,7 @@ I am here to assist you with:
               <span>CHẠM AI</span>
               <Sparkles className="w-3.5 h-3.5 text-amber-300" />
             </div>
-            <div className="text-[10px] text-teal-200 font-medium">Bạn đồng hành hướng nghiệp</div>
+            <div className="text-[10px] text-teal-200 font-medium">{language === "vi" ? "Bạn đồng hành hướng nghiệp" : "Career Companion"}</div>
           </div>
         </button>
       )}
@@ -644,16 +644,16 @@ I am here to assist you with:
                       CHẠM AI
                     </h3>
                     <span className="text-[9px] font-bold bg-amber-400 text-slate-950 px-2 py-0.5 rounded-full uppercase tracking-wider">
-                      Người bạn đồng hành
+                      {language === "vi" ? "Người bạn đồng hành" : "Career Companion"}
                     </span>
                     {chatStatus === 'streaming' && (
                       <span className="text-[9px] font-mono text-teal-300 bg-teal-800/80 px-2 py-0.2 rounded-full border border-teal-500/40">
-                        Đang truyền dữ liệu...
+                        {language === "vi" ? "Đang truyền dữ liệu..." : "Streaming response..."}
                       </span>
                     )}
                   </div>
                   <p className="text-[10px] text-teal-200 truncate max-w-[240px] sm:max-w-none">
-                    Dữ liệu tuyển sinh chính thức • Hiểu năng lực cá nhân
+                    {language === "vi" ? "Dữ liệu tuyển sinh chính thức • Hiểu năng lực cá nhân" : "Verified Admissions Data • Self-Insight"}
                   </p>
                 </div>
               </div>
@@ -663,7 +663,7 @@ I am here to assist you with:
                 <button
                   onClick={() => setShowClearConfirm(true)}
                   className="p-1.5 rounded-lg hover:text-white hover:bg-white/10 transition-colors"
-                  title="Xóa cuộc trò chuyện để bắt đầu lại"
+                  title={language === "vi" ? "Xóa cuộc trò chuyện để bắt đầu lại" : "Reset conversation"}
                   aria-label="Xóa cuộc trò chuyện"
                 >
                   <RotateCcw className="w-4 h-4" />
@@ -673,7 +673,7 @@ I am here to assist you with:
                 <button
                   onClick={() => setIsExpanded(!isExpanded)}
                   className="p-1.5 rounded-lg hover:text-white hover:bg-white/10 transition-colors hidden sm:block"
-                  title={isExpanded ? 'Thu nhỏ' : 'Mở rộng'}
+                  title={isExpanded ? (language === "vi" ? "Thu nhỏ" : "Minimize") : (language === "vi" ? "Mở rộng" : "Expand")}
                   aria-label="Thu nhỏ hoặc mở rộng khung chat"
                 >
                   {isExpanded ? <Minimize2 className="w-4 h-4" /> : <Maximize2 className="w-4 h-4" />}
@@ -683,7 +683,7 @@ I am here to assist you with:
                 <button
                   onClick={onClose}
                   className="p-1.5 rounded-lg hover:text-white hover:bg-white/10 transition-colors"
-                  title="Đóng cửa sổ chat"
+                  title={language === "vi" ? "Đóng cửa sổ chat" : "Close chat"}
                   aria-label="Đóng cửa sổ chat"
                 >
                   <X className="w-5 h-5" />
@@ -696,7 +696,7 @@ I am here to assist you with:
               <div className="bg-amber-100 border-b border-amber-300 p-3 text-xs text-amber-950 flex items-center justify-between gap-2 shrink-0 animate-in fade-in">
                 <div className="flex items-center gap-2">
                   <AlertCircle className="w-4 h-4 text-amber-700 shrink-0" />
-                  <span>Xóa toàn bộ tin nhắn trò chuyện hiện tại?</span>
+                  <span>{language === "vi" ? "Xóa toàn bộ tin nhắn trò chuyện hiện tại?" : "Clear all current chat messages?"}</span>
                 </div>
                 <div className="flex items-center gap-2">
                   <button
@@ -812,12 +812,12 @@ I am here to assist you with:
 
               {chatStatus === 'interrupted' && (
                 <div className="p-2.5 rounded-xl bg-slate-100 border border-slate-200 text-slate-600 text-xs flex items-center justify-between">
-                  <span>Đã dừng câu trả lời theo yêu cầu của em.</span>
+                  <span>{language === "vi" ? "Đã dừng câu trả lời theo yêu cầu của em." : "Generation paused upon request."}</span>
                   <button
                     onClick={() => handleRetry(messages[messages.length - 1]?.text)}
                     className="text-teal-700 font-bold hover:underline"
                   >
-                    Tiếp tục hỏi →
+                    {language === "vi" ? "Tiếp tục hỏi →" : "Continue asking →"}
                   </button>
                 </div>
               )}
@@ -827,7 +827,7 @@ I am here to assist you with:
 
             {/* Quick Prompts Chips */}
             <div className="px-3 py-2 bg-slate-50 border-t border-slate-200 overflow-x-auto scrollbar-none flex items-center gap-1.5 shrink-0">
-              <span className="text-[10px] text-slate-500 font-bold shrink-0 hidden sm:inline">Gợi ý câu hỏi:</span>
+              <span className="text-[10px] text-slate-500 font-bold shrink-0 hidden sm:inline">{language === "vi" ? "Gợi ý câu hỏi:" : "Suggested Questions:"}</span>
               {quickPrompts.map((btn, idx) => (
                 <button
                   key={idx}
@@ -851,8 +851,8 @@ I am here to assist you with:
                   onKeyDown={handleKeyDown}
                   placeholder={
                     isBusy
-                      ? 'AI đang phản hồi... bấm nút Dừng bên cạnh nếu muốn ngừng lại'
-                      : 'Nhập câu hỏi... (Nhấn Enter để gửi, Shift+Enter xuống dòng)'
+                      ? (language === 'vi' ? 'AI đang phản hồi... bấm nút Dừng bên cạnh nếu muốn ngừng lại' : 'AI is replying... click Stop if you wish to pause')
+                      : (language === 'vi' ? 'Nhập câu hỏi... (Nhấn Enter để gửi, Shift+Enter xuống dòng)' : 'Type your question... (Enter to send, Shift+Enter for new line)')
                   }
                   disabled={isBusy}
                   className="flex-1 px-3.5 py-2.5 rounded-2xl border border-slate-300 text-xs sm:text-[13px] focus:ring-2 focus:ring-teal-500 focus:border-teal-500 focus:outline-none resize-none max-h-28 overflow-y-auto leading-relaxed disabled:bg-slate-50"
@@ -867,7 +867,7 @@ I am here to assist you with:
                     title="Dừng phản hồi"
                   >
                     <Square className="w-3.5 h-3.5 fill-current" />
-                    <span>Dừng</span>
+                    <span>{language === "vi" ? "Dừng" : "Stop"}</span>
                   </button>
                 ) : (
                   <button
@@ -882,8 +882,8 @@ I am here to assist you with:
                 )}
               </div>
               <div className="mt-1 flex items-center justify-between text-[10px] text-slate-400 px-1">
-                <span>Shift + Enter để xuống dòng</span>
-                <span>CHẠM AI • Đồng hành hướng nghiệp</span>
+                <span>{language === "vi" ? "Shift + Enter để xuống dòng" : "Shift + Enter for new line"}</span>
+                <span>{language === "vi" ? "CHẠM AI • Đồng hành hướng nghiệp" : "CHẠM AI • Career Companion"}</span>
               </div>
             </div>
           </div>

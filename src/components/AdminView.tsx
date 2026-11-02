@@ -17,8 +17,10 @@ import { AdmissionRecord } from '../types';
 import { ADMISSION_RECORDS } from '../data/admissions';
 import { CAREERS_DATA } from '../data/careers';
 import { VIDEO_STORIES_DATA } from '../data/videoStories';
+import { useLanguage } from '../i18n/LanguageContext';
 
 export const AdminView: React.FC = () => {
+  const { t, language } = useLanguage();
   const [admissions, setAdmissions] = useState<AdmissionRecord[]>(ADMISSION_RECORDS);
   const [searchTerm, setSearchTerm] = useState('');
   const [filterStatus, setFilterStatus] = useState<'all' | 'verified' | 'demo'>('all');
@@ -78,22 +80,22 @@ export const AdminView: React.FC = () => {
       <div className="bg-white rounded-3xl p-6 sm:p-8 border border-slate-200/80 shadow-xs space-y-4">
         <div className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-slate-100 text-slate-800 text-xs font-bold">
           <Sliders className="w-3.5 h-3.5 text-slate-600" />
-          <span>Bảng điều khiển Kiểm soát Chất lượng Dữ liệu Tuyển sinh</span>
+          <span>{language === 'vi' ? 'Bảng điều khiển Kiểm soát Chất lượng Dữ liệu Tuyển sinh' : 'Admissions Data Quality & Integrity Console'}</span>
         </div>
 
         <h1 className="text-2xl sm:text-3xl font-extrabold text-slate-900 tracking-tight">
-          Quản trị & Kiểm duyệt Nguồn dữ liệu (Data Integrity Audit)
+          {language === 'vi' ? 'Quản trị & Kiểm duyệt Nguồn dữ liệu (Data Integrity Audit)' : 'Data Governance & Integrity Audit'}
         </h1>
 
         <p className="text-xs sm:text-sm text-slate-600 leading-relaxed max-w-3xl">
-          Tuân thủ nguyên tắc: <strong>AI không được phép tự động phát sinh hay công bố điểm chuẩn</strong>. Mọi số liệu bắt buộc phải đối chiếu với đề án tuyển sinh chính thức từ cổng thông tin của trường hoặc Bộ GD&ĐT.
+          {language === 'vi' ? 'Tuân thủ nguyên tắc: AI không được phép tự động phát sinh hay công bố điểm chuẩn. Mọi số liệu bắt buộc phải đối chiếu với đề án tuyển sinh chính thức từ cổng thông tin của trường hoặc Bộ GD&ĐT.' : 'Strict policy: AI is strictly prohibited from inventing or hallucinating cutoff scores. All figures must link directly to official university schemes or MOET registries.'}
         </p>
 
         {/* Audit metrics */}
         <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 pt-2">
           <div className="p-4 rounded-2xl bg-emerald-50 border border-emerald-200">
             <div className="text-xs font-bold text-emerald-800 uppercase tracking-wider">
-              Bản ghi tuyển sinh chính thức
+              {language === 'vi' ? 'Bản ghi tuyển sinh chính thức' : 'Official Admissions Records'}
             </div>
             <div className="text-2xl font-black text-emerald-700 mt-1">
               {totalVerified} <span className="text-xs font-normal text-emerald-600">bản ghi</span>
@@ -105,7 +107,7 @@ export const AdminView: React.FC = () => {
 
           <div className="p-4 rounded-2xl bg-blue-50 border border-blue-200">
             <div className="text-xs font-bold text-blue-800 uppercase tracking-wider">
-              Hồ sơ nghề & Video biên tập
+              {language === 'vi' ? 'Hồ sơ nghề & Video biên tập' : 'Career Dossiers & Curated Videos'}
             </div>
             <div className="text-2xl font-black text-blue-700 mt-1">
               {CAREERS_DATA.length} nghề / {VIDEO_STORIES_DATA.length} video
@@ -117,7 +119,7 @@ export const AdminView: React.FC = () => {
 
           <div className="p-4 rounded-2xl bg-slate-100 border border-slate-200">
             <div className="text-xs font-bold text-slate-700 uppercase tracking-wider">
-              Công cụ quản lý dữ liệu
+              {language === 'vi' ? 'Công cụ quản lý dữ liệu' : 'Data Management Tools'}
             </div>
             <div className="flex items-center gap-2 mt-2">
               <button

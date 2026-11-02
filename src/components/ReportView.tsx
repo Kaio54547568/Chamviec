@@ -20,12 +20,14 @@ import { exportProfileToJson } from '../utils/storage';
 import { ADMISSION_RECORDS } from '../data/admissions';
 import { CAREERS_DATA } from '../data/careers';
 import { RIASEC_INFO } from '../data/riasecQuestions';
+import { useLanguage } from '../i18n/LanguageContext';
 
 interface ReportViewProps {
   profile: StudentProfile;
 }
 
 export const ReportView: React.FC<ReportViewProps> = ({ profile }) => {
+  const { t, language } = useLanguage();
   const [copied, setCopied] = useState(false);
   const snapshot = generateRecommendations(profile);
   const actionPlan = generateActionPlan(profile);
@@ -60,13 +62,13 @@ Kế hoạch 30 ngày: Khám phá 2 nghề và phỏng vấn người làm ngh�
         <div>
           <div className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-teal-50 text-teal-800 text-xs font-bold mb-2">
             <FileText className="w-3.5 h-3.5 text-teal-600" />
-            <span>Hồ sơ Hướng nghiệp Cá nhân</span>
+            <span>{language === 'vi' ? 'Hồ sơ Hướng nghiệp Cá nhân' : 'Personal Career Dossier'}</span>
           </div>
           <h1 className="text-2xl sm:text-3xl font-extrabold text-slate-900 tracking-tight">
-            Báo cáo tổng hợp & Kế hoạch 30/60/90 ngày
+            {language === 'vi' ? 'Báo cáo tổng hợp & Kế hoạch 30/60/90 ngày' : 'Comprehensive Dossier & 30/60/90 Day Action Plan'}
           </h1>
           <p className="text-xs sm:text-sm text-slate-500 mt-1">
-            Bản báo cáo này thuộc quyền sở hữu của em, dùng để thảo luận cùng cha mẹ hoặc thầy cô chủ nhiệm.
+            {language === 'vi' ? 'Bản báo cáo này thuộc quyền sở hữu của em, dùng để thảo luận cùng cha mẹ hoặc thầy cô chủ nhiệm.' : 'This report is owned by you, designed for discussion with parents and educators.'}
           </p>
         </div>
 
@@ -76,7 +78,7 @@ Kế hoạch 30 ngày: Khám phá 2 nghề và phỏng vấn người làm ngh�
             className="px-4 py-2 rounded-xl bg-slate-900 hover:bg-slate-800 text-white font-bold text-xs flex items-center gap-1.5 shadow-xs transition-colors"
           >
             <Printer className="w-4 h-4" />
-            <span>In / Lưu PDF</span>
+            <span>{language === 'vi' ? 'In / Lưu PDF' : 'Print / Save PDF'}</span>
           </button>
 
           <button
@@ -84,7 +86,7 @@ Kế hoạch 30 ngày: Khám phá 2 nghề và phỏng vấn người làm ngh�
             className="px-3.5 py-2 rounded-xl bg-slate-100 hover:bg-slate-200 text-slate-700 font-semibold text-xs flex items-center gap-1.5 transition-colors"
           >
             {copied ? <Check className="w-4 h-4 text-emerald-600" /> : <Copy className="w-4 h-4" />}
-            <span>{copied ? 'Đã sao chép' : 'Sao chép tóm tắt'}</span>
+            <span>{copied ? (language === 'vi' ? 'Đã sao chép' : 'Copied') : (language === 'vi' ? 'Sao chép tóm tắt' : 'Copy Summary')}</span>
           </button>
 
           <button
@@ -92,7 +94,7 @@ Kế hoạch 30 ngày: Khám phá 2 nghề và phỏng vấn người làm ngh�
             className="px-3.5 py-2 rounded-xl bg-teal-50 hover:bg-teal-100 text-teal-800 font-semibold text-xs flex items-center gap-1.5 transition-colors"
           >
             <Download className="w-4 h-4" />
-            <span>Xuất JSON</span>
+            <span>{language === 'vi' ? 'Xuất JSON' : 'Export JSON'}</span>
           </button>
         </div>
       </div>
@@ -109,13 +111,13 @@ Kế hoạch 30 ngày: Khám phá 2 nghề và phỏng vấn người làm ngh�
             />
             <div>
               <span className="text-xs font-bold text-teal-700 uppercase tracking-widest">
-                CHẠM VIỆC • HƯỚNG NGHIỆP DỰA TRÊN TRẢI NGHIỆM
+                {language === 'vi' ? 'CHẠM VIỆC • HƯỚNG NGHIỆP DỰA TRÊN TRẢI NGHIỆM' : 'CHẠM VIỆC • EXPERIENTIAL CAREER GUIDANCE'}
               </span>
               <h2 className="text-2xl font-bold text-slate-900 mt-0.5">
-                Bản Tổng hợp Hồ sơ Khám phá & Lựa chọn Tuyển sinh
+                {language === 'vi' ? 'Bản Tổng hợp Hồ sơ Khám phá & Lựa chọn Tuyển sinh' : 'Career Discovery & College Admissions Dossier'}
               </h2>
               <p className="text-xs text-slate-500 mt-0.5">
-                Cập nhật lần cuối: {new Date(profile.updatedAt).toLocaleDateString('vi-VN')} • Mã hồ sơ: {profile.id}
+                {language === 'vi' ? 'Cập nhật lần cuối:' : 'Last updated:'} {new Date(profile.updatedAt).toLocaleDateString('vi-VN')} • {language === 'vi' ? 'Mã hồ sơ:' : 'Dossier ID:'} {profile.id}
               </p>
             </div>
           </div>
@@ -128,17 +130,17 @@ Kế hoạch 30 ngày: Khám phá 2 nghề và phỏng vấn người làm ngh�
         <div className="space-y-4">
           <h3 className="text-base font-bold text-slate-900 flex items-center gap-2">
             <Sparkles className="w-4 h-4 text-teal-600" />
-            <span>1. Sở thích nghề nghiệp & Nền tảng học tập</span>
+            <span>{language === 'vi' ? '1. Sở thích nghề nghiệp & Nền tảng học tập' : '1. Career Interests & Academic Profile'}</span>
           </h3>
 
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4 text-xs">
             <div className="p-4 rounded-2xl bg-slate-50 border border-slate-200 space-y-2">
-              <div className="font-bold text-slate-800">Điểm sở thích RIASEC tham khảo:</div>
+              <div className="font-bold text-slate-800">{language === 'vi' ? 'Điểm sở thích RIASEC tham khảo:' : 'Reference RIASEC Scores:'}</div>
               <div className="grid grid-cols-3 gap-2 pt-1">
                 {(Object.keys(profile.riasecScores) as (keyof typeof profile.riasecScores)[]).map((code) => (
                   <div key={code} className="p-2 rounded-xl bg-white border border-slate-200 text-center">
-                    <span className="font-bold text-teal-800">Nhóm {code}:</span>{' '}
-                    <span className="font-extrabold">{profile.riasecScores[code]} điểm</span>
+                    <span className="font-bold text-teal-800">{language === 'vi' ? 'Nhóm' : 'Group'} {code}:</span>{' '}
+                    <span className="font-extrabold">{profile.riasecScores[code]} {language === 'vi' ? 'điểm' : 'pts'}</span>
                   </div>
                 ))}
               </div>
@@ -148,18 +150,18 @@ Kế hoạch 30 ngày: Khám phá 2 nghề và phỏng vấn người làm ngh�
             </div>
 
             <div className="p-4 rounded-2xl bg-slate-50 border border-slate-200 space-y-2">
-              <div className="font-bold text-slate-800">Môn học yêu thích & Giá trị ưu tiên:</div>
+              <div className="font-bold text-slate-800">{language === 'vi' ? 'Môn học yêu thích & Giá trị ưu tiên:' : 'Favorite Subjects & Priority Values:'}</div>
               <div className="text-slate-700">
-                <strong>Môn học:</strong> {profile.favoriteSubjects.join(', ') || 'Chưa cập nhật'}
+                <strong>{language === 'vi' ? 'Môn học:' : 'Subjects:'}</strong> {profile.favoriteSubjects.join(', ') || 'Chưa cập nhật'}
               </div>
               <div className="text-slate-700">
-                <strong>Giá trị ưu tiên:</strong> {profile.priorityValues.join(', ') || 'Chưa chọn'}
+                <strong>{language === 'vi' ? 'Giá trị ưu tiên:' : 'Core Values:'}</strong> {profile.priorityValues.join(', ') || 'Chưa chọn'}
               </div>
               <div className="text-slate-700">
-                <strong>Ngân sách dự kiến:</strong> {profile.budgetRange || 'Chưa ghi'}
+                <strong>{language === 'vi' ? 'Ngân sách dự kiến:' : 'Estimated Budget:'}</strong> {profile.budgetRange || 'Chưa ghi'}
               </div>
               <div className="text-slate-700">
-                <strong>Khu vực mong muốn:</strong> {profile.preferredRegions.join(', ') || 'Chưa giới hạn'}
+                <strong>{language === 'vi' ? 'Khu vực mong muốn:' : 'Preferred Region:'}</strong> {profile.preferredRegions.join(', ') || 'Chưa giới hạn'}
               </div>
             </div>
           </div>
@@ -169,7 +171,7 @@ Kế hoạch 30 ngày: Khám phá 2 nghề và phỏng vấn người làm ngh�
         <div className="space-y-4">
           <h3 className="text-base font-bold text-slate-900 flex items-center gap-2">
             <GraduationCap className="w-4 h-4 text-teal-600" />
-            <span>2. Danh sách hướng nghề gợi ý (Có lý do & Đánh đổi thực tế)</span>
+            <span>{language === 'vi' ? '2. Danh sách hướng nghề gợi ý (Có lý do & Đánh đổi thực tế)' : '2. Recommended Career Options (With Rationale & Trade-offs)'}</span>
           </h3>
 
           <div className="space-y-3">
@@ -180,17 +182,17 @@ Kế hoạch 30 ngày: Khám phá 2 nghề và phỏng vấn người làm ngh�
                     {i + 1}. {rec.career.title} ({rec.career.categoryLabel})
                   </span>
                   <span className="font-bold text-teal-700 bg-teal-100 px-2 py-0.5 rounded-md">
-                    Phù hợp tham khảo: {rec.matchScore}/100
+                    {language === 'vi' ? 'Phù hợp tham khảo:' : 'Match Score:'} {rec.matchScore}/100
                   </span>
                 </div>
                 <p className="text-slate-700 leading-relaxed font-medium">
-                  <strong>Lý do phù hợp:</strong> {rec.hollandFitReason}
+                  <strong>{language === 'vi' ? 'Lý do phù hợp:' : 'Fit Rationale:'}</strong> {rec.hollandFitReason}
                 </p>
                 <div className="text-slate-600">
-                  <strong>Khó khăn & Đánh đổi:</strong> {rec.valuesTradeoffs.join('; ')}
+                  <strong>{language === 'vi' ? 'Khó khăn & Đánh đổi:' : 'Trade-offs & Hardships:'}</strong> {rec.valuesTradeoffs.join('; ')}
                 </div>
                 <div className="text-slate-500">
-                  <strong>Dữ liệu còn thiếu:</strong> {rec.missingInformation.join('; ') || 'Đã có thông tin cơ bản'}
+                  <strong>{language === 'vi' ? 'Dữ liệu còn thiếu:' : 'Missing Information:'}</strong> {rec.missingInformation.join('; ') || 'Đã có thông tin cơ bản'}
                 </div>
               </div>
             ))}
@@ -201,7 +203,7 @@ Kế hoạch 30 ngày: Khám phá 2 nghề và phỏng vấn người làm ngh�
         <div className="space-y-4">
           <h3 className="text-base font-bold text-slate-900 flex items-center gap-2">
             <Bookmark className="w-4 h-4 text-teal-600" />
-            <span>3. Ngành & Trường đại học quan tâm (Điểm chuẩn chính thức)</span>
+            <span>{language === 'vi' ? '3. Ngành & Trường đại học quan tâm (Điểm chuẩn chính thức)' : '3. Saved Majors & Universities (Verified Cutoff Scores)'}</span>
           </h3>
 
           {savedAdmissionsRecords.length === 0 ? (

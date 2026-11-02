@@ -395,7 +395,7 @@ export const EnterpriseExperienceView: React.FC = () => {
                     <div className="flex items-start gap-2">
                       <Users className="w-4 h-4 text-slate-400 shrink-0 mt-0.5" />
                       <div>
-                        <span className="text-[10px] text-slate-400 block">Số lượng & Đối tượng:</span>
+                        <span className="text-[10px] text-slate-400 block">{language === 'vi' ? 'Số lượng & Đối tượng:' : 'Slots & Eligibility:'}</span>
                         <strong className={isFull ? 'text-rose-600' : 'text-emerald-700'}>
                           {isFull ? t.enterprise.fullSlots : `${slotsRemaining} ${t.enterprise.slotsLeft}`}
                         </strong>
@@ -440,7 +440,7 @@ export const EnterpriseExperienceView: React.FC = () => {
                     <span className="text-[11px] text-slate-400 block">{t.enterprise.price}</span>
                     <span className="font-extrabold text-base text-slate-900">
                       {batch.ticketPriceVND === 0 ? (
-                        <span className="text-emerald-600">0 VNĐ (Tài trợ 100%)</span>
+                        <span className="text-emerald-600">{language === 'vi' ? '0 VNĐ (Tài trợ 100%)' : '0 VND (Fully Sponsored)'}</span>
                       ) : (
                         <span>{batch.ticketPriceVND.toLocaleString()} VNĐ</span>
                       )}
@@ -520,7 +520,7 @@ export const EnterpriseExperienceView: React.FC = () => {
                 {/* Voucher Pass Card */}
                 <div className="p-5 rounded-2xl bg-indigo-50/80 border-2 border-dashed border-indigo-300 text-left space-y-3">
                   <div className="flex items-center justify-between pb-3 border-b border-indigo-200">
-                    <span className="text-[11px] font-bold text-indigo-900 uppercase">Phiếu Trải Nghiệm Doanh Nghiệp</span>
+                    <span className="text-[11px] font-bold text-indigo-900 uppercase">{language === 'vi' ? 'Phiếu Trải Nghiệm Doanh Nghiệp' : 'Enterprise Immersion Pass'}</span>
                     <span className="font-mono font-extrabold text-indigo-700 text-sm bg-white px-2 py-0.5 rounded-lg border border-indigo-200">
                       {confirmedRegistration.registrationCode}
                     </span>
@@ -567,47 +567,47 @@ export const EnterpriseExperienceView: React.FC = () => {
 
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                   <div>
-                    <label className="block font-bold text-slate-700 mb-1">Họ và tên học sinh *</label>
+                    <label className="block font-bold text-slate-700 mb-1">{language === 'vi' ? 'Họ và tên học sinh *' : 'Student Full Name *'}</label>
                     <input
                       required
                       type="text"
                       value={studentName}
                       onChange={(e) => setStudentName(e.target.value)}
-                      placeholder="Nguyễn Văn A"
+                      placeholder={language === "vi" ? "Nguyễn Văn A" : "Alex Nguyen"}
                       className="w-full p-2.5 rounded-xl border border-slate-300 focus:ring-2 focus:ring-indigo-500 focus:outline-none"
                     />
                   </div>
 
                   <div>
-                    <label className="block font-bold text-slate-700 mb-1">Khối lớp *</label>
+                    <label className="block font-bold text-slate-700 mb-1">{language === 'vi' ? 'Khối lớp *' : 'Grade Level *'}</label>
                     <select
                       value={grade}
                       onChange={(e) => setGrade(e.target.value)}
                       className="w-full p-2.5 rounded-xl border border-slate-300 focus:ring-2 focus:ring-indigo-500 focus:outline-none bg-white"
                     >
-                      <option value="Lớp 10">Lớp 10 (THPT)</option>
-                      <option value="Lớp 11">Lớp 11 (THPT)</option>
-                      <option value="Lớp 12">Lớp 12 (THPT)</option>
-                      <option value="Sinh viên / Tự do">Khác</option>
+                      <option value="Lớp 10">{language === "vi" ? "Lớp 10 (THPT)" : "Grade 10"}</option>
+                      <option value="Lớp 11">{language === "vi" ? "Lớp 11 (THPT)" : "Grade 11"}</option>
+                      <option value="Lớp 12">{language === "vi" ? "Lớp 12 (THPT)" : "Grade 12"}</option>
+                      <option value="Sinh viên / Tự do">{language === "vi" ? "Khác" : "Other / Independent"}</option>
                     </select>
                   </div>
                 </div>
 
                 <div>
-                  <label className="block font-bold text-slate-700 mb-1">Trường THPT đang theo học *</label>
+                  <label className="block font-bold text-slate-700 mb-1">{language === 'vi' ? 'Trường THPT đang theo học *' : 'Current High School *'}</label>
                   <input
                     required
                     type="text"
                     value={schoolName}
                     onChange={(e) => setSchoolName(e.target.value)}
-                    placeholder="THPT Chuyên Chu Văn An, THPT Dân tộc nội trú..."
+                    placeholder={language === "vi" ? "THPT Chuyên Chu Văn An, THPT Dân tộc nội trú..." : "High School name..."}
                     className="w-full p-2.5 rounded-xl border border-slate-300 focus:ring-2 focus:ring-indigo-500 focus:outline-none"
                   />
                 </div>
 
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                   <div>
-                    <label className="block font-bold text-slate-700 mb-1">Email nhận vé trải nghiệm *</label>
+                    <label className="block font-bold text-slate-700 mb-1">{language === 'vi' ? 'Email nhận vé trải nghiệm *' : 'Email to Receive Pass *'}</label>
                     <input
                       required
                       type="email"
@@ -620,7 +620,7 @@ export const EnterpriseExperienceView: React.FC = () => {
 
                   <div>
                     <div className="flex items-center justify-between mb-1">
-                      <label className="font-bold text-slate-700">Số điện thoại {!isInternational && '*'}</label>
+                      <label className="font-bold text-slate-700">{language === 'vi' ? 'Số điện thoại' : 'Phone Number'} {!isInternational && '*'}</label>
                       <label className="inline-flex items-center gap-1 text-[11px] text-slate-500 cursor-pointer">
                         <input
                           type="checkbox"
@@ -628,14 +628,14 @@ export const EnterpriseExperienceView: React.FC = () => {
                           onChange={(e) => setIsInternational(e.target.checked)}
                           className="rounded text-indigo-600"
                         />
-                        <span>Học sinh quốc tế</span>
+                        <span>{language === 'vi' ? 'Học sinh quốc tế' : 'International Student'}</span>
                       </label>
                     </div>
                     <input
                       type="tel"
                       value={studentPhone}
                       onChange={(e) => setStudentPhone(e.target.value)}
-                      placeholder={isInternational ? 'Không bắt buộc nếu chưa có SIM VN' : '0912 345 678'}
+                      placeholder={isInternational ? (language === 'vi' ? 'Không bắt buộc nếu chưa có SIM VN' : 'Optional if no VN SIM') : '0912 345 678'}
                       className="w-full p-2.5 rounded-xl border border-slate-300 focus:ring-2 focus:ring-indigo-500 focus:outline-none"
                     />
                   </div>
@@ -644,33 +644,33 @@ export const EnterpriseExperienceView: React.FC = () => {
                 {/* Minor Guardian Contact */}
                 <div className="p-3.5 rounded-2xl bg-slate-50 border border-slate-200 space-y-2">
                   <span className="font-bold text-slate-800 block text-[11px] uppercase tracking-wider">
-                    Thông tin Phụ huynh / Người giám hộ (dành cho học sinh dưới 18 tuổi):
+                    {language === 'vi' ? 'Thông tin Phụ huynh / Người giám hộ (dành cho học sinh dưới 18 tuổi):' : 'Parent / Guardian Contact (for students under 18):'}
                   </span>
                   <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                     <input
                       type="text"
                       value={guardianName}
                       onChange={(e) => setGuardianName(e.target.value)}
-                      placeholder="Họ tên phụ huynh"
+                      placeholder={language === "vi" ? "Họ tên phụ huynh" : "Parent / Guardian Name"}
                       className="w-full p-2 rounded-lg border border-slate-300 bg-white"
                     />
                     <input
                       type="tel"
                       value={guardianPhone}
                       onChange={(e) => setGuardianPhone(e.target.value)}
-                      placeholder="Số điện thoại phụ huynh"
+                      placeholder={language === "vi" ? "Số điện thoại phụ huynh" : "Guardian Phone Number"}
                       className="w-full p-2 rounded-lg border border-slate-300 bg-white"
                     />
                   </div>
                 </div>
 
                 <div>
-                  <label className="block font-bold text-slate-700 mb-1">Ghi chú hoặc nguyện vọng đặc biệt (nếu có)</label>
+                  <label className="block font-bold text-slate-700 mb-1">{language === 'vi' ? 'Ghi chú hoặc nguyện vọng đặc biệt (nếu có)' : 'Special Requests or Notes (Optional)'}</label>
                   <input
                     type="text"
                     value={specialRequests}
                     onChange={(e) => setSpecialRequests(e.target.value)}
-                    placeholder="Ví dụ: Ăn chay, say xe, cần hỗ trợ nghe thuyết minh song ngữ..."
+                    placeholder={language === "vi" ? "Ví dụ: Ăn chay, say xe, cần hỗ trợ nghe thuyết minh song ngữ..." : "E.g. Vegetarian meal, motion sickness, bilingual commentary..."}
                     className="w-full p-2.5 rounded-xl border border-slate-300 focus:ring-2 focus:ring-indigo-500 focus:outline-none"
                   />
                 </div>
@@ -685,7 +685,9 @@ export const EnterpriseExperienceView: React.FC = () => {
                     className="mt-0.5 rounded text-indigo-600 focus:ring-indigo-500"
                   />
                   <span className="text-[11px] text-slate-600 leading-relaxed">
-                    Tôi cam kết thông tin khai báo là chính xác, đồng ý tuân thủ nội quy an toàn lao động và hướng dẫn của trưởng đoàn CHẠM VIỆC trong suốt hành trình trải nghiệm.
+                    {language === 'vi'
+                      ? 'Tôi cam kết thông tin khai báo là chính xác, đồng ý tuân thủ nội quy an toàn lao động và hướng dẫn của trưởng đoàn CHẠM VIỆC trong suốt hành trình trải nghiệm.'
+                      : 'I certify that the provided information is accurate and agree to adhere to workplace safety rules and CHẠM VIỆC trip coordinator instructions.'}
                   </span>
                 </label>
 
@@ -703,7 +705,7 @@ export const EnterpriseExperienceView: React.FC = () => {
                     disabled={isSubmitting}
                     className="px-6 py-2.5 rounded-xl bg-indigo-600 hover:bg-indigo-700 text-white font-bold text-xs shadow-md shadow-indigo-600/20 disabled:opacity-50"
                   >
-                    {isSubmitting ? t.common.loading : 'Xác nhận giữ chỗ ngay'}
+                    {isSubmitting ? t.common.loading : (language === 'vi' ? 'Xác nhận giữ chỗ ngay' : 'Confirm Registration')}
                   </button>
                 </div>
               </form>
