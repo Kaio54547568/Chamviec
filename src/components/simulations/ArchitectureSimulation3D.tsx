@@ -144,18 +144,7 @@ export const ArchitectureSimulation3D: React.FC<ArchitectureSimulation3DProps> =
       return;
     }
 
-    // Grid Floor
-    const grid = new THREE.GridHelper(24, 24, 0x0284c7, 0x1e293b);
-    grid.position.y = -0.01;
-    scene.add(grid);
-
-    // Ground Plane
-    const groundGeo = new THREE.PlaneGeometry(30, 30);
-    const groundMat = studioSurface(0x9a9f98, 0.5);
-    const ground = new THREE.Mesh(groundGeo, groundMat);
-    ground.rotation.x = -Math.PI / 2;
-    ground.receiveShadow = true;
-    scene.add(ground);
+    // The shared studio supplies the landscape and presentation plinth.
 
     // Ambient light
     const ambientLight = new THREE.AmbientLight(0xffffff, 0.6);
@@ -478,17 +467,14 @@ export const ArchitectureSimulation3D: React.FC<ArchitectureSimulation3DProps> =
             </div>
             <div>
               <div className="flex items-center gap-2">
-                <span className="text-xs font-semibold px-2.5 py-0.5 rounded-full bg-blue-500/10 text-blue-400 border border-blue-500/20">
-                  {language === 'vi' ? 'MÔ PHỎNG 3D TƯƠNG TÁC' : '3D INTERACTIVE SIMULATION'}
-                </span>
                 <span className="text-xs text-slate-400">
-                  {language === 'vi' ? 'Trạm 1 • Kiến trúc, Quy hoạch & Thiết kế Nhà' : 'Station 1 • Architecture, Spatial Planning & Interior Design'}
+                  {language === 'vi' ? 'Kiến trúc & thiết kế' : 'Architecture & design'}
                 </span>
               </div>
               <h2 className="text-lg font-bold text-white">
                 {language === 'vi'
-                  ? 'Phòng Lab Thiết kế Mặt bằng, Bố trí Nội thất & Hướng Nắng 3D'
-                  : '3D Floorplan Studio, Interior Layout & Solar Path Lab'}
+                  ? 'Thiết kế không gian sống'
+                  : 'Design a living space'}
               </h2>
             </div>
           </div>
@@ -665,7 +651,7 @@ export const ArchitectureSimulation3D: React.FC<ArchitectureSimulation3DProps> =
                 {furnitureList.map((item) => (
                   <div
                     key={item.id}
-                    className="p-2.5 bg-slate-900/60 border border-slate-700/60 rounded-lg flex items-center justify-between gap-2"
+                    className="lab-furniture-row p-2.5 bg-slate-900/60 border border-slate-700/60 rounded-lg flex items-center justify-between gap-2"
                   >
                     <div>
                       <div className="font-semibold text-slate-200">{getFurnitureDisplayName(item)}</div>
@@ -680,6 +666,7 @@ export const ArchitectureSimulation3D: React.FC<ArchitectureSimulation3DProps> =
                         onClick={() => handleMoveFurniture(item.id, -0.5, 0)}
                         className="w-6 h-6 rounded bg-slate-800 hover:bg-slate-700 text-slate-300 text-center font-bold"
                         title={language === 'vi' ? 'Dịch sang trái' : 'Move Left'}
+                        aria-label={language === 'vi' ? 'Dịch sang trái' : 'Move Left'}
                       >
                         ←
                       </button>
@@ -687,6 +674,7 @@ export const ArchitectureSimulation3D: React.FC<ArchitectureSimulation3DProps> =
                         onClick={() => handleMoveFurniture(item.id, 0.5, 0)}
                         className="w-6 h-6 rounded bg-slate-800 hover:bg-slate-700 text-slate-300 text-center font-bold"
                         title={language === 'vi' ? 'Dịch sang phải' : 'Move Right'}
+                        aria-label={language === 'vi' ? 'Dịch sang phải' : 'Move Right'}
                       >
                         →
                       </button>
@@ -694,6 +682,7 @@ export const ArchitectureSimulation3D: React.FC<ArchitectureSimulation3DProps> =
                         onClick={() => handleMoveFurniture(item.id, 0, -0.5)}
                         className="w-6 h-6 rounded bg-slate-800 hover:bg-slate-700 text-slate-300 text-center font-bold"
                         title={language === 'vi' ? 'Dịch lên trên' : 'Move Forward'}
+                        aria-label={language === 'vi' ? 'Dịch lên trên' : 'Move Forward'}
                       >
                         ↑
                       </button>
@@ -701,6 +690,7 @@ export const ArchitectureSimulation3D: React.FC<ArchitectureSimulation3DProps> =
                         onClick={() => handleMoveFurniture(item.id, 0, 0.5)}
                         className="w-6 h-6 rounded bg-slate-800 hover:bg-slate-700 text-slate-300 text-center font-bold"
                         title={language === 'vi' ? 'Dịch xuống dưới' : 'Move Back'}
+                        aria-label={language === 'vi' ? 'Dịch xuống dưới' : 'Move Back'}
                       >
                         ↓
                       </button>
@@ -718,11 +708,11 @@ export const ArchitectureSimulation3D: React.FC<ArchitectureSimulation3DProps> =
             </div>
 
             {/* Reflection Form */}
-            <div className="bg-slate-800/80 border border-slate-700 rounded-xl p-4 text-xs">
-              <h4 className="font-bold text-white mb-2 flex items-center gap-1.5">
+            <details className="lab-help bg-slate-800/80 border border-slate-700 rounded-xl p-4 text-xs">
+              <summary className="font-bold text-white cursor-pointer">
                 <HelpCircle className="w-4 h-4 text-blue-400" />
                 {language === 'vi' ? 'Cảm nhận sau trải nghiệm:' : 'Post-Studio Reflection:'}
-              </h4>
+              </summary>
               <p className="text-slate-400 text-[11px] mb-2">
                 {language === 'vi'
                   ? 'Theo em, điều khó nhất khi bố trí mặt bằng ngôi nhà là làm sao cân bằng giữa tính thẩm mỹ, sự tiện lợi đi lại và khả năng đón ánh sáng tự nhiên?'
@@ -748,7 +738,7 @@ export const ArchitectureSimulation3D: React.FC<ArchitectureSimulation3DProps> =
                   ? (language === 'vi' ? 'Đã lưu phản tư của em' : 'Reflection saved to profile')
                   : (language === 'vi' ? 'Lưu cảm nhận của em' : 'Save Reflection')}
               </button>
-            </div>
+            </details>
           </div>
         </div>
       </div>

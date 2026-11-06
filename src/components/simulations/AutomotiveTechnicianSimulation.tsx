@@ -365,7 +365,7 @@ export const AutomotiveTechnicianSimulation: React.FC<AutomotiveTechnicianSimula
     // --- CAR CHASSIS & FRONT BODY ---
     const carPaintMat = new THREE.MeshPhysicalMaterial({
       clearcoat: 1, clearcoatRoughness: 0.16, 
-      color: 0x0284c7, // Metallic Ocean Blue
+      color: 0x244855, // Deep metallic blue paint
       metalness: 0.8, 
       roughness: 0.25 
     });
@@ -506,6 +506,26 @@ export const AutomotiveTechnicianSimulation: React.FC<AutomotiveTechnicianSimula
     engineBlockGroup.add(pulley);
 
     carRootGroup.add(engineBlockGroup);
+
+    const boltMaterial = new THREE.MeshStandardMaterial({color:0x909a9f,metalness:0.9,roughness:0.32});
+    const rubberMaterial = new THREE.MeshStandardMaterial({color:0x1e2527,metalness:0,roughness:0.88});
+    for(const x of [-0.32,0.32])for(const z of [-0.28,-0.09,0.1,0.29]){
+      const bolt=new THREE.Mesh(new THREE.CylinderGeometry(0.032,0.032,0.035,6),boltMaterial);
+      bolt.position.set(x,0.42,z);engineBlockGroup.add(bolt);
+    }
+    for(let z=-0.32;z<=0.32;z+=0.09){
+      const fin=new THREE.Mesh(beveledBox(0.94,0.025,0.025),boltMaterial);
+      fin.position.set(0,-0.06,z);engineBlockGroup.add(fin);
+    }
+    for(const side of [-1,1]){
+      const curve=new THREE.CatmullRomCurve3([new THREE.Vector3(side*0.35,0.3,0.65),new THREE.Vector3(side*0.63,0.45,0.7),new THREE.Vector3(side*0.8,0.3,1.05),new THREE.Vector3(side*0.85,0.22,1.65)]);
+      const hose=new THREE.Mesh(new THREE.TubeGeometry(curve,24,0.045,10,false),rubberMaterial);
+      hose.castShadow=true;carRootGroup.add(hose);
+      for(const z of [0.68,1.6]){
+        const clamp=new THREE.Mesh(new THREE.TorusGeometry(0.049,0.008,6,14),boltMaterial);
+        clamp.position.set(side*0.85,0.25,z);carRootGroup.add(clamp);
+      }
+    }
 
     // 2. 12V BATTERY (Ắc-quy xe) - Clickable Target
     const batteryGeo = beveledBox(0.48, 0.42, 0.38);
@@ -888,11 +908,8 @@ export const AutomotiveTechnicianSimulation: React.FC<AutomotiveTechnicianSimula
             <div className="flex items-center gap-2">
               <span className="font-extrabold text-base sm:text-lg tracking-tight text-white">
                 {language === 'vi'
-                  ? 'Mô Phỏng 3D: Kỹ Thuật Viên Sửa Chữa & Chẩn Đoán Ô Tô'
-                  : '3D Simulation: Automotive Diagnostic & Service Technician'}
-              </span>
-              <span className="px-2.5 py-0.5 rounded-full text-[11px] font-bold bg-teal-900/60 text-teal-300 border border-teal-700/50">
-                Three.js WebGL
+                  ? 'Chẩn đoán & bảo dưỡng ô tô'
+                  : 'Automotive diagnostics & servicing'}
               </span>
             </div>
             <p className="text-xs text-slate-400 hidden sm:block">
@@ -1081,7 +1098,6 @@ export const AutomotiveTechnicianSimulation: React.FC<AutomotiveTechnicianSimula
                 <span className="text-xs font-bold text-teal-400 uppercase tracking-wider">
                   {language === 'vi' ? 'Chi tiết đang kiểm tra' : 'Active Component Inspection'}
                 </span>
-                <span className="text-xs text-slate-400 font-mono">ID: {selectedComponent.id}</span>
               </div>
 
               <div>

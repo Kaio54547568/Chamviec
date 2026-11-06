@@ -15,6 +15,23 @@ const palettes = {
   automotive: { background: 0x19232b, accent: 0x7dd3fc, floor: -0.57 },
 };
 
+// Local micro-surface maps: subtle brushed metal and plaster grain without network assets.
+function finishTexture(brushed: boolean) {
+  const size = 128, pixels = new Uint8Array(size * size * 4);
+  for (let y = 0; y < size; y++) for (let x = 0; x < size; x++) {
+    const noise = Math.sin(x * 12.9898 + y * 78.233) * 43758.5453;
+    const grain = noise - Math.floor(noise);
+    const value = Math.round(brushed ? 150 + Math.sin(y * 1.7) * 16 + grain * 15 : 180 + grain * 35);
+    const offset = (y * size + x) * 4;
+    pixels[offset] = pixels[offset + 1] = pixels[offset + 2] = value; pixels[offset + 3] = 255;
+  }
+  const texture = new THREE.DataTexture(pixels, size, size, THREE.RGBAFormat);
+  texture.wrapS = texture.wrapT = THREE.RepeatWrapping;
+  texture.magFilter = THREE.LinearFilter; texture.minFilter = THREE.LinearMipmapLinearFilter;
+  texture.generateMipmaps = true; texture.needsUpdate = true;
+  return texture;
+}
+
 /** PBR surface shader: subtle aggregate and joints, with normal lighting and shadows intact. */
 export function studioSurface(color: number, scale = 1) {
   const material = new THREE.MeshStandardMaterial({ color, roughness: 0.78, metalness: 0.12 });
@@ -49,7 +66,7 @@ export function createLabStudio(scene: THREE.Scene, renderer: THREE.WebGLRendere
   scene.fog = new THREE.Fog(palette.background, outdoors ? 26 : 22, 65);
   renderer.outputColorSpace = THREE.SRGBColorSpace;
   renderer.toneMapping = THREE.ACESFilmicToneMapping;
-  renderer.toneMappingExposure = outdoors ? 1.08 : 1.2;
+  renderer.toneMappingExposure = outdoors ? 0.98 : 1.02;
   renderer.shadowMap.enabled = true;
   renderer.shadowMap.type = THREE.PCFShadowMap;
   renderer.domElement.style.touchAction = 'none';
@@ -118,7 +135,9 @@ export function createLabStudio(scene: THREE.Scene, renderer: THREE.WebGLRendere
   const warmWood = new THREE.MeshStandardMaterial({ color: 0x967358, roughness: 0.68 });
   const lamp = new THREE.MeshStandardMaterial({ color: 0xe4f5ff, emissive: 0xc6e7ff, emissiveIntensity: 2.1, roughness: 0.3 });
 
-  const floor = new THREE.Mesh(new THREE.PlaneGeometry(70, 70), studioSurface(outdoors ? 0x89918b : 0x35434d, outdoors ? 0.5 : 0.7));
+  const floor = new THREE.Mesh(new THREE.PlaneGeometry(70, 70), kind === 'architecture'
+    ? new THREE.MeshStandardMaterial({ color: 0x788765, roughness: 1 })
+    : studioSurface(outdoors ? 0x89918b : 0x35434d, outdoors ? 0.5 : 0.7));
   floor.rotation.x = -Math.PI / 2;
   floor.position.y = palette.floor;
   floor.receiveShadow = true;
@@ -142,11 +161,31 @@ export function createLabStudio(scene: THREE.Scene, renderer: THREE.WebGLRendere
     // A landscaped architectural presentation plinth and timber pathways.
     box([10.4, 0.16, 8.4], [0, -0.09, 0], new THREE.MeshStandardMaterial({ color: 0xa6ada7, roughness: 0.85 }));
     for (let i = 0; i < 9; i++) box([0.55, 0.045, 1.5], [-2.5 + i * 0.64, 0.025, 4.7], warmWood);
-    const foliage = new THREE.MeshStandardMaterial({ color: 0x536f48, roughness: 0.95 });
+    const foliage = new THREE.MeshStandardMaterial({ color: 0x7f975a, roughness: 0.85, side: THREE.DoubleSide });
+    const leafShape = new THREE.Shape();
+    leafShape.moveTo(0, -0.13); leafShape.bezierCurveTo(-0.11, -0.04, -0.09, 0.08, 0, 0.15);
+    leafShape.bezierCurveTo(0.09, 0.08, 0.11, -0.04, 0, -0.13);
+    const leafGeometry = new THREE.ShapeGeometry(leafShape, 3);
+    const leafTransform = new THREE.Object3D();
+    const random = (seed: number) => { const value = Math.sin(seed * 127.1) * 43758.5453; return value - Math.floor(value); };
     for (const x of [-6.2, 6.2]) for (const z of [-4.5, 4]) {
-      box([0.15, 1.8, 0.15], [x, 0.9, z], warmWood);
-      const crown = new THREE.Mesh(new THREE.IcosahedronGeometry(0.8, 1), foliage);
-      crown.scale.set(0.85, 1.5, 0.85); crown.position.set(x, 2.25, z); crown.castShadow = true; dressing.add(crown);
+      const trunk = new THREE.Mesh(new THREE.CylinderGeometry(0.045, 0.11, 1.8, 10), warmWood);
+      trunk.position.set(x, 0.9, z); trunk.castShadow = true; dressing.add(trunk);
+      for (let branch = 0; branch < 5; branch++) {
+        const angle = branch * 2.4;
+        const curve = new THREE.LineCurve3(new THREE.Vector3(x, 1.1 + branch * 0.15, z), new THREE.Vector3(x + Math.cos(angle) * 0.45, 2.1 + branch * 0.12, z + Math.sin(angle) * 0.45));
+        const twig = new THREE.Mesh(new THREE.TubeGeometry(curve, 1, 0.023, 6), warmWood); dressing.add(twig);
+      }
+      const leaves = new THREE.InstancedMesh(leafGeometry, foliage, 500);
+      for (let i = 0; i < 500; i++) {
+        const azimuth = random(i + 1) * Math.PI * 2, vertical = random(i + 610) * 2 - 1;
+        const radial = Math.cbrt(random(i + 1200)), ring = Math.sqrt(1 - vertical * vertical);
+        leafTransform.position.set(x + Math.cos(azimuth) * ring * radial * 0.85, 2.2 + vertical * radial * 1.05, z + Math.sin(azimuth) * ring * radial * 0.85);
+        leafTransform.rotation.set(random(i + 33) * Math.PI, azimuth, random(i + 44) * Math.PI);
+        leafTransform.scale.setScalar(0.8 + random(i + 9) * 0.7); leafTransform.updateMatrix();
+        leaves.setMatrixAt(i, leafTransform.matrix); leaves.setColorAt(i, new THREE.Color().setHSL(0.22 + random(i + 17) * 0.025, 0.3, 0.38 + random(i + 32) * 0.22));
+      }
+      leaves.castShadow = true; leaves.receiveShadow = true; dressing.add(leaves);
     }
   }
   if (kind === 'agriculture') {
@@ -177,6 +216,21 @@ export function createLabStudio(scene: THREE.Scene, renderer: THREE.WebGLRendere
     for (const x of [-4, 4]) box([0.25, 0.08, 5], [x, 4.1, -1.4], lamp);
   }
   scene.add(dressing);
+
+  const brushed = finishTexture(true), matte = finishTexture(false);
+  scene.traverse(object => {
+    if (!(object instanceof THREE.Mesh)) return;
+    (Array.isArray(object.material) ? object.material : [object.material]).forEach(material => {
+      if (!(material instanceof THREE.MeshStandardMaterial) || material.transparent) return;
+      if (material.metalness > 0.5 && material.roughness > 0.12) {
+        material.roughnessMap = brushed;
+        material.bumpMap = brushed; material.bumpScale = 0.006;
+      } else if (material.roughness > 0.7) {
+        material.bumpMap = matte; material.bumpScale = 0.012;
+      }
+      material.needsUpdate = true;
+    });
+  });
 
   let composer: EffectComposer | undefined;
   let bloom: UnrealBloomPass | undefined;
@@ -228,6 +282,7 @@ export function createLabStudio(scene: THREE.Scene, renderer: THREE.WebGLRendere
       scene.environment = null; environment.dispose();
       const geometries = new Set<THREE.BufferGeometry>(), materials = new Set<THREE.Material>(), textures = new Set<THREE.Texture>();
       scene.traverse(object => {
+        if (object instanceof THREE.InstancedMesh) object.dispose();
         if (object instanceof THREE.Mesh || object instanceof THREE.Line || object instanceof THREE.Points) {
           geometries.add(object.geometry);
           (Array.isArray(object.material) ? object.material : [object.material]).forEach(material => materials.add(material));
@@ -238,6 +293,7 @@ export function createLabStudio(scene: THREE.Scene, renderer: THREE.WebGLRendere
       geometries.forEach(value => value.dispose()); materials.forEach(value => value.dispose()); textures.forEach(value => value.dispose());
       // Some shared dressing materials are unused for a particular lab.
       alloy.dispose(); graphite.dispose(); warmWood.dispose(); lamp.dispose();
+      brushed.dispose(); matte.dispose();
     },
   };
 }

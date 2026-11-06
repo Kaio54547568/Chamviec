@@ -81,6 +81,7 @@ export const RecommendationsView: React.FC<RecommendationsViewProps> = ({
   onOpenTask,
   onSelectMajor
 }) => {
+  const [recommendationLimit,setRecommendationLimit]=useState(3);
   const [activeTab, setActiveTab] = useState<'recommended' | 'directory'>('recommended');
   const [feedbackState, setFeedbackState] = useState<Record<string, string>>({});
   
@@ -88,7 +89,7 @@ export const RecommendationsView: React.FC<RecommendationsViewProps> = ({
   const [searchQuery, setSearchQuery] = useState('');
   const [selectedGroup, setSelectedGroup] = useState<string>('ALL');
   const [selectedExpType, setSelectedExpType] = useState<string>('ALL');
-  const [visibleCount, setVisibleCount] = useState<number>(24);
+  const [visibleCount, setVisibleCount] = useState<number>(12);
   const [comparisonList, setComparisonList] = useState<Career[]>([]);
   const [isCompareModalOpen, setIsCompareModalOpen] = useState(false);
   const [selectedCareerDetail, setSelectedCareerDetail] = useState<Career | null>(null);
@@ -257,7 +258,7 @@ export const RecommendationsView: React.FC<RecommendationsViewProps> = ({
       {activeTab === 'recommended' && snapshot.recommendations.length === 0 && <IncompleteProfileNotice />}
       {activeTab === 'recommended' && (
         <div className="space-y-6">
-          {snapshot.recommendations.map((rec, index) => {
+          {snapshot.recommendations.slice(0,recommendationLimit).map((rec, index) => {
             const isSaved = profile.savedCareers.includes(rec.career.id);
             const feedback = feedbackState[rec.career.id];
 
@@ -356,6 +357,7 @@ export const RecommendationsView: React.FC<RecommendationsViewProps> = ({
                     </div>
                   </div>
 
+                  <details className="disclosure-panel col-span-full"><summary>{language==='vi'?'Vì sao gợi ý nghề này? Xem phân tích chi tiết':'Why this career? See the detailed explanation'}</summary>
                   {/* 4 Explanatory Pillars */}
                   <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                     {/* Pillar 1: Lý do phù hợp */}
@@ -438,6 +440,7 @@ export const RecommendationsView: React.FC<RecommendationsViewProps> = ({
                     </div>
                   </div>
 
+                  </details>
                   {/* Call to action & Student Feedback */}
                   <div className="pt-4 border-t border-slate-100 flex flex-col sm:flex-row sm:items-center justify-between gap-4">
                     <div className="flex items-center gap-2">
@@ -481,6 +484,8 @@ export const RecommendationsView: React.FC<RecommendationsViewProps> = ({
           })}
         </div>
       )}
+
+      {activeTab==='recommended'&&recommendationLimit<snapshot.recommendations.length&&<button className="show-more-results" onClick={()=>setRecommendationLimit(snapshot.recommendations.length)}>{language==='vi'?'Xem thêm các hướng nghề khác':'Explore more career directions'}</button>}
 
       {/* TAB 2: COMPLETE CAREER DIRECTORY (200 CAREERS) */}
       {activeTab === 'directory' && (

@@ -1,5 +1,5 @@
 import { beveledBox } from './labGeometry';
-import { createLabStudio, studioSurface } from './labStudio';
+import { createLabStudio } from './labStudio';
 import { LabToolbar } from './LabToolbar';
 import React, { useEffect, useRef, useState } from 'react';
 import * as THREE from 'three';
@@ -79,12 +79,8 @@ export const CircuitSimulation3D: React.FC<CircuitSimulation3DProps> = ({ onClos
     }
 
     // Grid Floor / Workbench
-    const gridHelper = new THREE.GridHelper(16, 16, 0x38bdf8, 0x1e293b);
-    gridHelper.position.y = -0.5;
-    scene.add(gridHelper);
-
     const tableGeo = beveledBox(14, 0.5, 10);
-    const tableMat = studioSurface(0x3b4f5a, 0.45);
+    const tableMat = new THREE.MeshStandardMaterial({ color: 0x949b8f, roughness: 0.86 });
     const tableMesh = new THREE.Mesh(tableGeo, tableMat);
     tableMesh.position.y = -0.75;
     tableMesh.receiveShadow = true;
@@ -101,11 +97,31 @@ export const CircuitSimulation3D: React.FC<CircuitSimulation3DProps> = ({ onClos
 
     // 1. Power Supply / Battery 12V (Left: x = -4, z = 0)
     const batteryGeo = beveledBox(2.2, 1.8, 1.6);
-    const batteryMat = new THREE.MeshStandardMaterial({ color: 0x0284c7, roughness: 0.3, metalness: 0.2 });
+    const batteryMat = new THREE.MeshStandardMaterial({ color: 0x34424b, roughness: 0.42, metalness: 0.65 });
     const battery = new THREE.Mesh(batteryGeo, batteryMat);
     battery.position.set(-4, 0.4, 0);
     battery.castShadow = true;
     scene.add(battery);
+
+    const steel = new THREE.MeshStandardMaterial({ color: 0xa9b2b6, metalness: 0.9, roughness: 0.28 });
+    const rubber = new THREE.MeshStandardMaterial({ color: 0x182126, roughness: 0.9 });
+    const detail = (geometry: THREE.BufferGeometry, material: THREE.Material, x: number, y: number, z: number) => {
+      const mesh = new THREE.Mesh(geometry, material); mesh.position.set(x, y, z); scene.add(mesh); return mesh;
+    };
+    detail(beveledBox(2.08, 1.65, 0.06), steel, -4, 0.4, 0.82);
+    for (const x of [-4.75, -3.25]) for (const z of [-0.55, 0.55]) detail(new THREE.CylinderGeometry(0.14, 0.17, 0.16, 12), rubber, x, -0.43, z);
+    for (let i = 0; i < 9; i++) detail(beveledBox(0.025, 0.62, 0.06), rubber, -4.8 + i * 0.11, 0.22, 0.86);
+    const labelCanvas = document.createElement('canvas'); labelCanvas.width = 512; labelCanvas.height = 192;
+    const labelContext = labelCanvas.getContext('2d');
+    if (labelContext) {
+      labelContext.fillStyle = '#101d23'; labelContext.fillRect(0, 0, 512, 192);
+      labelContext.fillStyle = '#d8e8e1'; labelContext.font = '20px monospace'; labelContext.fillText('REGULATED DC / LAB SUPPLY', 22, 34);
+      labelContext.fillStyle = '#99dcc0'; labelContext.font = '64px monospace'; labelContext.fillText('DC OUTPUT', 22, 118);
+      labelContext.fillStyle = '#8fa7ad'; labelContext.font = '18px monospace'; labelContext.fillText('0—24 V     CURRENT LIMITED', 22, 164);
+      const labelTexture = new THREE.CanvasTexture(labelCanvas); labelTexture.colorSpace = THREE.SRGBColorSpace;
+      detail(new THREE.PlaneGeometry(1.65, 0.62), new THREE.MeshStandardMaterial({ map: labelTexture, emissiveMap: labelTexture, emissive: 0xffffff, emissiveIntensity: 0.18, roughness: 0.45 }), -4, 0.82, 0.86);
+    }
+    detail(new THREE.CylinderGeometry(0.2, 0.2, 0.12, 24), rubber, -3.42, 0.12, 0.91).rotation.x = Math.PI / 2;
 
     // Battery terminals (+ Red, - Black)
     const termGeo = new THREE.CylinderGeometry(0.15, 0.15, 0.4, 16);
@@ -122,25 +138,44 @@ export const CircuitSimulation3D: React.FC<CircuitSimulation3DProps> = ({ onClos
 
     // 2. Light Bulb & Socket (Right: x = 4, z = 0)
     const socketGeo = new THREE.CylinderGeometry(0.9, 1.1, 0.6, 24);
-    const socketMat = new THREE.MeshStandardMaterial({ color: 0x475569, metalness: 0.5 });
+    const socketMat = new THREE.MeshStandardMaterial({ color: 0xe2ded2, metalness: 0, roughness: 0.25 });
     const socket = new THREE.Mesh(socketGeo, socketMat);
     socket.position.set(4, -0.2, 0);
     scene.add(socket);
 
-    const bulbGlassGeo = new THREE.SphereGeometry(0.8, 24, 24);
+    detail(new THREE.CylinderGeometry(0.43, 0.55, 0.45, 32), socketMat, 4, 0.2, 0);
+    for (let i = 0; i < 5; i++) {
+      const thread = detail(new THREE.TorusGeometry(0.29, 0.033, 8, 40), steel, 4, 0.32 + i * 0.07, 0);
+      thread.rotation.x = Math.PI / 2;
+    }
+    for (const x of [3.3, 4.7]) detail(new THREE.CylinderGeometry(0.06, 0.06, 0.035, 6), steel, x, 0.11, 0);
+
+    const bulbGlassGeo = new THREE.LatheGeometry([
+      new THREE.Vector2(0.24, -0.15), new THREE.Vector2(0.26, 0.03), new THREE.Vector2(0.35, 0.2),
+      new THREE.Vector2(0.56, 0.4), new THREE.Vector2(0.68, 0.65), new THREE.Vector2(0.65, 0.9),
+      new THREE.Vector2(0.5, 1.12), new THREE.Vector2(0.25, 1.26), new THREE.Vector2(0, 1.3),
+    ], 48);
     const bulbGlassMat = new THREE.MeshPhysicalMaterial({
-      clearcoat: 1, transmission: 0.2, thickness: 0.2,
+      clearcoat: 1, transmission: 0.45, thickness: 0.06, ior: 1.46,
       color: 0xffffff,
       transparent: true,
-      opacity: 0.85,
-      roughness: 0.1,
-      metalness: 0.1,
+      opacity: 0.35,
+      roughness: 0.06,
+      metalness: 0,
       emissive: 0x000000,
     });
     const bulbMesh = new THREE.Mesh(bulbGlassGeo, bulbGlassMat);
-    bulbMesh.position.set(4, 0.7, 0);
+    bulbMesh.position.set(4, 0.65, 0);
     scene.add(bulbMesh);
     bulbMeshRef.current = bulbMesh;
+
+    const filamentMaterial = new THREE.MeshStandardMaterial({ color: 0x9c6034, metalness: 0.75, roughness: 0.4 });
+    for (const x of [3.85, 4.15]) {
+      const support = new THREE.LineCurve3(new THREE.Vector3(x, 0.55, 0), new THREE.Vector3(x, 1.35, 0));
+      detail(new THREE.TubeGeometry(support, 1, 0.012, 6), steel, 0, 0, 0);
+    }
+    const filamentPoints = Array.from({ length: 81 }, (_, i) => new THREE.Vector3(3.85 + i / 80 * 0.3, 1.35 + Math.sin(i / 80 * Math.PI * 16) * 0.04, Math.cos(i / 80 * Math.PI * 16) * 0.04));
+    detail(new THREE.TubeGeometry(new THREE.CatmullRomCurve3(filamentPoints), 100, 0.012, 6), filamentMaterial, 0, 0, 0);
 
     // Glowing PointLight inside Bulb
     const bulbLight = new THREE.PointLight(0xfef08a, 0, 10, 1.5);
@@ -150,10 +185,15 @@ export const CircuitSimulation3D: React.FC<CircuitSimulation3DProps> = ({ onClos
 
     // 3. Knife Switch (Center: x = 0, z = -2.5)
     const switchBaseGeo = beveledBox(2, 0.25, 1.2);
-    const switchBaseMat = new THREE.MeshStandardMaterial({ color: 0x78350f });
+    const switchBaseMat = new THREE.MeshStandardMaterial({ color: 0x493729, roughness: 0.65 });
     const switchBase = new THREE.Mesh(switchBaseGeo, switchBaseMat);
     switchBase.position.set(0, -0.35, -2.5);
     scene.add(switchBase);
+    const brass = new THREE.MeshStandardMaterial({ color: 0xb59452, metalness: 0.85, roughness: 0.3 });
+    for (const x of [-0.72, 0.72]) {
+      detail(beveledBox(0.3, 0.16, 0.48), brass, x, -0.15, -2.5);
+      for (const z of [-2.85, -2.15]) detail(new THREE.CylinderGeometry(0.07, 0.07, 0.05, 6), steel, x, -0.2, z);
+    }
 
     // Lever
     const leverGeo = beveledBox(1.6, 0.12, 0.25);
@@ -360,7 +400,7 @@ export const CircuitSimulation3D: React.FC<CircuitSimulation3DProps> = ({ onClos
                 {language === 'vi' ? 'ĐIỆN & ĐIỆN TỬ' : 'ELECTRICAL ENGINEERING'}
               </span>
               <h3 className="text-base sm:text-lg font-bold text-white">
-                {language === 'vi' ? 'Phòng Thí Nghiệm 3D: Đóng Mạch & Điều Khiển Điện Áp' : '3D Lab: Circuit Wiring & Voltage Control'}
+                {language === 'vi' ? 'Lắp mạch & thử điện áp' : 'Circuit wiring & voltage control'}
               </h3>
             </div>
           </div>
@@ -537,11 +577,11 @@ export const CircuitSimulation3D: React.FC<CircuitSimulation3DProps> = ({ onClos
         </div>
 
         {/* Kolb Experiential Reflection Form */}
-        <div className="p-4 rounded-2xl bg-slate-800/80 border border-slate-700 space-y-3 text-xs">
-          <h4 className="font-bold text-amber-400 flex items-center gap-1.5">
+        <details className="lab-help p-4 rounded-2xl bg-slate-800/80 border border-slate-700 space-y-3 text-xs">
+          <summary className="font-bold text-amber-400 cursor-pointer">
             <HelpCircle className="w-4 h-4 text-amber-400" />
-            <span>{t.simulation.kolbTitle}</span>
-          </h4>
+            <span>{language === 'vi' ? 'Ghi lại trải nghiệm của bạn' : 'Reflect on your experience'}</span>
+          </summary>
 
           {language === 'vi' ? (
             <ol className="list-decimal list-inside space-y-1 text-slate-300 leading-relaxed">
@@ -600,7 +640,7 @@ export const CircuitSimulation3D: React.FC<CircuitSimulation3DProps> = ({ onClos
               </div>
             </div>
           </form>
-        </div>
+        </details>
       </div>
     </div>
   );

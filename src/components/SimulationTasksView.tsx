@@ -141,22 +141,19 @@ export const SimulationTasksView: React.FC<SimulationTasksViewProps> = ({
 
       {/* Header */}
       <div className="bg-white rounded-3xl p-6 sm:p-8 border border-slate-200/80 shadow-xs space-y-4">
-        <div className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-cyan-50 text-cyan-900 text-xs font-bold border border-cyan-200">
-          <PlayCircle className="w-3.5 h-3.5 text-cyan-600" />
-          <span>{t.simulation.title}</span>
-        </div>
         <h1 className="text-2xl sm:text-3xl font-extrabold text-slate-900 tracking-tight">
-          {language === 'vi' ? 'Chạm Thử Nghề: Phòng Thí Nghiệm 3D & Thử Vai Tình Huống' : 'Career Lab: 3D Simulations & Scenario Roleplay'}
+          {language === 'vi' ? 'Chạm thử nghề' : 'Try a career'}
         </h1>
         <p className="text-xs sm:text-sm text-slate-600 max-w-3xl leading-relaxed">
-          {t.simulation.subtitle}
+          {language === 'vi' ? 'Chọn một công việc, tự tay thử và khám phá điều bạn thích.' : 'Choose a workspace, try the work and discover what interests you.'}
         </p>
 
         {/* Tab Switcher */}
-        <div className="flex items-center gap-2 pt-2 border-t border-slate-100">
+        <div className="flex flex-wrap items-center gap-2 pt-2 border-t border-slate-100">
           <button
             onClick={() => setActiveTab('3D')}
-            className={`px-4 py-2 rounded-xl text-xs font-bold transition-all flex items-center gap-2 ${
+            aria-pressed={activeTab === '3D'}
+            className={`min-h-11 px-4 py-2 rounded-xl text-xs font-bold transition-all flex items-center gap-2 ${
               activeTab === '3D'
                 ? 'bg-slate-900 text-white shadow-xs'
                 : 'bg-slate-100 text-slate-600 hover:bg-slate-200'
@@ -164,20 +161,19 @@ export const SimulationTasksView: React.FC<SimulationTasksViewProps> = ({
           >
             <Sparkles className="w-3.5 h-3.5 text-cyan-400" />
             <span>{t.simulation.tab3D}</span>
-            <span className="text-[10px] px-1.5 py-0.2 rounded-full bg-cyan-500/30 text-cyan-300 font-mono">{language === 'vi' ? '5 Phòng thực hành' : '5 Interactive studios'}</span>
           </button>
 
           <button
             onClick={() => setActiveTab('2D')}
-            className={`px-4 py-2 rounded-xl text-xs font-bold transition-all flex items-center gap-2 ${
+            aria-pressed={activeTab === '2D'}
+            className={`min-h-11 px-4 py-2 rounded-xl text-xs font-bold transition-all flex items-center gap-2 ${
               activeTab === '2D'
                 ? 'bg-slate-900 text-white shadow-xs'
                 : 'bg-slate-100 text-slate-600 hover:bg-slate-200'
             }`}
           >
             <Award className="w-3.5 h-3.5 text-amber-500" />
-            <span>{t.simulation.tab2D}</span>
-            <span className="text-[10px] px-1.5 py-0.2 rounded-full bg-amber-500/30 text-amber-800 font-mono">{language === 'vi' ? '8 Tình huống' : '8 Scenarios'}</span>
+            <span>{language === 'vi' ? 'Tình huống nghề nghiệp' : 'Career scenarios'}</span>
           </button>
         </div>
       </div>

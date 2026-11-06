@@ -548,17 +548,14 @@ export const SemiconductorSimulation3D: React.FC<SemiconductorSimulation3DProps>
             </div>
             <div>
               <div className="flex items-center gap-2">
-                <span className="text-xs font-semibold px-2.5 py-0.5 rounded-full bg-cyan-500/10 text-cyan-400 border border-cyan-500/20">
-                  {language === 'vi' ? 'MÔ PHỎNG 3D TƯƠNG TÁC' : '3D INTERACTIVE SIMULATION'}
-                </span>
                 <span className="text-xs text-slate-400">
-                  {language === 'vi' ? 'Trạm 2 • Kỹ thuật Bán dẫn & Vi mạch' : 'Station 2 • Semiconductor & IC Engineering'}
+                  {language === 'vi' ? 'Kỹ thuật bán dẫn' : 'Semiconductor engineering'}
                 </span>
               </div>
               <h2 className="text-lg font-bold text-white">
                 {language === 'vi'
-                  ? 'Phòng Lab Đo kiểm & Đóng gói Chip Bán dẫn (ATE Testing Lab)'
-                  : 'Semiconductor Packaging & Automated Test Equipment (ATE) Lab'}
+                  ? 'Đo kiểm & đóng gói vi mạch'
+                  : 'Microchip packaging & testing'}
               </h2>
             </div>
           </div>
@@ -581,7 +578,7 @@ export const SemiconductorSimulation3D: React.FC<SemiconductorSimulation3DProps>
                 : 'border-transparent text-slate-400 hover:text-slate-200'
             }`}
           >
-            {language === 'vi' ? '1. Thiết kế (Design - RTL)' : '1. IC Design (RTL)'}
+            {language === 'vi' ? '1. Thiết kế' : '1. Design'}
           </button>
           <button
             onClick={() => { setSelectedPhase('fab'); setActiveViewMode('wafer'); }}
@@ -591,7 +588,7 @@ export const SemiconductorSimulation3D: React.FC<SemiconductorSimulation3DProps>
                 : 'border-transparent text-slate-400 hover:text-slate-200'
             }`}
           >
-            {language === 'vi' ? '2. Chế tạo phiến (Fab - Wafer)' : '2. Wafer Fab (300mm)'}
+            {language === 'vi' ? '2. Chế tạo' : '2. Fabrication'}
           </button>
           <button
             onClick={() => { setSelectedPhase('packaging'); setActiveViewMode('testbed'); }}
@@ -601,7 +598,7 @@ export const SemiconductorSimulation3D: React.FC<SemiconductorSimulation3DProps>
                 : 'border-transparent text-slate-400 hover:text-slate-200'
             }`}
           >
-            {language === 'vi' ? '3. Đóng gói (Packaging - BGA)' : '3. BGA Packaging (ATP)'}
+            {language === 'vi' ? '3. Đóng gói' : '3. Packaging'}
           </button>
           <button
             onClick={() => { setSelectedPhase('testing'); setActiveViewMode('testbed'); }}
@@ -611,7 +608,7 @@ export const SemiconductorSimulation3D: React.FC<SemiconductorSimulation3DProps>
                 : 'border-transparent text-slate-400 hover:text-slate-200'
             }`}
           >
-            {language === 'vi' ? '4. Đo kiểm (ATE Testing)' : '4. ATE Electrical Testing'}
+            {language === 'vi' ? '4. Đo kiểm' : '4. Testing'}
           </button>
         </div>
 
@@ -622,10 +619,10 @@ export const SemiconductorSimulation3D: React.FC<SemiconductorSimulation3DProps>
             <div ref={mountRef} className="lab-viewport flex-1 w-full h-full cursor-grab active:cursor-grabbing" />
 
             {/* In-canvas Guidance Overlay */}
-            <div className="absolute top-4 left-4 bg-slate-900/90 backdrop-blur-md border border-slate-700/60 p-3 rounded-xl max-w-sm text-xs text-slate-300 pointer-events-none">
-              <div className="flex items-center gap-2 font-semibold text-cyan-400 mb-1">
+            <details className="lab-help absolute top-4 left-4 bg-slate-900/90 backdrop-blur-md border border-slate-700/60 p-3 rounded-xl max-w-sm text-xs text-slate-300">
+              <summary className="font-semibold text-cyan-400 cursor-pointer">
                 <Info className="w-4 h-4" /> {language === 'vi' ? 'Hướng dẫn thao tác 3D:' : '3D Controls & Alignment Guide:'}
-              </div>
+              </summary>
               {language === 'vi' ? (
                 <>
                   <p>• Kéo chuột để xoay 360° quan sát chân tiếp xúc.</p>
@@ -641,7 +638,7 @@ export const SemiconductorSimulation3D: React.FC<SemiconductorSimulation3DProps>
                   <p>• 🟡 Gold Chip Dot: IC Package Pin 1 index mark.</p>
                 </>
               )}
-            </div>
+            </details>
 
             {/* Quick View Switches */}
             <div className="absolute bottom-4 left-4 flex gap-2">
@@ -788,23 +785,23 @@ export const SemiconductorSimulation3D: React.FC<SemiconductorSimulation3DProps>
             )}
 
             {/* Knowledge Box */}
-            <div className="bg-slate-800/50 border border-slate-700/60 rounded-xl p-3.5 text-xs text-slate-300">
-              <h4 className="font-semibold text-cyan-400 mb-1.5 flex items-center gap-1.5">
+            <details className="lab-help bg-slate-800/50 border border-slate-700/60 rounded-xl p-3.5 text-xs text-slate-300">
+              <summary className="font-semibold text-cyan-400 cursor-pointer">
                 <Sparkles className="w-4 h-4" /> {language === 'vi' ? 'Kiến thức chuỗi bán dẫn:' : 'Semiconductor Value Chain Insight:'}
-              </h4>
+              </summary>
               <p className="leading-relaxed text-[11px] text-slate-400">
                 {language === 'vi'
                   ? 'Ở giai đoạn 4 (Testing), con chip sau khi đóng gói được thử nghiệm tự động bằng máy ATE với hàng triệu xung tín hiệu để phát hiện lỗi logic, rò rỉ điện hoặc quá nhiệt trước khi lắp vào điện thoại hay ô tô.'
                   : 'In Phase 4 (ATE Testing), packaged chips undergo automated high-speed testing using millions of signal vectors to detect logic defects, current leakage, or thermal issues before shipping into smartphones or EVs.'}
               </p>
-            </div>
+            </details>
 
             {/* Reflection Form */}
-            <div className="bg-slate-800/80 border border-slate-700 rounded-xl p-4 text-xs">
-              <h4 className="font-bold text-white mb-2 flex items-center gap-1.5">
+            <details className="lab-help bg-slate-800/80 border border-slate-700 rounded-xl p-4 text-xs">
+              <summary className="font-bold text-white cursor-pointer">
                 <HelpCircle className="w-4 h-4 text-cyan-400" />
                 {language === 'vi' ? 'Cảm nhận sau trải nghiệm:' : 'Post-Lab Reflection:'}
-              </h4>
+              </summary>
               <p className="text-slate-400 text-[11px] mb-2">
                 {language === 'vi'
                   ? 'Sau khi quan sát vi mạch và thử xoay chip đúng điểm khuyết Pin 1, em thấy công việc kỹ sư đo kiểm bán dẫn đòi hỏi đức tính gì nhất?'
@@ -830,7 +827,7 @@ export const SemiconductorSimulation3D: React.FC<SemiconductorSimulation3DProps>
                   ? (language === 'vi' ? 'Đã lưu cảm nhận vào hồ sơ cá nhân' : 'Reflection saved to profile')
                   : (language === 'vi' ? 'Lưu phản tư của em' : 'Save Reflection')}
               </button>
-            </div>
+            </details>
           </div>
         </div>
       </div>

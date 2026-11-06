@@ -13,7 +13,7 @@ export function AuthProvider({children}:{children:React.ReactNode}){
  if(!r.ok)throw new Error(d.message);if(d.session){setSession(d.session);await load();setOpen(false);setPassword('');}else setMessage(d.message||'Kiểm tra email xác nhận tài khoản.');
  }catch(e:any){setMessage(e.message||'Không thể kết nối.');}finally{setBusy(false);}}
  return <Context.Provider value={{user,ready,requireLogin:()=>{if(user)return true;setOpen(true);return false;},logout}}>
- <div className="bg-white px-4 py-2 border-b flex justify-end items-center gap-3 text-sm">
+ <div className="account-strip">
  {user?<><span>{user.email}{user.role==='admin'?' · Quản trị viên':''}</span><button onClick={logout} className="underline">Đăng xuất</button></>:<button disabled={!ready} onClick={()=>setOpen(true)} className="font-bold text-teal-800">Đăng nhập / Đăng ký</button>}
  </div>{children}
  {open&&<div className="fixed inset-0 z-[100] bg-black/50 flex items-center justify-center p-4" role="dialog" aria-modal="true" aria-labelledby="auth-title">

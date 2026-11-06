@@ -46,6 +46,8 @@ export default function App() {
   const [isChamAiOpen, setIsChamAiOpen] = useState(false);
   const [chamAiInitialPrompt, setChamAiInitialPrompt] = useState<string | null>(null);
 
+  useEffect(()=>{const keyboard=()=>{document.documentElement.dataset.input='keyboard';};const pointer=()=>{document.documentElement.dataset.input='pointer';};document.addEventListener('keydown',keyboard);document.addEventListener('pointerdown',pointer);return()=>{document.removeEventListener('keydown',keyboard);document.removeEventListener('pointerdown',pointer);};},[]);
+
   // Synchronize tab state with URL query without losing lang parameter
   const handleNavigateTab = (tab: string) => {
     setCurrentTab(tab);
@@ -104,7 +106,7 @@ export default function App() {
   };
 
   return (
-    <div className="min-h-screen bg-slate-50 text-slate-900 flex flex-col font-sans selection:bg-teal-500 selection:text-white">
+    <div className="site-content min-h-screen bg-slate-50 text-slate-900 flex flex-col font-sans selection:bg-teal-500 selection:text-white">
       {/* Top Navigation */}
       <Navbar
         currentTab={currentTab}
@@ -245,12 +247,12 @@ export default function App() {
               >
                 {t.footer.cutoffs}
               </button>
-              <button
+              {user?.role === 'admin' && <button
                 onClick={() => handleNavigateTab('admin')}
                 className="hover:text-teal-700 underline font-medium"
               >
                 {t.footer.audit}
-              </button>
+              </button>}
             </div>
           </div>
 

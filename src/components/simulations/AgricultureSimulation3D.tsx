@@ -117,7 +117,7 @@ export const AgricultureSimulation3D: React.FC<AgricultureSimulation3DProps> = (
 
     // Drip irrigation tube
     const dripGeo = new THREE.CylinderGeometry(0.04, 0.04, 4.2, 16);
-    const dripMat = new THREE.MeshStandardMaterial({ color: 0x0284c7 });
+    const dripMat = new THREE.MeshStandardMaterial({ color: 0x273831, roughness: 0.8 });
     const dripTube = new THREE.Mesh(dripGeo, dripMat);
     dripTube.rotation.z = Math.PI / 2;
     dripTube.position.set(0, 0.5, 0.3);
@@ -125,7 +125,7 @@ export const AgricultureSimulation3D: React.FC<AgricultureSimulation3DProps> = (
 
     // Greenhouse Structural Arch Frame (Plexiglass outline)
     const archGeo = new THREE.TorusGeometry(6, 0.06, 8, 32, Math.PI);
-    const archMat = new THREE.MeshStandardMaterial({ color: 0x059669, metalness: 0.8 });
+    const archMat = new THREE.MeshStandardMaterial({ color: 0x81938d, metalness: 0.8, roughness: 0.32 });
     const arch1 = new THREE.Mesh(archGeo, archMat);
     arch1.position.set(0, -0.5, -2);
     scene.add(arch1);
@@ -158,10 +158,11 @@ export const AgricultureSimulation3D: React.FC<AgricultureSimulation3DProps> = (
     plantGroupRef.current = plantGroup;
 
     // Stem
-    const stemGeo = new THREE.CylinderGeometry(0.08, 0.14, 2.6, 12);
-    const stemMat = new THREE.MeshStandardMaterial({ color: 0x166534, roughness: 0.7 });
+    const stemGeo = new THREE.TubeGeometry(new THREE.CatmullRomCurve3([
+      new THREE.Vector3(0, 0.48, 0), new THREE.Vector3(0.06, 1.4, -0.03), new THREE.Vector3(-0.08, 2.4, 0.04), new THREE.Vector3(0, 3.35, 0),
+    ]), 24, 0.045, 8);
+    const stemMat = new THREE.MeshStandardMaterial({ color: 0x4b7133, roughness: 0.85 });
     const stem = new THREE.Mesh(stemGeo, stemMat);
-    stem.position.y = 1.6;
     stem.castShadow = true;
     plantGroup.add(stem);
 
@@ -170,23 +171,47 @@ export const AgricultureSimulation3D: React.FC<AgricultureSimulation3DProps> = (
     const leafMat = new THREE.MeshStandardMaterial({ color: 0x45813a, roughness: 0.75, side: THREE.DoubleSide });
 
     leavesRef.current = [];
-    const leafPositions = [
-      { x: 0.5, y: 1.2, z: 0.3, rotZ: 0.4, rotY: 0.2 },
-      { x: -0.5, y: 1.5, z: -0.2, rotZ: -0.5, rotY: -0.3 },
-      { x: 0.6, y: 2.0, z: -0.3, rotZ: 0.3, rotY: 0.8 },
-      { x: -0.6, y: 2.3, z: 0.3, rotZ: -0.4, rotY: -0.7 },
-      { x: 0.2, y: 2.8, z: 0.2, rotZ: 0.2, rotY: 0.1 },
-      { x: -0.2, y: 2.9, z: -0.2, rotZ: -0.2, rotY: 0.5 },
-    ];
-
-    leafPositions.forEach(p => {
-      const leaf = new THREE.Mesh(leafGeo, leafMat.clone());
-      leaf.position.set(p.x, p.y, p.z);
-      leaf.rotation.set(0, p.rotY, p.rotZ);
-      leaf.castShadow = true;
-      plantGroup.add(leaf);
-      leavesRef.current.push(leaf);
-    });
+    leafMat.onBeforeCompile=shader=>{
+      shader.vertexShader='varying vec2 labLeafUv;\n'+shader.vertexShader.replace('#include <uv_vertex>','#include <uv_vertex>\nlabLeafUv=uv;');
+      shader.fragmentShader='varying vec2 labLeafUv;\n'+shader.fragmentShader.replace('#include <color_fragment>',`#include <color_fragment>
+        float rib=1.0-smoothstep(0.008,0.03,abs(labLeafUv.y-0.5));
+        float veins=pow(max(0.0,cos((labLeafUv.x+abs(labLeafUv.y-0.5)*0.9)*70.0)),16.0);
+        diffuseColor.rgb*=mix(0.87,1.13,max(rib,veins*0.45));`);
+    };
+    // Clones retain this shader callback, so all leaves share the same vein definition.
+    // Alternating compound branches and smaller leaflets give the tomato its natural silhouette.
+    for (let branch = 0; branch < 7; branch++) {
+      const angle = branch * 2.4, y = 0.9 + branch * 0.32, length = 1.15 - branch * 0.055;
+      const end = new THREE.Vector3(Math.cos(angle) * length, y + 0.18, Math.sin(angle) * length);
+      const petiole = new THREE.Mesh(new THREE.TubeGeometry(new THREE.CatmullRomCurve3([
+        new THREE.Vector3(0, y, 0), end.clone().multiplyScalar(0.5).setY(y + 0.16), end,
+      ]), 12, 0.018, 6), stemMat);
+      plantGroup.add(petiole);
+      for (let leaflet = 0; leaflet < 5; leaflet++) {
+        const side = leaflet === 4 ? 0 : leaflet % 2 ? -1 : 1;
+        const distance = leaflet === 4 ? 1 : 0.35 + Math.floor(leaflet / 2) * 0.3;
+        const material = leafMat.clone(); material.onBeforeCompile = leafMat.onBeforeCompile;
+        const leaf = new THREE.Mesh(leafGeo, material);
+        leaf.position.set(end.x * distance - Math.sin(angle) * side * 0.19, y + 0.16, end.z * distance + Math.cos(angle) * side * 0.19);
+        leaf.rotation.set(0.25 + branch * 0.06, -angle + side * 0.75, side * 0.16);
+        leaf.userData.restScale = leaflet === 4 ? 0.65 : 0.48;
+        leaf.scale.setScalar(leaf.userData.restScale);
+        leaf.castShadow = true; plantGroup.add(leaf); leavesRef.current.push(leaf);
+      }
+    }
+    // Vertical support string, drip emitters and coco-coir granules.
+    const support = new THREE.Mesh(new THREE.CylinderGeometry(0.008, 0.008, 4.7, 6), new THREE.MeshStandardMaterial({ color: 0xd6caae, roughness: 0.9 }));
+    support.position.set(0.16, 2.85, -0.08); plantGroup.add(support);
+    for (const x of [-1.4, 0, 1.4]) {
+      const emitter = new THREE.Mesh(new THREE.CylinderGeometry(0.07, 0.07, 0.07, 12), dripMat);
+      emitter.position.set(x, 0.55, 0.3); scene.add(emitter);
+    }
+    const granules = new THREE.InstancedMesh(new THREE.IcosahedronGeometry(0.035, 0), soilMat, 120);
+    const matrix = new THREE.Matrix4();
+    for (let i = 0; i < 120; i++) {
+      matrix.makeTranslation(Math.sin(i * 137.5) * 2.05, 0.49, Math.cos(i * 47.3) * 0.93); granules.setMatrixAt(i, matrix);
+    }
+    scene.add(granules);
 
     // Tomato Fruits
     fruitsRef.current = [];
@@ -205,6 +230,12 @@ export const AgricultureSimulation3D: React.FC<AgricultureSimulation3DProps> = (
       fruit.castShadow = true;
       plantGroup.add(fruit);
       fruitsRef.current.push(fruit);
+      const calyx = new THREE.Group();
+      for (let i = 0; i < 5; i++) {
+        const sepal = new THREE.Mesh(leafGeo, stemMat); sepal.scale.set(0.18, 0.1, 0.25);
+        sepal.rotation.y = i * Math.PI * 2 / 5; calyx.add(sepal);
+      }
+      calyx.position.set(p.x, p.y + 0.23, p.z); plantGroup.add(calyx);
     });
 
     // Mouse & Touch Controls
@@ -330,7 +361,8 @@ export const AgricultureSimulation3D: React.FC<AgricultureSimulation3DProps> = (
       (leaf.material as THREE.MeshStandardMaterial).color.setHex(leafColor);
       // Slight scale wilt if health is low
       const s = 0.75 + (health / 100) * 0.25;
-      leaf.scale.set(1.1 * s, s, s);
+      const baseScale = leaf.userData.restScale || 1;
+      leaf.scale.set(1.1 * s * baseScale, s * baseScale, s * baseScale);
     });
 
     // 3. Fruits scale and color
@@ -368,7 +400,7 @@ export const AgricultureSimulation3D: React.FC<AgricultureSimulation3DProps> = (
                 {t.simulation.agriTitle}
               </span>
               <h3 className="text-base sm:text-lg font-bold text-white">
-                {language === 'vi' ? 'Nhà Kính Thông Minh 3D: Cân Bằng Ánh Sáng, Tưới Tiết Kiệm & Dinh Dưỡng' : '3D Smart Greenhouse: Tuning Light, Drip Irrigation & Nutrients'}
+                {language === 'vi' ? 'Nhà kính thông minh' : 'Smart greenhouse'}
               </h3>
             </div>
           </div>
@@ -564,15 +596,15 @@ export const AgricultureSimulation3D: React.FC<AgricultureSimulation3DProps> = (
         </div>
 
         {/* Kolb Experiential Reflection Form */}
-        <div className="p-4 rounded-2xl bg-slate-800/80 border border-slate-700 space-y-3 text-xs">
-          <h4 className="font-bold text-emerald-400 flex items-center gap-1.5">
+        <details className="lab-help p-4 rounded-2xl bg-slate-800/80 border border-slate-700 space-y-3 text-xs">
+          <summary className="font-bold text-emerald-400 cursor-pointer">
             <HelpCircle className="w-4 h-4 text-emerald-400" />
             <span>
               {language === 'vi'
-                ? 'Phản tư trải nghiệm Kỹ sư Nông nghiệp Công nghệ cao (Kolb Learning Cycle):'
-                : 'Smart Agriculture Engineer Experiential Reflection (Kolb Learning Cycle):'}
+                ? 'Ghi lại trải nghiệm của bạn'
+                : 'Reflect on your experience'}
             </span>
-          </h4>
+          </summary>
 
           {language === 'vi' ? (
             <ol className="list-decimal list-inside space-y-1 text-slate-300 leading-relaxed">
@@ -631,7 +663,7 @@ export const AgricultureSimulation3D: React.FC<AgricultureSimulation3DProps> = (
               </div>
             </div>
           </form>
-        </div>
+        </details>
       </div>
     </div>
   );
