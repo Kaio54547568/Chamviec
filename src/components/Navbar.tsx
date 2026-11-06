@@ -37,17 +37,18 @@ export const Navbar: React.FC<NavbarProps> = ({
       label: vi ? "Chọn trường" : "Admissions",
       icon: GraduationCap,
     },
+    {
+      id: "enterprise",
+      label: vi ? "Trải nghiệm doanh nghiệp" : "Enterprise visits",
+      mobileLabel: vi ? "Doanh nghiệp" : "Visits",
+      icon: Briefcase,
+    },
   ];
   const secondary = [
     {
       id: "recommendations",
       label: vi ? "Khám phá nghề nghiệp" : "Career directory",
       icon: Compass,
-    },
-    {
-      id: "enterprise",
-      label: vi ? "Trải nghiệm doanh nghiệp" : "Enterprise visits",
-      icon: Briefcase,
     },
     {
       id: "videos",
@@ -114,11 +115,20 @@ export const Navbar: React.FC<NavbarProps> = ({
           {primary.map((item) => (
             <button
               key={item.id}
+              className={item.id === "home" ? "nav-home" : undefined}
               onClick={() => navigate(item.id)}
+              aria-label={item.label}
               aria-current={currentTab === item.id ? "page" : undefined}
             >
               <item.icon size={17} />
-              <span>{item.label}</span>
+              {"mobileLabel" in item ? (
+                <>
+                  <span className="nav-desktop-label">{item.label}</span>
+                  <span className="nav-mobile-label">{item.mobileLabel}</span>
+                </>
+              ) : (
+                <span>{item.label}</span>
+              )}
             </button>
           ))}
           <details

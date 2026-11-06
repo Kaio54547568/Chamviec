@@ -1,6 +1,7 @@
 import { useAuth } from './AuthContext';
 import { authFetch } from '../utils/authSession';
 import { isEnterpriseBatchOpen } from '../utils/enterpriseAvailability';
+import { EnterprisePartners } from './EnterprisePartners';
 import React, { useState, useEffect } from 'react';
 import { 
   Briefcase, 
@@ -30,6 +31,8 @@ export const EnterpriseExperienceView: React.FC = () => {
   const {user}=useAuth();
   const [batches, setBatches] = useState<EnterpriseBatch[]>([]);
   const [isLoading, setIsLoading] = useState(true);
+  const [batchError, setBatchError] = useState(false);
+  const [viewMode, setViewMode] = useState<'partners' | 'batches'>('partners');
   const [selectedBatch, setSelectedBatch] = useState<EnterpriseBatch | null>(null);
 
   const localizedBatches = React.useMemo(
@@ -74,14 +77,16 @@ export const EnterpriseExperienceView: React.FC = () => {
 
   const fetchBatches = async () => {
     setIsLoading(true);
+    setBatchError(false);
     try {
       const res = await authFetch('/api/enterprise/batches');
       const data = await res.json();
+      if (!res.ok || !data.success) throw new Error('Cannot load programs');
       if (data.success && data.data) {
         setBatches(data.data);
       }
     } catch (e) {
-      console.error('Failed to load enterprise batches:', e);
+      setBatchError(true);
     } finally {
       setIsLoading(false);
     }
@@ -218,8 +223,8 @@ export const EnterpriseExperienceView: React.FC = () => {
             <Briefcase className="w-3.5 h-3.5 text-indigo-600" />
             <span>
               {language === 'vi'
-                ? 'Trải nghiệm nghề thật tại doanh nghiệp đối tác'
-                : 'Real-World Career Immersion at Partner Enterprises'}
+                ? 'Kết nối với môi trường làm việc'
+                : 'Connect with real workplaces'}
             </span>
           </div>
 
@@ -242,22 +247,30 @@ export const EnterpriseExperienceView: React.FC = () => {
         </div>
 
         <h1 className="text-2xl sm:text-3xl font-extrabold text-slate-900 tracking-tight">
-          {t.enterprise.title}
+          {language === 'vi' ? 'Trải nghiệm doanh nghiệp' : 'Enterprise experiences'}
         </h1>
 
         <p className="text-xs sm:text-sm text-slate-600 max-w-3xl leading-relaxed">
-          {t.enterprise.subtitle}
+          {language === 'vi' ? 'Tìm hiểu đơn vị hỗ trợ và theo dõi các đợt trải nghiệm thực tế.' : 'Meet supporting organizations and explore workplace experience programs.'}
         </p>
 
-        <div className="p-3.5 rounded-2xl bg-indigo-50/70 border border-indigo-100 text-xs text-indigo-900 flex items-start gap-2.5">
+        {viewMode === 'batches' && <div className="p-3.5 rounded-2xl bg-indigo-50/70 border border-indigo-100 text-xs text-indigo-900 flex items-start gap-2.5">
           <ShieldCheck className="w-4 h-4 text-indigo-600 shrink-0 mt-0.5" />
           <span>
             {language === 'vi'
-              ? 'Mọi đợt trải nghiệm đều được xác minh thực tế với ban lãnh đạo doanh nghiệp. Có xe đưa đón học sinh, bảo hiểm sự kiện và người phụ trách chuyên trách đi kèm theo đoàn.'
-              : 'All enterprise tours are officially verified with host partners, featuring dedicated chaperones, event insurance, and student shuttle services.'}
+              ? 'Giấy xác nhận hỗ trợ là cơ sở để phối hợp tổ chức. Lịch, chi phí, phương tiện và các điều kiện tham gia cần được xác nhận riêng cho từng đợt.'
+              : 'Partner confirmations establish a basis for coordination. Dates, costs, transport and participation conditions must be confirmed for each visit.'}
           </span>
-        </div>
+        </div>}
       </div>
+
+      {!showAdminTab && <div className="enterprise-view-tabs" role="group" aria-label={language === 'vi' ? 'Nội dung trải nghiệm doanh nghiệp' : 'Enterprise experience sections'}>
+        <button aria-pressed={viewMode === 'partners'} onClick={() => setViewMode('partners')}>{language === 'vi' ? 'Đơn vị hỗ trợ' : 'Supporting organizations'}</button>
+        <button aria-pressed={viewMode === 'batches'} onClick={() => setViewMode('batches')}>{language === 'vi' ? 'Đợt trải nghiệm' : 'Visit programs'}</button>
+      </div>}
+      {!showAdminTab && viewMode === 'partners' && <EnterprisePartners/>}
+      {!showAdminTab && viewMode === 'batches' && isLoading && <p role="status">{language === 'vi' ? 'Đang cập nhật các đợt trải nghiệm…' : 'Updating visit programs…'}</p>}
+      {!showAdminTab && viewMode === 'batches' && batchError && <div className="disclosure-panel"><p role="alert">{language === 'vi' ? 'Chưa kết nối được danh sách đợt trải nghiệm. Vui lòng thử lại sau.' : 'The visit programs are currently unavailable. Please try again later.'}</p><button className="text-action" onClick={fetchBatches}>{language === 'vi' ? 'Thử lại' : 'Retry'}</button></div>}
 
       {/* ADMIN VIEW PORTAL */}
       {showAdminTab ? (
@@ -363,7 +376,7 @@ export const EnterpriseExperienceView: React.FC = () => {
             </table>
           </div>
         </div>
-      ) : (
+      ) : viewMode === 'batches' ? (
         /* PUBLIC BATCHES LIST */
         <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
           {localizedBatches.map((batch) => {
@@ -513,7 +526,7 @@ export const EnterpriseExperienceView: React.FC = () => {
             );
           })}
         </div>
-      )}
+      ) : null}
 
       {/* REGISTRATION MODAL WITH PROMINENT CLOSE BUTTON */}
       {activeBatch && (

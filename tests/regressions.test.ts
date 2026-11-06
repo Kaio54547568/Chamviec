@@ -1,5 +1,9 @@
 import assert from 'node:assert/strict';
 import { test } from 'node:test';
+import React from 'react';
+import { renderToStaticMarkup } from 'react-dom/server';
+import { Navbar } from '../src/components/Navbar.tsx';
+import { EnterprisePartners } from '../src/components/EnterprisePartners.tsx';
 import { readFileSync, existsSync } from 'node:fs';
 import { DEFAULT_PROFILE, loadStudentProfile, resetProfile } from '../src/utils/storage.ts';
 import { RIASEC_CODES, RIASEC_MAX_SCORES, hasCompletedRiasec } from '../src/utils/riasec.ts';
@@ -7,6 +11,8 @@ import { generateRecommendations, generateActionPlan } from '../src/utils/recomm
 import { getTestAttemptKey } from '../src/utils/testAttempt.ts';
 import { isEnterpriseBatchOpen } from '../src/utils/enterpriseAvailability.ts';
 import { ENTERPRISE_BATCHES } from '../src/server/enterpriseAndQuotaService.ts';
+import { ENTERPRISE_PARTNERS } from '../src/data/enterprisePartners.ts';
+import { getDatabaseConfig, endpoint } from '../src/server/database.ts';
 import registerEnterprise from '../api/enterprise-register.ts';
 import { enterpriseAdminHandler, grantCreditHandler, eieHandler } from '../src/server/supplementalApi.ts';
 
@@ -80,6 +86,45 @@ test('enterprise API rejects guests without consuming a seat', async () => {
   assert.equal(result.statusCode, 401);
   assert.equal(result.body.success, false);
   assert.equal(batch.registeredSlots, slotsBefore);
+});
+
+test('enterprise confirmations remain non-bookable partners, with legal names from the documents', () => {
+  assert.equal(ENTERPRISE_PARTNERS.length, 15);
+  assert.equal(new Set(ENTERPRISE_PARTNERS.map(p => p.id)).size, 15);
+  assert.equal(new Set(ENTERPRISE_PARTNERS.map(p => p.sourceSha256)).size, 15);
+  for (const partner of ENTERPRISE_PARTNERS) {
+    assert.equal(partner.confirmationStatus, 'AGREED_IN_PRINCIPLE');
+    for (const unconfirmed of ['scheduleDate', 'deadlineDate', 'totalSlots', 'ticketPriceVND']) assert.equal(unconfirmed in partner, false);
+    assert.equal(ENTERPRISE_BATCHES.some(batch => batch.id === partner.id), false);
+  }
+  assert.equal(ENTERPRISE_PARTNERS.find(p => p.id === 'partner-lita-foods')?.name, 'Công ty Cổ phần LITA Foods');
+  assert.equal(ENTERPRISE_PARTNERS.find(p => p.id === 'partner-anh-vu-thinh-phat')?.name, 'Công ty TNHH Anh Vũ Thịnh Phát');
+  assert.equal(ENTERPRISE_PARTNERS.find(p => p.id === 'partner-thang-nguyen')?.name, 'Công ty TNHH Đầu tư và Phát triển Thắng Nguyên');
+});
+
+test('enterprise navigation is primary and the partner directory does not offer unconfirmed bookings', () => {
+  const navigation = renderToStaticMarkup(React.createElement(Navbar, {currentTab: 'enterprise', setCurrentTab: () => {}, profile: DEFAULT_PROFILE, onOpenAssistant: () => {}}));
+  const enterprisePosition = navigation.indexOf('aria-label="Trải nghiệm doanh nghiệp"');
+  assert.ok(enterprisePosition > 0 && enterprisePosition < navigation.indexOf('<details'));
+  assert.equal((navigation.match(/aria-label="Trải nghiệm doanh nghiệp"/g) || []).length, 1);
+  const directory = renderToStaticMarkup(React.createElement(EnterprisePartners));
+  assert.equal((directory.match(/<article/g) || []).length, 6);
+  assert.match(directory, /15 đơn vị đã đồng ý hỗ trợ/);
+  assert.match(directory, /Lịch, số chỗ và chi phí trải nghiệm chưa công bố/);
+  assert.doesNotMatch(directory, /Đăng ký|giữ chỗ|miễn phí|0 VNĐ/);
+});
+
+test('server configuration accepts integration aliases and reports missing settings without claiming an empty database', async () => {
+  const url = 'https://example.supabase.co', key = 'server-secret-placeholder';
+  assert.deepEqual(getDatabaseConfig({SUPABASE_URL: ` ${url} `, SUPABASE_SECRET_KEY: ` ${key} `}), {url, key});
+  assert.deepEqual(getDatabaseConfig({VITE_SUPABASE_URL: url, SUPABASE_SERVICE_ROLE_KEY: key}), {url, key});
+  for (const env of [{}, {SUPABASE_URL: url}, {SUPABASE_URL: url, SUPABASE_SECRET_KEY: 'sb_publishable_not_a_server_secret'}]) {
+    const result = response();
+    await endpoint(async () => getDatabaseConfig(env))({method: 'POST'}, result);
+    assert.equal(result.statusCode, 503);
+    assert.equal(result.body.code, 'DATABASE_NOT_CONFIGURED');
+    assert.doesNotMatch(JSON.stringify(result.body), /chưa được khởi tạo|server-secret|sb_publishable/);
+  }
 });
 
 test('admin and EIE APIs require an authenticated account', async () => {

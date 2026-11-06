@@ -263,6 +263,19 @@ export interface ActionPlanItem {
 }
 
 // Enterprise Tour / Experience Batch Types
+export interface EnterprisePartner {
+  id: string;
+  name: string;
+  displayName: string;
+  sector: string;
+  location: string;
+  address: string;
+  confirmationDate: string;
+  confirmationStatus: 'AGREED_IN_PRINCIPLE';
+  sourceDocument: string;
+  sourceSha256: string;
+}
+
 export type BatchStatus = 'SAP_MO' | 'DANG_MO' | 'HET_CHO' | 'DA_HOAN_THANH';
 export type RegistrationStatus = 'DA_TIEP_NHAN' | 'CHO_THANH_TOAN' | 'DA_THANH_TOAN' | 'DA_XAC_NHAN' | 'DA_HUY';
 

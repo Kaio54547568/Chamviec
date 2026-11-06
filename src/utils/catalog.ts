@@ -1,4 +1,5 @@
 import type { EnterpriseBatch } from '../types';
+import { ENTERPRISE_PARTNERS } from '../data/enterprisePartners';
 export const enterpriseCatalog:EnterpriseBatch[]=[];
 // Local catalogs are a versioned cache. If the database is available it supplies the current records.
 export async function loadCatalog(){
@@ -14,4 +15,6 @@ export async function loadCatalog(){
  for(const [kind,array] of Object.entries(arrays)){
   const records=result.data.filter((r:any)=>r.kind===kind).map((r:any)=>r.data);if(records.length)array.splice(0,array.length,...records);
  }
+ const partners=result.data.filter((r:any)=>r.kind==='enterprise_partners').map((r:any)=>r.data);
+ if(partners.length)ENTERPRISE_PARTNERS.splice(0,ENTERPRISE_PARTNERS.length,...partners);
 }
