@@ -6,7 +6,7 @@ import { hasCompletedRiasec, RIASEC_MAX_SCORES } from './riasec';
 import { RIASEC_INFO } from '../data/riasecQuestions';
 import { localizeCareer, localizeMajor, localizeTask, localizeSubject } from './i18nData';
 
-export const RULE_ENGINE_VERSION = '2.4.1-transparent-2026';
+export const RULE_ENGINE_VERSION = '3.0.0-interest-80-20';
 
 // Map each task ID to the RIASEC codes of its associated career for fast, crash-safe lookup
 const TASK_RIASEC_MAP: Record<string, RiasecCode[]> = (() => {
@@ -48,54 +48,20 @@ export function generateRecommendations(
 
   // Step 1: Lightweight scoring across all 200 careers (no expensive localization inside the 200-item loop)
   const preliminaryScored = CAREERS_DATA.map((rawCareer) => {
-    let riasecPoints = 0;
     const careerCodes = rawCareer.riasecCodes || [];
-
-    if (careerCodes.includes(top1)) {
-      const ratio = Math.min(1, Math.max(0, (scores[top1] || 0) / RIASEC_MAX_SCORES[top1]));
-      riasecPoints += Math.round(25 * ratio);
-    }
-    if (careerCodes.includes(top2)) {
-      const ratio = Math.min(1, Math.max(0, (scores[top2] || 0) / RIASEC_MAX_SCORES[top2]));
-      riasecPoints += Math.round(15 * ratio);
-    }
-    if (careerCodes.includes(top3)) {
-      const ratio = Math.min(1, Math.max(0, (scores[top3] || 0) / RIASEC_MAX_SCORES[top3]));
-      riasecPoints += Math.round(5 * ratio);
-    }
-
-    let subjectPoints = 0;
+    const riasecPoints = Math.round(careerCodes.reduce((sum, code) => {
+      const max = RIASEC_MAX_SCORES[code];
+      return sum + Math.max(0, Math.min(100, ((scores[code] || 0) - max / 5) / (max * 0.8) * 100));
+    }, 0) / Math.max(1, careerCodes.length));
     const careerSubjects = rawCareer.highSchoolSubjects || [];
-    const matchingSubjects = careerSubjects.filter(
-      (s) =>
-        favoriteSubjects.includes(s) ||
-        academicStrengths.includes(s) ||
-        localizedSubjects.includes(localizeSubject(s, lang)) ||
-        localizedStrengths.includes(localizeSubject(s, lang))
-    );
-
-    if (matchingSubjects.length >= 2) subjectPoints = 20;
-    else if (matchingSubjects.length === 1) subjectPoints = 12;
-    else if (favoriteSubjects.length === 0) subjectPoints = 8;
-
-    let competencyPoints = 10;
-    const completedCareerTasks = SIMULATION_TASKS.filter((t) => {
-      if (!completedTasks.includes(t.id)) return false;
-      if (t.careerId === rawCareer.id) return true;
-      const taskCodes = TASK_RIASEC_MAP[t.id] || [];
-      return taskCodes.some((c) => careerCodes.includes(c));
-    });
-
-    if (completedCareerTasks.length > 0) {
-      competencyPoints = Math.min(20, 12 + completedCareerTasks.length * 4);
-    }
-
-    const valuesPoints = priorityValues.length > 0 ? 8 : 6;
-    const environmentPoints = 5;
-    const totalScore = Math.min(
-      98,
-      Math.max(42, riasecPoints + subjectPoints + competencyPoints + valuesPoints + environmentPoints)
-    );
+    const matchingSubjects = careerSubjects.filter(s => localizedSubjects.includes(localizeSubject(s, lang)));
+    const subjectPoints = favoriteSubjects.length && careerSubjects.length
+      ? Math.round(matchingSubjects.length / careerSubjects.length * 100) : 0;
+    const competencyPoints = 0;
+    const valuesPoints = 0;
+    const environmentPoints = 0;
+    const completedCareerTasks = SIMULATION_TASKS.filter(t => completedTasks.includes(t.id) && t.careerId === rawCareer.id);
+    const totalScore = favoriteSubjects.length ? Math.round(riasecPoints * 0.8 + subjectPoints * 0.2) : riasecPoints;
 
     return {
       rawCareer,
@@ -138,15 +104,13 @@ export function generateRecommendations(
     const career = localizeCareer(rawCareer, lang);
     const localizedMatchingSubjects = matchingSubjects.map((s) => localizeSubject(s, lang));
 
-    const hollandFitReason =
-      lang === 'en'
-        ? `Your dominant Holland codes (${top1} - ${top1Name} & ${top2} - ${top2Name}) align closely with the core work activities of ${career.title} (Group ${careerCodes.join('-')}).`
-        : `Tổ hợp mã Holland nổi trội của bạn (${top1} - ${top1Name} & ${top2} - ${top2Name}) tương thích trực tiếp với đặc thù công việc của nghề ${career.title} (Nhóm ${careerCodes.join('-')}).`;
+    const hollandFitReason = lang === 'en'
+      ? `This career maps to RIASEC groups ${careerCodes.join(', ')}. Its interest score is the average of your normalized scores in those groups; it does not measure professional ability.`
+      : `Nghề này gắn với nhóm RIASEC ${careerCodes.join(', ')}. Điểm sở thích là trung bình điểm đã quy đổi của bạn ở các nhóm này; chưa phải đánh giá năng lực làm nghề.`;
 
-    const explanation =
-      lang === 'en'
-        ? `Match score ${totalScore}% = Holland RIASEC (${riasecPoints}/45) + Subjects (${subjectPoints}/20) + Simulation Tasks (${competencyPoints}/20) + Values & Environment (${valuesPoints + environmentPoints}/15).`
-        : `Điểm tương thích ${totalScore}% = Holland RIASEC (${riasecPoints}/45) + Môn học (${subjectPoints}/20) + Thực hành mô phỏng (${competencyPoints}/20) + Giá trị & Môi trường (${valuesPoints + environmentPoints}/15).`;
+    const explanation = lang === 'en'
+      ? (favoriteSubjects.length ? `Interest fit ${totalScore}/100 = RIASEC ${riasecPoints}/100 × 80% + favorite subjects ${subjectPoints}/100 × 20%.` : `RIASEC interest score ${riasecPoints}/100. Add favorite subjects for a combined score.`)
+      : (favoriteSubjects.length ? `Điểm phù hợp sở thích ${totalScore}/100 = RIASEC ${riasecPoints}/100 × 80% + môn yêu thích ${subjectPoints}/100 × 20%.` : `Điểm sở thích RIASEC ${riasecPoints}/100. Chưa bổ sung môn học để tính điểm tổng hợp.`);
 
     const evidenceFromProfile: string[] = [];
     if (careerCodes.includes(top1)) {
@@ -166,8 +130,8 @@ export function generateRecommendations(
     if (completedCareerTasks.length > 0) {
       evidenceFromProfile.push(
         lang === 'en'
-          ? `Verified through ${completedCareerTasks.length} hands-on simulation task(s)`
-          : `Đã kiểm chứng qua ${completedCareerTasks.length} bài tập mô phỏng thực tế`
+          ? `Tried ${completedCareerTasks.length} related simulation task(s); this does not increase the interest score.`
+          : `Đã thử ${completedCareerTasks.length} mô phỏng liên quan; không tự động cộng điểm phù hợp.`
       );
     }
     if (evidenceFromProfile.length === 0) {
@@ -179,6 +143,7 @@ export function generateRecommendations(
     }
 
     const missingInformation: string[] = [];
+    if (Math.max(...Object.values(scores)) - Math.min(...Object.values(scores)) <= 2) missingInformation.push(lang === 'en' ? 'Your interests are not clearly differentiated; explore several career groups.' : 'Sở thích chưa phân hóa rõ; nên khám phá thêm nhiều nhóm nghề.');
     if (favoriteSubjects.length === 0) {
       missingInformation.push(
         lang === 'en'

@@ -1,4 +1,7 @@
-import { enterpriseAdminHandler, grantCreditHandler, eieHandler } from './src/server/supplementalApi.ts';
+import { authenticatedUser } from './src/server/database.ts';
+import accountHandler from './api/account.ts';
+import { batchesHandler, quotaHandler, attemptsHandler, registerHandler } from './src/server/persistentHandlers.ts';
+import { enterpriseAdminHandler, grantCreditHandler, eieHandler } from './src/server/persistentHandlers.ts';
 import { isEnterpriseBatchOpen } from './src/utils/enterpriseAvailability.ts';
 import express from 'express';
 import { createServer as createViteServer } from 'vite';
@@ -344,6 +347,10 @@ Bạn có thể chọn một trong các câu hỏi gợi ý bên dưới hoặc 
 }
 
 // SSE STREAMING ENDPOINT: /api/cham-ai/stream
+app.use(['/api/cham-ai', '/api/phuong-chat'], async (req, res, next) => {
+ try { await authenticatedUser(req); next(); } catch { res.status(401).json({success:false,message:'Vui lòng đăng nhập.'}); }
+});
+
 app.post('/api/cham-ai/stream', async (req, res) => {
   const { message, language, profile, currentContext, chatHistory } = req.body;
 
@@ -483,148 +490,12 @@ app.post('/api/phuong-chat', async (req, res) => {
   }
 });
 
-// Import enterprise tour and test attempt quota managers
-import { 
-  ENTERPRISE_BATCHES, 
-  ENTERPRISE_REGISTRATIONS, 
-  getUserQuota, 
-  registerTestAttempt, 
-  grantCredit 
-} from './src/server/enterpriseAndQuotaService.ts';
-
-// 1. Test Quota API Endpoints
-app.get('/api/test-quota', (req, res) => {
-  const email = (req.query.email as string) || 'student@chamviec.vn';
-  const info = getUserQuota(email);
-  return res.json({ success: true, data: info });
-});
-
-app.post('/api/test-attempts', (req, res) => {
-  const { email, idempotencyKey, riasecScores } = req.body;
-  if (!idempotencyKey) {
-    return res.status(400).json({ success: false, error: 'MISSING_IDEMPOTENCY_KEY', message: 'Yêu cầu khóa định danh lần nộp.' });
-  }
-
-  const result = registerTestAttempt({
-    email: email || 'student@chamviec.vn',
-    idempotencyKey,
-    riasecScores: riasecScores || {}
-  });
-
-  if (!result.allowed) {
-    return res.status(402).json({
-      success: false,
-      error: 'PAYMENT_OR_CREDIT_REQUIRED',
-      feeVND: result.feeVND,
-      message: result.errorMessage
-    });
-  }
-
-  return res.json({
-    success: true,
-    attemptNumber: result.attemptNumber,
-    message: result.attemptNumber === 1 ? 'Lần làm bài thứ 1 miễn phí thành công!' : 'Đã sử dụng 1 tín chỉ khảo sát thành công!'
-  });
-});
-
+app.all('/api/account', accountHandler);
+app.get('/api/test-quota', quotaHandler);
+app.post('/api/test-attempts', attemptsHandler);
 app.post('/api/test-quota/grant-credit', grantCreditHandler);
-
-// 2. Enterprise Experience Batches API Endpoints
-app.get('/api/enterprise/batches', (req, res) => {
-  return res.json({ success: true, data: ENTERPRISE_BATCHES });
-});
-
-app.post('/api/enterprise/register', (req, res) => {
-  try {
-    const {
-      batchId,
-      studentName,
-      schoolName,
-      grade,
-      studentEmail,
-      studentPhone,
-      isInternationalStudent,
-      guardianName,
-      guardianPhone,
-      specialRequests
-    } = req.body;
-
-    if (!batchId || !studentName || !studentEmail || !schoolName) {
-      return res.status(400).json({
-        success: false,
-        error: 'MISSING_REQUIRED_FIELDS',
-        message: 'Vui lòng điền đầy đủ: Đợt trải nghiệm, Họ tên học sinh, Trường học và Email liên hệ.'
-      });
-    }
-
-    const batch = ENTERPRISE_BATCHES.find(b => b.id === batchId);
-    if (!batch) {
-      return res.status(404).json({
-        success: false,
-        error: 'BATCH_NOT_FOUND',
-        message: 'Không tìm thấy đợt trải nghiệm yêu cầu.'
-      });
-    }
-
-    // Server-side slot limit check
-    if (batch.registeredSlots >= batch.totalSlots || batch.status === 'HET_CHO') {
-      return res.status(409).json({
-        success: false,
-        error: 'BATCH_FULL',
-        message: 'Đợt trải nghiệm này hiện đã hết chỗ. Vui lòng chọn đợt khác hoặc tham gia danh sách chờ.'
-      });
-    }
-
-    // Atomic increment of registered slots
-    if (!isEnterpriseBatchOpen(batch)) {
-      return res.status(409).json({ success: false, error: 'BATCH_CLOSED', message: 'Đợt trải nghiệm chưa mở, đã đóng hoặc đã quá hạn đăng ký.' });
-    }
-
-    batch.registeredSlots += 1;
-    if (batch.registeredSlots >= batch.totalSlots) {
-      batch.status = 'HET_CHO';
-    }
-
-    // Generate unique code format CV-EXP-XXXXXX
-    const randomSuffix = Math.floor(100000 + Math.random() * 900000);
-    const registrationCode = `CV-EXP-${randomSuffix}`;
-
-    const newRegistration = {
-      registrationCode,
-      batchId: batch.id,
-      batchName: batch.programName,
-      enterpriseName: batch.enterpriseName,
-      studentName: studentName.trim(),
-      schoolName: schoolName.trim(),
-      grade: grade || 'Lớp 11',
-      studentEmail: studentEmail.trim().toLowerCase(),
-      studentPhone: studentPhone ? studentPhone.trim() : undefined,
-      isInternationalStudent: Boolean(isInternationalStudent),
-      guardianName: guardianName ? guardianName.trim() : undefined,
-      guardianPhone: guardianPhone ? guardianPhone.trim() : undefined,
-      specialRequests: specialRequests ? specialRequests.trim() : undefined,
-      registeredAt: new Date().toISOString(),
-      status: (batch.ticketPriceVND === 0 ? 'DA_XAC_NHAN' : 'DA_TIEP_NHAN') as any,
-      ticketPriceVND: batch.ticketPriceVND,
-    };
-
-    ENTERPRISE_REGISTRATIONS.unshift(newRegistration);
-
-    return res.status(201).json({
-      success: true,
-      data: newRegistration,
-      message: 'Đăng ký trải nghiệm doanh nghiệp thành công!'
-    });
-  } catch (err: any) {
-    console.error('Error registering enterprise experience:', err);
-    return res.status(500).json({
-      success: false,
-      error: 'REGISTRATION_ERROR',
-      message: 'Không thể xử lý đăng ký lúc này. Vui lòng thử lại.'
-    });
-  }
-});
-
+app.get('/api/enterprise/batches', batchesHandler);
+app.post('/api/enterprise/register', registerHandler);
 app.get('/api/enterprise/registrations', enterpriseAdminHandler);
 app.patch('/api/enterprise/registrations/:code/status', enterpriseAdminHandler);
 app.post('/api/eie/register-english-account', eieHandler);

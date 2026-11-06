@@ -6,7 +6,7 @@ import { RIASEC_CODES, RIASEC_MAX_SCORES, hasCompletedRiasec } from '../src/util
 import { generateRecommendations, generateActionPlan } from '../src/utils/recommendation.ts';
 import { getTestAttemptKey } from '../src/utils/testAttempt.ts';
 import { isEnterpriseBatchOpen } from '../src/utils/enterpriseAvailability.ts';
-import { ENTERPRISE_BATCHES, ENTERPRISE_REGISTRATIONS } from '../src/server/enterpriseAndQuotaService.ts';
+import { ENTERPRISE_BATCHES } from '../src/server/enterpriseAndQuotaService.ts';
 import registerEnterprise from '../api/enterprise-register.ts';
 import { enterpriseAdminHandler, grantCreditHandler, eieHandler } from '../src/server/supplementalApi.ts';
 
@@ -45,7 +45,7 @@ test('RIASEC uses 20 points per group and distinguishes different rating intensi
   assert.ok(low.recommendations.length > 0);
   assert.notDeepEqual(low.recommendations.map(r => r.breakdown.riasecScore), high.recommendations.map(r => r.breakdown.riasecScore));
   const allMax = generateRecommendations({ ...DEFAULT_PROFILE, riasecAnswerCount: 24, riasecScores: { R: 20, I: 20, A: 20, S: 20, E: 20, C: 20 } });
-  assert.ok(allMax.recommendations.some(r => r.breakdown.riasecScore === 45));
+  assert.ok(allMax.recommendations.some(r => r.breakdown.riasecScore === 100));
 });
 
 test('complete legacy survey profiles remain usable', () => {
@@ -72,53 +72,29 @@ test('enterprise deadlines include the last millisecond of the day in Vietnam', 
   assert.equal(isEnterpriseBatchOpen({ ...batch, registeredSlots: batch.totalSlots }, new Date('2026-11-01')), false);
 });
 
-test('enterprise API rejects expired batches without consuming a seat', async () => {
+test('enterprise API rejects guests without consuming a seat', async () => {
   const batch = ENTERPRISE_BATCHES[0];
   const slotsBefore = batch.registeredSlots;
   const result = response();
   await registerEnterprise({ method: 'POST', body: { batchId: batch.id, studentName: 'Audit Test', studentEmail: 'audit@example.invalid', schoolName: 'Test' } }, result);
-  assert.equal(result.statusCode, 409);
-  assert.equal(result.body.error, 'BATCH_CLOSED');
+  assert.equal(result.statusCode, 401);
+  assert.equal(result.body.success, false);
   assert.equal(batch.registeredSlots, slotsBefore);
 });
 
-test('admin APIs fail closed without configuration or a valid token', () => {
-  const previous = process.env.ADMIN_API_TOKEN;
-  try {
-    delete process.env.ADMIN_API_TOKEN;
-    const disabled = response();
-    enterpriseAdminHandler({ method: 'GET', headers: {} }, disabled);
-    assert.equal(disabled.statusCode, 503);
-    process.env.ADMIN_API_TOKEN = 'regression-test-secret';
-    for (const [handler, method] of [[enterpriseAdminHandler, 'GET'], [enterpriseAdminHandler, 'PATCH'], [grantCreditHandler, 'POST']] as const) {
-      const unauthorized = response();
-      handler({ method, headers: {} }, unauthorized);
-      assert.equal(unauthorized.statusCode, 401);
-      assert.equal(unauthorized.body.data, undefined);
-    }
-    const authorized = response();
-    enterpriseAdminHandler({ method: 'GET', headers: { authorization: 'Bearer regression-test-secret' } }, authorized);
-    assert.equal(authorized.statusCode, 200);
-    assert.equal(authorized.body.total, ENTERPRISE_REGISTRATIONS.length);
-    const invalid = response();
-    enterpriseAdminHandler({ method: 'PATCH', headers: { authorization: 'Bearer regression-test-secret' }, query: { code: ENTERPRISE_REGISTRATIONS[0].registrationCode }, body: { status: 'INVALID' } }, invalid);
-    assert.equal(invalid.statusCode, 400);
-  } finally {
-    if (previous === undefined) delete process.env.ADMIN_API_TOKEN; else process.env.ADMIN_API_TOKEN = previous;
+test('admin and EIE APIs require an authenticated account', async () => {
+  for (const [handler, method] of [[enterpriseAdminHandler, 'GET'], [enterpriseAdminHandler, 'PATCH'], [grantCreditHandler, 'POST'], [eieHandler, 'POST']] as const) {
+    const res=response(); await handler({method,headers:{},body:{}},res);
+    assert.equal(res.statusCode,401); assert.equal(res.body.data,undefined);
   }
 });
 
-test('EIE registration validates requests and normalizes emails before detecting duplicates', () => {
-  const invalid = response();
-  eieHandler({ method: 'POST', body: { fullName: ' ', contactEmail: 'bad' } }, invalid);
-  assert.equal(invalid.statusCode, 400);
-  const first = response();
-  eieHandler({ method: 'POST', body: { fullName: 'Test', contactEmail: ' Audit@Example.invalid ' } }, first);
-  assert.equal(first.body.success, true);
-  const duplicate = response();
-  eieHandler({ method: 'POST', body: { fullName: 'Test', contactEmail: 'audit@example.invalid' } }, duplicate);
-  assert.equal(duplicate.body.alreadyRegistered, true);
-  assert.equal(first.body.data.registrationCode, duplicate.body.data.registrationCode);
+test('interest scoring has no floor or invented competency, values and environment points', () => {
+ const low=generateRecommendations({...DEFAULT_PROFILE,riasecAnswerCount:24,riasecScores:{R:4,I:4,A:4,S:4,E:4,C:4}});
+ assert.ok(low.recommendations.every(r=>r.matchScore===0 && r.breakdown.competencyScore===0 && r.breakdown.valuesScore===0 && r.breakdown.environmentScore===0));
+ const high=generateRecommendations({...DEFAULT_PROFILE,riasecAnswerCount:24,riasecScores:{R:20,I:20,A:20,S:20,E:20,C:20}});
+ assert.ok(high.recommendations.every(r=>r.matchScore===100));
+ assert.ok(high.recommendations.every(r=>r.missingInformation.some(x=>x.includes('chưa phân hóa'))));
 });
 
 test('every Vercel API rewrite points to an existing serverless handler', () => {

@@ -1,3 +1,4 @@
+import { authFetch } from '../utils/authSession';
 import React, { useState, useRef, useEffect } from 'react';
 import { 
   X, 
@@ -85,7 +86,7 @@ export const PhuongAssistantModal: React.FC<PhuongAssistantModalProps> = ({
     setIsLoading(true);
 
     try {
-      const response = await fetch('/api/phuong-chat', {
+      const response = await authFetch('/api/phuong-chat', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({

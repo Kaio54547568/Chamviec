@@ -1,3 +1,4 @@
+import { authFetch } from '../utils/authSession';
 import React, { useState, useEffect } from 'react';
 import { 
   Sparkles, 
@@ -59,7 +60,7 @@ export const ProfileView: React.FC<ProfileViewProps> = ({
 
   const fetchQuota = async () => {
     try {
-      const res = await fetch('/api/test-quota?email=student@chamviec.vn');
+      const res = await authFetch('/api/test-quota');
       const data = await res.json();
       if (data.success && data.data) {
         setQuotaInfo(data.data);
@@ -134,7 +135,7 @@ export const ProfileView: React.FC<ProfileViewProps> = ({
     const updatedProfile = {
       ...profile,
       riasecScores: newScores,
-      riasecAnswerCount: Object.keys(nextAnswers).length
+      riasecAnswerCount: 0
     };
     setProfile(updatedProfile);
     saveStudentProfile(updatedProfile);
@@ -147,11 +148,11 @@ export const ProfileView: React.FC<ProfileViewProps> = ({
     setQuotaNotice(null);
 
     try {
-      const res = await fetch('/api/test-attempts', {
+      const res = await authFetch('/api/test-attempts', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
-          email: 'student@chamviec.vn',
+          answers: questionAnswers,
           idempotencyKey: getTestAttemptKey(questionAnswers),
           riasecScores: profile.riasecScores,
         })
@@ -163,20 +164,20 @@ export const ProfileView: React.FC<ProfileViewProps> = ({
         // Payment required
         setQuotaNotice(resData.message || t.riasec.retakePrompt);
       } else if (resData.success) {
+        setProfile(p=>({...p,riasecScores:resData.scores,riasecAnswerCount:24}));
         fetchQuota();
         onGoToRecommendations();
-      }
+      } else { setQuotaNotice(resData.message || 'Không thể nộp bài.'); }
     } catch (e) {
-      // If offline/network issue, still allow navigating to recommendations locally
-      onGoToRecommendations();
+      setQuotaNotice('Không thể nộp bài. Vui lòng thử lại khi có kết nối.');
     } finally {
       setIsSubmittingAttempt(false);
     }
   };
 
   const handleResetData = () => {
-    if (window.confirm(language === 'vi' ? 'Em có chắc chắn muốn làm mới toàn bộ kết quả khảo sát trên thiết bị này không?' : 'Are you sure you want to reset all test results?')) {
-      const clean = resetProfile();
+    if (window.confirm(language === 'vi' ? 'Bắt đầu khảo sát mới? Lịch sử bài đã nộp và hạn mức vẫn được giữ. Từ lượt thứ hai cần 1 tín chỉ (50.000đ).' : 'Start a new survey? Submitted history and quota are retained. Retakes require one credit (50,000 VND).')) {
+      const clean = {...profile,riasecScores:{R:0,I:0,A:0,S:0,E:0,C:0},riasecAnswerCount:0};
       setProfile(clean);
       setQuestionAnswers({});
       localStorage.removeItem('cham_viec_riasec_answers');
@@ -530,7 +531,7 @@ export const ProfileView: React.FC<ProfileViewProps> = ({
           {/* Next Step */}
           <div className="pt-6 border-t border-slate-200 flex items-center justify-between">
             <span className="text-xs text-slate-500">
-              {language === "vi" ? "Thông tin học tập sẽ được lưu vào thiết bị và đồng bộ cùng báo cáo hướng nghiệp." : "Academic details are stored locally on your device and synced with your career dossier."}
+              {language === "vi" ? "Thông tin học tập được đồng bộ vào tài khoản trên Supabase." : "Academic details are synced to your account in Supabase."}
             </span>
             <button
               onClick={onGoToRecommendations}

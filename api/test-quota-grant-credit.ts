@@ -1,1 +1,1 @@
-export { grantCreditHandler as default } from '../src/server/supplementalApi.ts';
+export { grantCreditHandler as default } from '../src/server/persistentHandlers.ts';

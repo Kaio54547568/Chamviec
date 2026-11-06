@@ -1,3 +1,6 @@
+import { beveledBox } from './labGeometry';
+import { createLabStudio } from './labStudio';
+import { LabToolbar } from './LabToolbar';
 import React, { useEffect, useRef, useState } from 'react';
 import * as THREE from 'three';
 import { 
@@ -29,6 +32,7 @@ type ValueChainPhase = 'design' | 'fab' | 'packaging' | 'testing';
 export const SemiconductorSimulation3D: React.FC<SemiconductorSimulation3DProps> = ({ onClose, onComplete }) => {
   const { t, language } = useLanguage();
   const mountRef = useRef<HTMLDivElement>(null);
+  const [webglError,setWebglError]=useState(false);
 
   // Simulation State
   const [selectedPhase, setSelectedPhase] = useState<ValueChainPhase>('testing');
@@ -36,6 +40,7 @@ export const SemiconductorSimulation3D: React.FC<SemiconductorSimulation3DProps>
   const [isChipPlaced, setIsChipPlaced] = useState<boolean>(false);
   const [probesConnected, setProbesConnected] = useState<boolean>(false);
   const [diagnosticState, setDiagnosticState] = useState<'idle' | 'running' | 'success' | 'failed'>('idle');
+  const diagnosticRef=useRef(diagnosticState); diagnosticRef.current=diagnosticState;
   const [diagnosticMessage, setDiagnosticMessage] = useState<string>('');
   const [activeViewMode, setActiveViewMode] = useState<'testbed' | 'wafer' | 'die'>('testbed');
   const [reflectionAnswer, setReflectionAnswer] = useState<string>('');
@@ -97,6 +102,7 @@ export const SemiconductorSimulation3D: React.FC<SemiconductorSimulation3DProps>
       mountRef.current.appendChild(renderer.domElement);
       rendererRef.current = renderer;
     } catch (err) {
+      setWebglError(true);
       console.warn('WebGL init failed:', err);
       return;
     }
@@ -131,7 +137,7 @@ export const SemiconductorSimulation3D: React.FC<SemiconductorSimulation3DProps>
     scene.add(testbedGroup);
 
     // Main Test PCB Board (Dark Green Glossy)
-    const pcbGeo = new THREE.BoxGeometry(9, 0.4, 7);
+    const pcbGeo = beveledBox(9, 0.4, 7);
     const pcbMat = new THREE.MeshStandardMaterial({
       color: 0x064e3b, // Deep PCB emerald green
       roughness: 0.3,
@@ -148,14 +154,14 @@ export const SemiconductorSimulation3D: React.FC<SemiconductorSimulation3DProps>
       metalness: 0.9
     });
     for (let i = -3; i <= 3; i += 0.8) {
-      const traceGeo = new THREE.BoxGeometry(0.12, 0.02, 6);
+      const traceGeo = beveledBox(0.12, 0.02, 6);
       const traceMesh = new THREE.Mesh(traceGeo, traceMat);
       traceMesh.position.set(i, 0.21, 0);
       testbedGroup.add(traceMesh);
     }
 
     // Socket Base (Black Thermoplastic with central pin bed)
-    const socketBaseGeo = new THREE.BoxGeometry(4.2, 0.5, 4.2);
+    const socketBaseGeo = beveledBox(4.2, 0.5, 4.2);
     const socketBaseMat = new THREE.MeshStandardMaterial({
       color: 0x18181b,
       roughness: 0.6,
@@ -166,7 +172,7 @@ export const SemiconductorSimulation3D: React.FC<SemiconductorSimulation3DProps>
     testbedGroup.add(socketBase);
 
     // Socket Cavity (where chip goes in)
-    const cavityGeo = new THREE.BoxGeometry(3.2, 0.1, 3.2);
+    const cavityGeo = beveledBox(3.2, 0.1, 3.2);
     const cavityMat = new THREE.MeshStandardMaterial({
       color: 0x09090b,
       roughness: 0.8
@@ -208,7 +214,7 @@ export const SemiconductorSimulation3D: React.FC<SemiconductorSimulation3DProps>
     testbedGroup.add(chipGroup);
 
     // 1. Organic BGA Substrate (Dark Green / Blue Laminate)
-    const substrateGeo = new THREE.BoxGeometry(3.0, 0.2, 3.0);
+    const substrateGeo = beveledBox(3.0, 0.2, 3.0);
     const substrateMat = new THREE.MeshStandardMaterial({
       color: 0x0f766e,
       roughness: 0.4,
@@ -218,7 +224,7 @@ export const SemiconductorSimulation3D: React.FC<SemiconductorSimulation3DProps>
     chipGroup.add(substrateMesh);
 
     // 2. Silicon Bare Die in center (Glossy Iridescent / Mirror Silver-Blue)
-    const dieGeo = new THREE.BoxGeometry(1.8, 0.12, 1.8);
+    const dieGeo = beveledBox(1.8, 0.12, 1.8);
     const dieMat = new THREE.MeshStandardMaterial({
       color: 0x334155,
       roughness: 0.05,
@@ -231,7 +237,7 @@ export const SemiconductorSimulation3D: React.FC<SemiconductorSimulation3DProps>
     // Microscopic circuits etching pattern on die
     const dieCircuitMat = new THREE.MeshBasicMaterial({ color: 0x38bdf8 });
     for (let c = -0.6; c <= 0.6; c += 0.3) {
-      const lineGeo = new THREE.BoxGeometry(0.04, 0.01, 1.4);
+      const lineGeo = beveledBox(0.04, 0.01, 1.4);
       const lineMesh = new THREE.Mesh(lineGeo, dieCircuitMat);
       lineMesh.position.set(c, 0.21, 0);
       chipGroup.add(lineMesh);
@@ -296,7 +302,8 @@ export const SemiconductorSimulation3D: React.FC<SemiconductorSimulation3DProps>
     scene.add(waferGroup);
 
     const waferDiscGeo = new THREE.CylinderGeometry(3.5, 3.5, 0.08, 64);
-    const waferMat = new THREE.MeshStandardMaterial({
+    const waferMat = new THREE.MeshPhysicalMaterial({
+      iridescence: 1, iridescenceIOR: 1.4, clearcoat: 1, clearcoatRoughness: 0.12,
       color: 0x475569,
       roughness: 0.1,
       metalness: 0.9
@@ -341,22 +348,28 @@ export const SemiconductorSimulation3D: React.FC<SemiconductorSimulation3DProps>
     };
 
     const domElement = renderer.domElement;
+    const touchStart=(event:TouchEvent)=>{const t=event.touches[0];if(t)onMouseDown({clientX:t.clientX,clientY:t.clientY} as MouseEvent);};
+    const touchMove=(event:TouchEvent)=>{const t=event.touches[0];if(t)onMouseMove({clientX:t.clientX,clientY:t.clientY} as MouseEvent);};
+    domElement.addEventListener('touchstart',touchStart,{passive:true});
+    domElement.addEventListener('touchmove',touchMove,{passive:true});
+    window.addEventListener('touchend',onMouseUp);
     domElement.addEventListener('mousedown', onMouseDown);
     window.addEventListener('mousemove', onMouseMove);
     window.addEventListener('mouseup', onMouseUp);
     domElement.addEventListener('wheel', onWheel);
 
     // Animation Loop
-    let clock = new THREE.Clock();
+    const startTime = performance.now();
+    const studio = createLabStudio(scene, renderer, camera, mountRef.current!, 'semiconductor');
     const animate = () => {
       animFrameIdRef.current = requestAnimationFrame(animate);
-      const elapsedTime = clock.getElapsedTime();
+      const elapsedTime = (performance.now() - startTime) / 1000;
 
       // Subtle breathing glow when diagnostic running or successful
       if (glowLightRef.current) {
-        if (diagnosticState === 'running') {
+        if (diagnosticRef.current === 'running') {
           glowLightRef.current.intensity = 1.5 + Math.sin(elapsedTime * 8) * 1.0;
-        } else if (diagnosticState === 'success') {
+        } else if (diagnosticRef.current === 'success') {
           glowLightRef.current.intensity = 2.0;
         } else {
           glowLightRef.current.intensity = 0;
@@ -365,10 +378,10 @@ export const SemiconductorSimulation3D: React.FC<SemiconductorSimulation3DProps>
 
       // Slowly rotate wafer if in wafer view
       if (waferGroupRef.current && waferGroupRef.current.visible) {
-        waferGroupRef.current.rotation.y = elapsedTime * 0.2;
+        if (!studio.reducedMotion) waferGroupRef.current.rotation.y = elapsedTime * 0.12;
       }
 
-      renderer.render(scene, camera);
+      studio.render();
     };
     animate();
 
@@ -376,6 +389,9 @@ export const SemiconductorSimulation3D: React.FC<SemiconductorSimulation3DProps>
     return () => {
       if (animFrameIdRef.current) cancelAnimationFrame(animFrameIdRef.current);
       domElement.removeEventListener('mousedown', onMouseDown);
+      domElement.removeEventListener('touchstart',touchStart);
+      domElement.removeEventListener('touchmove',touchMove);
+      window.removeEventListener('touchend',onMouseUp);
       window.removeEventListener('mousemove', onMouseMove);
       window.removeEventListener('mouseup', onMouseUp);
       domElement.removeEventListener('wheel', onWheel);
@@ -383,6 +399,7 @@ export const SemiconductorSimulation3D: React.FC<SemiconductorSimulation3DProps>
       if (mountRef.current && domElement.parentNode === mountRef.current) {
         mountRef.current.removeChild(domElement);
       }
+      studio.dispose();
       renderer.dispose();
     };
   }, []);
@@ -519,8 +536,10 @@ export const SemiconductorSimulation3D: React.FC<SemiconductorSimulation3DProps>
   };
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-950/85 backdrop-blur-md p-2 sm:p-4">
-      <div className="relative w-full max-w-6xl h-[95vh] bg-slate-900 border border-slate-700 rounded-2xl flex flex-col overflow-hidden shadow-2xl">
+    <div role="dialog" aria-modal="true" aria-label="MICROELECTRONICS" className="lab-backdrop fixed inset-0 z-50 flex items-center justify-center bg-slate-950/85 backdrop-blur-md p-2 sm:p-4">
+      <div className="lab-session lab-semiconductor relative w-full max-w-6xl h-[95vh] bg-slate-900 border border-slate-700 rounded-2xl flex flex-col overflow-hidden shadow-2xl">
+        <LabToolbar name="MICROELECTRONICS" onClose={onClose} />
+      {webglError&&<p role="alert" className="lab-webgl-error">{language==='vi'?'Thiết bị không khởi tạo được đồ họa 3D. Bạn vẫn có thể đọc hướng dẫn và sử dụng bảng điều khiển bên dưới. Hãy thử trình duyệt hỗ trợ WebGL để xem mô hình.':'3D graphics are unavailable on this device. Instructions and the control panel remain accessible. Try a WebGL-capable browser to view the model.'}</p>}
         {/* Top Header */}
         <div className="flex items-center justify-between px-6 py-4 border-b border-slate-800 bg-slate-900/90">
           <div className="flex items-center gap-3">
@@ -600,7 +619,7 @@ export const SemiconductorSimulation3D: React.FC<SemiconductorSimulation3DProps>
         <div className="flex-1 grid grid-cols-1 lg:grid-cols-12 min-h-0 overflow-hidden">
           {/* 3D WebGL Canvas (8 cols on lg) */}
           <div className="lg:col-span-8 relative bg-slate-950 flex flex-col">
-            <div ref={mountRef} className="flex-1 w-full h-full cursor-grab active:cursor-grabbing" />
+            <div ref={mountRef} className="lab-viewport flex-1 w-full h-full cursor-grab active:cursor-grabbing" />
 
             {/* In-canvas Guidance Overlay */}
             <div className="absolute top-4 left-4 bg-slate-900/90 backdrop-blur-md border border-slate-700/60 p-3 rounded-xl max-w-sm text-xs text-slate-300 pointer-events-none">

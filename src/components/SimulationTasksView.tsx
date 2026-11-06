@@ -1,4 +1,5 @@
-import React, { useState, lazy, Suspense } from 'react';
+import { LabGallery } from './simulations/LabGallery';
+import React, { useState, useEffect, lazy, Suspense } from 'react';
 import { 
   PlayCircle, 
   CheckCircle2, 
@@ -43,7 +44,9 @@ export const SimulationTasksView: React.FC<SimulationTasksViewProps> = ({
 
   // Active 3D simulation modal state
   const [active3DModal, setActive3DModal] = useState<'semiconductor' | 'circuit' | 'architecture' | 'agriculture' | 'automotive' | null>(null);
-  const [activeTab, setActiveTab] = useState<'3D' | '2D'>('3D');
+  const [activeTab, setActiveTab] = useState<'3D' | '2D'>(selectedTaskId ? '2D' : '3D');
+
+  useEffect(()=>{if(selectedTaskId)setActiveTab('2D');},[selectedTaskId]);
 
   // Task active states
   const [currentStageIdx, setCurrentStageIdx] = useState(0);
@@ -131,7 +134,7 @@ export const SimulationTasksView: React.FC<SimulationTasksViewProps> = ({
         <AgricultureSimulation3D onClose={() => setActive3DModal(null)} />
       )}
       {active3DModal === 'automotive' && (
-        <div className="fixed inset-0 z-50 bg-black/80 backdrop-blur-sm flex items-center justify-center p-2 sm:p-4 overflow-y-auto">
+        <div className="lab-backdrop fixed inset-0 z-50 bg-black/80 backdrop-blur-sm flex items-center justify-center p-2 sm:p-4 overflow-y-auto">
           <AutomotiveTechnicianSimulation onClose={() => setActive3DModal(null)} />
         </div>
       )}
@@ -161,7 +164,7 @@ export const SimulationTasksView: React.FC<SimulationTasksViewProps> = ({
           >
             <Sparkles className="w-3.5 h-3.5 text-cyan-400" />
             <span>{t.simulation.tab3D}</span>
-            <span className="text-[10px] px-1.5 py-0.2 rounded-full bg-cyan-500/30 text-cyan-300 font-mono">{language === 'vi' ? '4 Labs 3D WebGL' : '4 3D WebGL Labs'}</span>
+            <span className="text-[10px] px-1.5 py-0.2 rounded-full bg-cyan-500/30 text-cyan-300 font-mono">{language === 'vi' ? '5 Phòng thực hành' : '5 Interactive studios'}</span>
           </button>
 
           <button
@@ -179,143 +182,10 @@ export const SimulationTasksView: React.FC<SimulationTasksViewProps> = ({
         </div>
       </div>
 
-      {/* 3D LABS SHOWCASE SECTION */}
-      {activeTab === '3D' && !currentTask && (
-        <div className="space-y-4">
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-5">
-            {/* Lab 1: Semiconductor & IC Packaging */}
-            <div className="bg-slate-900 text-white rounded-3xl p-5 border border-slate-800 hover:border-amber-400 transition-all flex flex-col justify-between space-y-4 group">
-              <div className="space-y-3">
-                <div className="w-12 h-12 rounded-2xl bg-amber-500/20 text-amber-400 flex items-center justify-center border border-amber-500/40">
-                  <PlayCircle className="w-6 h-6" />
-                </div>
-                <div>
-                  <span className="text-[10px] font-mono font-bold text-amber-400 uppercase tracking-wider block">
-                    Three.js WebGL Lab 01
-                  </span>
-                  <h3 className="font-bold text-white text-lg group-hover:text-amber-300 transition-colors">
-                    {language === 'vi' ? 'Kỹ Thuật Bán Dẫn & Đóng Gói Vi Mạch 3D' : '3D Semiconductor & IC Packaging Lab'}
-                  </h3>
-                </div>
-                <p className="text-xs text-slate-400 leading-relaxed">
-                  {language === 'vi' ? 'Trải nghiệm quy trình kiểm thử ATE, xoay định vị Pin 1 notch chip bán dẫn, gắn socket kiểm thử, cắm que đo và chạy chẩn đoán lỗi vi mạch.' : 'Experience ATE automated testing, rotate Pin 1 notch alignment, insert into test socket, connect probes, and run circuit diagnostics.'}
-                </p>
-                <div className="text-[11px] text-slate-400 space-y-1 pt-2 border-t border-slate-800">
-                  <div>{language === 'vi' ? '• Mô hình: Wafer 300mm, Bare Die, Đế BGA & Test Socket' : '• Model: 300mm Wafer, Bare Die, BGA Substrate & Test Socket'}</div>
-                  <div>{language === 'vi' ? '• Năng lực: Tư duy công nghệ cao & đo kiểm vi mạch (R & I)' : '• Competency: High-tech diagnostics & microcircuit testing (R & I)'}</div>
-                </div>
-              </div>
-
-              <button
-                onClick={() => setActive3DModal('semiconductor')}
-                className="w-full py-2.5 rounded-xl bg-amber-500 hover:bg-amber-400 text-slate-950 font-bold text-xs transition-colors shadow-md flex items-center justify-center gap-2"
-              >
-                <span>{language === 'vi' ? 'Vào Lab Bán Dẫn 3D' : 'Enter 3D Semiconductor Lab'}</span>
-                <ArrowRight className="w-4 h-4" />
-              </button>
-            </div>
-
-            {/* Lab 2: Architecture */}
-            <div className="bg-slate-900 text-white rounded-3xl p-6 border border-slate-800 hover:border-cyan-400 transition-all flex flex-col justify-between space-y-4 group">
-              <div className="space-y-3">
-                <div className="w-12 h-12 rounded-2xl bg-cyan-500/20 text-cyan-400 flex items-center justify-center border border-cyan-500/40">
-                  <PlayCircle className="w-6 h-6" />
-                </div>
-                <div>
-                  <span className="text-[10px] font-mono font-bold text-cyan-400 uppercase tracking-wider block">
-                    Three.js WebGL Lab 02
-                  </span>
-                  <h3 className="font-bold text-white text-lg group-hover:text-cyan-300 transition-colors">
-                    {t.simulation.archTitle}
-                  </h3>
-                </div>
-                <p className="text-xs text-slate-400 leading-relaxed">
-                  {t.simulation.archDesc}
-                </p>
-                <div className="text-[11px] text-slate-400 space-y-1 pt-2 border-t border-slate-800">
-                  <div>{language === 'vi' ? '• Tương tác: Lắp ghép modular tường, mái dốc, bóng đổ mặt trời' : '• Interaction: Modular wall snapping, roof framing, solar sun path'}</div>
-                  <div>{language === 'vi' ? '• Năng lực rèn luyện: Cảm quan không gian & thẩm mỹ (A & R)' : '• Competency: Spatial awareness & aesthetic design (A & R)'}</div>
-                </div>
-              </div>
-
-              <button
-                onClick={() => setActive3DModal('architecture')}
-                className="w-full py-2.5 rounded-xl bg-cyan-500 hover:bg-cyan-400 text-slate-950 font-bold text-xs transition-colors shadow-md flex items-center justify-center gap-2"
-              >
-                <span>{language === 'vi' ? 'Vào phòng Studio Kiến trúc' : 'Enter 3D Architecture Studio'}</span>
-                <ArrowRight className="w-4 h-4" />
-              </button>
-            </div>
-
-            {/* Lab 3: Agriculture */}
-            <div className="bg-slate-900 text-white rounded-3xl p-6 border border-slate-800 hover:border-emerald-400 transition-all flex flex-col justify-between space-y-4 group">
-              <div className="space-y-3">
-                <div className="w-12 h-12 rounded-2xl bg-emerald-500/20 text-emerald-400 flex items-center justify-center border border-emerald-500/40">
-                  <PlayCircle className="w-6 h-6" />
-                </div>
-                <div>
-                  <span className="text-[10px] font-mono font-bold text-emerald-400 uppercase tracking-wider block">
-                    Three.js WebGL Lab 03
-                  </span>
-                  <h3 className="font-bold text-white text-lg group-hover:text-emerald-300 transition-colors">
-                    {t.simulation.agriTitle}
-                  </h3>
-                </div>
-                <p className="text-xs text-slate-400 leading-relaxed">
-                  {t.simulation.agriDesc}
-                </p>
-                <div className="text-[11px] text-slate-400 space-y-1 pt-2 border-t border-slate-800">
-                  <div>{language === 'vi' ? '• Tương tác: Cảm biến ánh sáng Lux, độ ẩm tưới nhỏ giọt, EC' : '• Interaction: Lux sensor tuning, soil drip moisture, nutrient EC'}</div>
-                  <div>{language === 'vi' ? '• Năng lực rèn luyện: Nghiên cứu khoa học cây trồng (I & R)' : '• Competency: Plant science & agricultural research (I & R)'}</div>
-                </div>
-              </div>
-
-              <button
-                onClick={() => setActive3DModal('agriculture')}
-                className="w-full py-2.5 rounded-xl bg-emerald-500 hover:bg-emerald-400 text-slate-950 font-bold text-xs transition-colors shadow-md flex items-center justify-center gap-2"
-              >
-                <span>{language === 'vi' ? 'Vào Nhà kính Nông nghiệp 4.0' : 'Enter 4.0 Smart Greenhouse'}</span>
-                <ArrowRight className="w-4 h-4" />
-              </button>
-            </div>
-
-            {/* Lab 4: Automotive Technician */}
-            <div className="bg-slate-900 text-white rounded-3xl p-5 border border-slate-800 hover:border-teal-400 transition-all flex flex-col justify-between space-y-4 group">
-              <div className="space-y-3">
-                <div className="w-12 h-12 rounded-2xl bg-teal-500/20 text-teal-400 flex items-center justify-center border border-teal-500/40">
-                  <PlayCircle className="w-6 h-6" />
-                </div>
-                <div>
-                  <span className="text-[10px] font-mono font-bold text-teal-400 uppercase tracking-wider block">
-                    Three.js WebGL Lab 04
-                  </span>
-                  <h3 className="font-bold text-white text-lg group-hover:text-teal-300 transition-colors">
-                    {language === 'vi' ? 'Kỹ Thuật Viên Sửa Chữa Ô Tô 3D' : '3D Automotive Repair Technician'}
-                  </h3>
-                </div>
-                <p className="text-xs text-slate-400 leading-relaxed">
-                  {language === 'vi' ? 'Tương tác trực tiếp khoang máy 3D: kiểm tra ắc quy 12V, thay lọc gió, đo điện cực bugi, bổ sung nước giải nhiệt và nổ máy thử nghiệm.' : 'Interact with live 3D engine bay: inspect 12V battery, replace air filter, check spark plug gap, top up coolant, and crank engine.'}
-                </p>
-                <div className="text-[11px] text-slate-400 space-y-1 pt-2 border-t border-slate-800">
-                  <div>{language === 'vi' ? '• Tương tác: Ắc quy, bugi, lọc gió, que dầu, nổ máy RPM' : '• Interaction: Battery, spark plug, air filter, dipstick, RPM crank'}</div>
-                  <div>{language === 'vi' ? '• Năng lực rèn luyện: Chẩn đoán & an toàn kỹ thuật (R - Realistic)' : '• Competency: Diagnostics & workshop safety (R - Realistic)'}</div>
-                </div>
-              </div>
-
-              <button
-                onClick={() => setActive3DModal('automotive')}
-                className="w-full py-2.5 rounded-xl bg-teal-500 hover:bg-teal-400 text-slate-950 font-extrabold text-xs transition-colors shadow-md flex items-center justify-center gap-2"
-              >
-                <span>{language === 'vi' ? 'Vào Xưởng Chẩn Đoán Ô Tô 3D' : 'Enter 3D Auto Workshop'}</span>
-                <ArrowRight className="w-4 h-4" />
-              </button>
-            </div>
-          </div>
-        </div>
-      )}
-
+      {activeTab === '3D' && !currentTask && <LabGallery onOpen={setActive3DModal} />}
 
       {/* Main Task List or Active Task Player */}
+      {activeTab === '2D' && <>
       {!currentTask ? (
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-5">
           {localizedTasks.map((task) => {
@@ -654,6 +524,7 @@ export const SimulationTasksView: React.FC<SimulationTasksViewProps> = ({
           </div>
         </div>
       )}
+      </>}
     </div>
     </Suspense>
   );

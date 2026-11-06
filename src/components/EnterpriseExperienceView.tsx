@@ -1,3 +1,5 @@
+import { useAuth } from './AuthContext';
+import { authFetch } from '../utils/authSession';
 import { isEnterpriseBatchOpen } from '../utils/enterpriseAvailability';
 import React, { useState, useEffect } from 'react';
 import { 
@@ -25,6 +27,7 @@ import { localizeEnterpriseBatch } from '../utils/i18nData';
 
 export const EnterpriseExperienceView: React.FC = () => {
   const { t, language } = useLanguage();
+  const {user}=useAuth();
   const [batches, setBatches] = useState<EnterpriseBatch[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [selectedBatch, setSelectedBatch] = useState<EnterpriseBatch | null>(null);
@@ -72,7 +75,7 @@ export const EnterpriseExperienceView: React.FC = () => {
   const fetchBatches = async () => {
     setIsLoading(true);
     try {
-      const res = await fetch('/api/enterprise/batches');
+      const res = await authFetch('/api/enterprise/batches');
       const data = await res.json();
       if (data.success && data.data) {
         setBatches(data.data);
@@ -87,7 +90,7 @@ export const EnterpriseExperienceView: React.FC = () => {
   const fetchAdminRegistrations = async () => {
     try {
       setAdminError(null);
-      const res = await fetch('/api/enterprise/registrations', { headers: { Authorization: `Bearer ${adminToken}` } });
+      const res = await authFetch('/api/enterprise/registrations', { headers: {} });
       const data = await res.json();
       if (!res.ok || !data.success) throw new Error(data.message || 'Unable to load registrations');
       setAdminRegistrations(data.data);
@@ -127,7 +130,7 @@ export const EnterpriseExperienceView: React.FC = () => {
     setSubmitError(null);
 
     try {
-      const response = await fetch('/api/enterprise/register', {
+      const response = await authFetch('/api/enterprise/register', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
@@ -191,9 +194,9 @@ export const EnterpriseExperienceView: React.FC = () => {
 
   const handleStatusChange = async (code: string, newStatus: string) => {
     try {
-      const res = await fetch(`/api/enterprise/registrations/${code}/status`, {
+      const res = await authFetch(`/api/enterprise/registrations/${code}/status`, {
         method: 'PATCH',
-        headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${adminToken}` },
+        headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ status: newStatus })
       });
       if (!res.ok) {
@@ -220,7 +223,7 @@ export const EnterpriseExperienceView: React.FC = () => {
             </span>
           </div>
 
-          <button
+          {user?.role==='admin' && <button
             onClick={() => {
               setShowAdminTab(!showAdminTab);
               setAdminRegistrations([]);
@@ -235,7 +238,7 @@ export const EnterpriseExperienceView: React.FC = () => {
                 ? (language === 'vi' ? 'Xem danh sách đợt mở' : 'View Open Batches')
                 : t.enterprise.adminPortal}
             </span>
-          </button>
+          </button>}
         </div>
 
         <h1 className="text-2xl sm:text-3xl font-extrabold text-slate-900 tracking-tight">
@@ -286,17 +289,7 @@ export const EnterpriseExperienceView: React.FC = () => {
             </div>
           </div>
 
-          <form onSubmit={e => { e.preventDefault(); fetchAdminRegistrations(); }} className="flex flex-wrap items-end gap-3">
-            <label className="text-sm font-semibold">
-              {language === 'vi' ? 'Khóa quản trị' : 'Admin access key'}
-              <input type="password" autoComplete="off" required value={adminToken}
-                onChange={e => { setAdminToken(e.target.value); setAdminRegistrations([]); setAdminError(null); }}
-                className="block mt-1 p-2 rounded-lg border border-slate-300" />
-            </label>
-            <button type="submit" disabled={!adminToken.trim()} className="rounded-lg bg-indigo-700 px-4 py-2 text-sm text-white disabled:opacity-50">
-              {language === 'vi' ? 'Tải danh sách' : 'Load registrations'}
-            </button>
-          </form>
+          <button onClick={fetchAdminRegistrations} className="rounded-lg bg-indigo-700 px-4 py-2 text-white">Tải danh sách</button>
           {adminError && <p role="alert" className="text-sm text-rose-700">{adminError}</p>}
 
           <div className="overflow-x-auto">

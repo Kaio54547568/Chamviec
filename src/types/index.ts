@@ -22,11 +22,11 @@ export interface CareerValue {
 }
 
 export interface MatchScoreBreakdown {
-  riasecScore: number; // max 30
-  competencyScore: number; // max 25
-  valuesScore: number; // max 20
-  subjectsScore: number; // max 15
-  environmentScore: number; // max 10
+  riasecScore: number; // normalized interest score, 0–100
+  competencyScore: number; // not scored
+  valuesScore: number; // not scored
+  subjectsScore: number; // normalized favorite-subject score, 0–100
+  environmentScore: number; // not scored
   total: number; // max 100
   explanation: string;
 }

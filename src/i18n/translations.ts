@@ -104,7 +104,7 @@ export const TRANSLATIONS = {
       ethicsCard2Title: 'Bình đẳng cơ hội',
       ethicsCard2Desc: 'Không dùng giới tính, dân tộc hay hoàn cảnh kinh tế để hạn chế nghề được khám phá. Dữ liệu ngân sách dùng để gợi ý học bổng, chính sách miễn giảm học phí và các phương án đào tạo khả thi.',
       ethicsCard3Title: 'Bảo vệ quyền riêng tư',
-      ethicsCard3Desc: 'Không yêu cầu CCCD, số điện thoại hay thông tin gia đình nhạy cảm. Toàn bộ hồ sơ nháp lưu trên thiết bị của em, em hoàn toàn chủ động xuất dữ liệu hoặc xóa trắng bất kỳ lúc nào.',
+      ethicsCard3Desc: 'Không yêu cầu CCCD, số điện thoại hay thông tin gia đình nhạy cảm. Hồ sơ được đồng bộ theo tài khoản. Em có thể xuất hồ sơ để xem lại.',
     },
     careers: {
       directoryTitle: 'Kho Toàn Bộ 200 Nghề Nghiệp & 20 Nhóm Ngành Chuẩn',
@@ -213,8 +213,8 @@ export const TRANSLATIONS = {
     },
     simulation: {
       title: 'Chạm Thử Nghề: Phòng Thí Nghiệm 3D & Thử Vai Tình Huống',
-      subtitle: 'Trải nghiệm không gian làm việc thực tế với 4 phòng thí nghiệm 3D tương tác (Three.js WebGL) và các bài toán tình huống thực tế theo chu trình học tập thực nghiệm Kolb.',
-      tab3D: 'Phòng thí nghiệm 3D (Three.js WebGL)',
+      subtitle: 'Trải nghiệm không gian làm việc thực tế với 5 phòng thực hành 3D tương tác và các bài toán tình huống thực tế theo chu trình học tập thực nghiệm Kolb.',
+      tab3D: 'Phòng thực hành 3D',
       tab2D: 'Thử vai tình huống nghề (2D)',
       circuitTitle: 'Kỹ Thuật Bán Dẫn & Đóng Gói Vi Mạch 3D',
       circuitDesc: 'Trải nghiệm quy trình kiểm thử ATE, xoay định vị Pin 1 notch chip bán dẫn, gắn socket kiểm thử, cắm que đo và chạy chẩn đoán lỗi vi mạch.',
@@ -274,7 +274,7 @@ export const TRANSLATIONS = {
       cutoffs: 'Điểm chuẩn đại học',
       audit: 'Kiểm duyệt dữ liệu',
       disclaimer: 'Lưu ý: Điểm chuẩn các năm chỉ để tham khảo xu hướng. Thí sinh luôn cần kiểm tra đề án và thông báo chính thức tại website trường đại học năm đăng ký.',
-      privacyNote: 'Dữ liệu nháp lưu an toàn trên thiết bị của em',
+      privacyNote: 'Hồ sơ được lưu theo tài khoản trên Supabase',
     },
     admissions: {
       badge: 'Hệ thống Tuyển sinh & Điểm chuẩn Đại học Toàn quốc',
@@ -423,7 +423,7 @@ export const TRANSLATIONS = {
       ethicsCard2Title: 'Equal Opportunity',
       ethicsCard2Desc: 'No restriction based on gender, ethnicity, or socioeconomic background. Budget criteria recommend tuition waivers, scholarships, and viable regional colleges.',
       ethicsCard3Title: 'Privacy Protection',
-      ethicsCard3Desc: 'No national ID, phone numbers, or sensitive family data collected. Draft profiles remain on your device, fully exportable and wipeable at any moment.',
+      ethicsCard3Desc: 'No national ID, phone numbers, or sensitive family data collected. Profiles are synced to your account and can be exported for review.',
     },
     careers: {
       directoryTitle: 'Full National Database: 200 Careers in 20 Standard Groups',
@@ -593,7 +593,7 @@ export const TRANSLATIONS = {
       cutoffs: 'College Cutoffs',
       audit: 'Data Verification',
       disclaimer: 'Note: Historical cutoffs indicate trends only. Applicants must always verify official admissions guidelines on each university website for their enrollment year.',
-      privacyNote: 'Draft profile saved securely on your local device',
+      privacyNote: 'Profiles are saved to your account in Supabase',
     },
     admissions: {
       badge: 'National University Admissions & Cutoff Database',

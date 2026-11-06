@@ -1,3 +1,6 @@
+import { beveledBox } from './labGeometry';
+import { createLabStudio, studioSurface } from './labStudio';
+import { LabToolbar } from './LabToolbar';
 import React, { useEffect, useRef, useState } from 'react';
 import * as THREE from 'three';
 import { 
@@ -80,8 +83,8 @@ export const CircuitSimulation3D: React.FC<CircuitSimulation3DProps> = ({ onClos
     gridHelper.position.y = -0.5;
     scene.add(gridHelper);
 
-    const tableGeo = new THREE.BoxGeometry(14, 0.5, 10);
-    const tableMat = new THREE.MeshStandardMaterial({ color: 0x1e293b, roughness: 0.8 });
+    const tableGeo = beveledBox(14, 0.5, 10);
+    const tableMat = studioSurface(0x3b4f5a, 0.45);
     const tableMesh = new THREE.Mesh(tableGeo, tableMat);
     tableMesh.position.y = -0.75;
     tableMesh.receiveShadow = true;
@@ -97,7 +100,7 @@ export const CircuitSimulation3D: React.FC<CircuitSimulation3DProps> = ({ onClos
     scene.add(dirLight);
 
     // 1. Power Supply / Battery 12V (Left: x = -4, z = 0)
-    const batteryGeo = new THREE.BoxGeometry(2.2, 1.8, 1.6);
+    const batteryGeo = beveledBox(2.2, 1.8, 1.6);
     const batteryMat = new THREE.MeshStandardMaterial({ color: 0x0284c7, roughness: 0.3, metalness: 0.2 });
     const battery = new THREE.Mesh(batteryGeo, batteryMat);
     battery.position.set(-4, 0.4, 0);
@@ -125,7 +128,8 @@ export const CircuitSimulation3D: React.FC<CircuitSimulation3DProps> = ({ onClos
     scene.add(socket);
 
     const bulbGlassGeo = new THREE.SphereGeometry(0.8, 24, 24);
-    const bulbGlassMat = new THREE.MeshStandardMaterial({
+    const bulbGlassMat = new THREE.MeshPhysicalMaterial({
+      clearcoat: 1, transmission: 0.2, thickness: 0.2,
       color: 0xffffff,
       transparent: true,
       opacity: 0.85,
@@ -145,14 +149,14 @@ export const CircuitSimulation3D: React.FC<CircuitSimulation3DProps> = ({ onClos
     bulbLightRef.current = bulbLight;
 
     // 3. Knife Switch (Center: x = 0, z = -2.5)
-    const switchBaseGeo = new THREE.BoxGeometry(2, 0.25, 1.2);
+    const switchBaseGeo = beveledBox(2, 0.25, 1.2);
     const switchBaseMat = new THREE.MeshStandardMaterial({ color: 0x78350f });
     const switchBase = new THREE.Mesh(switchBaseGeo, switchBaseMat);
     switchBase.position.set(0, -0.35, -2.5);
     scene.add(switchBase);
 
     // Lever
-    const leverGeo = new THREE.BoxGeometry(1.6, 0.12, 0.25);
+    const leverGeo = beveledBox(1.6, 0.12, 0.25);
     const leverMat = new THREE.MeshStandardMaterial({ color: 0xf59e0b, metalness: 0.9, roughness: 0.2 });
     const lever = new THREE.Mesh(leverGeo, leverMat);
     lever.position.set(0, 0.2, -2.5);
@@ -260,9 +264,10 @@ export const CircuitSimulation3D: React.FC<CircuitSimulation3DProps> = ({ onClos
 
     // Animation Loop
     let animId: number;
+    const studio = createLabStudio(scene, renderer, camera, mountRef.current!, 'circuit');
     const animate = () => {
       animId = requestAnimationFrame(animate);
-      renderer.render(scene, camera);
+      studio.render();
     };
     animate();
 
@@ -278,6 +283,7 @@ export const CircuitSimulation3D: React.FC<CircuitSimulation3DProps> = ({ onClos
       if (mountRef.current && dom) {
         mountRef.current.removeChild(dom);
       }
+      studio.dispose();
       renderer.dispose();
     };
   }, [is2DMode]);
@@ -302,6 +308,7 @@ export const CircuitSimulation3D: React.FC<CircuitSimulation3DProps> = ({ onClos
 
     if (bulbLightRef.current && bulbMeshRef.current) {
       if (isCircuitClosed) {
+        (bulbMeshRef.current.material as THREE.MeshStandardMaterial).color.setHex(0xffebbb);
         const intensity = (voltage / 12) * 4;
         bulbLightRef.current.intensity = intensity;
         const color = voltage > 12 ? 0xffedd5 : 0xfef08a;
@@ -309,6 +316,7 @@ export const CircuitSimulation3D: React.FC<CircuitSimulation3DProps> = ({ onClos
         (bulbMeshRef.current.material as THREE.MeshStandardMaterial).emissive.setHex(color);
         (bulbMeshRef.current.material as THREE.MeshStandardMaterial).emissiveIntensity = Math.min(2.5, intensity * 0.8);
       } else {
+        (bulbMeshRef.current.material as THREE.MeshStandardMaterial).color.setHex(0xa7b2ad);
         bulbLightRef.current.intensity = 0;
         (bulbMeshRef.current.material as THREE.MeshStandardMaterial).emissive.setHex(0x000000);
         (bulbMeshRef.current.material as THREE.MeshStandardMaterial).emissiveIntensity = 0;
@@ -318,7 +326,7 @@ export const CircuitSimulation3D: React.FC<CircuitSimulation3DProps> = ({ onClos
     if (isCircuitClosed && missionStep === 1) {
       setMissionStep(2);
     }
-  }, [isSwitchClosed, wireConnected, voltage, missionStep]);
+  }, [isSwitchClosed, wireConnected, voltage, missionStep, is2DMode]);
 
   const handleToggleSwitch = () => {
     setIsSwitchClosed(prev => !prev);
@@ -338,8 +346,9 @@ export const CircuitSimulation3D: React.FC<CircuitSimulation3DProps> = ({ onClos
   const isLit = isSwitchClosed && wireConnected;
 
   return (
-    <div className="fixed inset-0 z-50 bg-slate-950/85 backdrop-blur-md flex items-center justify-center p-2 sm:p-4 animate-fade-in overflow-y-auto">
-      <div className="bg-slate-900 border border-slate-700 rounded-3xl max-w-5xl w-full p-4 sm:p-6 shadow-2xl flex flex-col space-y-4 my-auto max-h-[95vh] overflow-y-auto text-slate-100">
+    <div role="dialog" aria-modal="true" aria-label="ELECTRICAL BENCH" className="lab-backdrop fixed inset-0 z-50 bg-slate-950/85 backdrop-blur-md flex items-center justify-center p-2 sm:p-4 animate-fade-in overflow-y-auto">
+      <div className="lab-session lab-circuit bg-slate-900 border border-slate-700 rounded-3xl max-w-5xl w-full p-4 sm:p-6 shadow-2xl flex flex-col space-y-4 my-auto max-h-[95vh] overflow-y-auto text-slate-100">
+        <LabToolbar name="ELECTRICAL BENCH" onClose={onClose} />
         {/* Top Header */}
         <div className="flex items-center justify-between pb-3 border-b border-slate-800">
           <div className="flex items-center gap-3">
@@ -348,7 +357,7 @@ export const CircuitSimulation3D: React.FC<CircuitSimulation3DProps> = ({ onClos
             </div>
             <div>
               <span className="text-[11px] font-bold text-amber-400 uppercase tracking-wider">
-                {t.simulation.circuitTitle}
+                {language === 'vi' ? 'ĐIỆN & ĐIỆN TỬ' : 'ELECTRICAL ENGINEERING'}
               </span>
               <h3 className="text-base sm:text-lg font-bold text-white">
                 {language === 'vi' ? 'Phòng Thí Nghiệm 3D: Đóng Mạch & Điều Khiển Điện Áp' : '3D Lab: Circuit Wiring & Voltage Control'}
@@ -444,7 +453,7 @@ export const CircuitSimulation3D: React.FC<CircuitSimulation3DProps> = ({ onClos
           ) : (
             <>
               {/* 3D WebGL Canvas Container */}
-              <div ref={mountRef} className="w-full h-full cursor-grab active:cursor-grabbing" />
+              <div ref={mountRef} className="lab-viewport w-full h-full cursor-grab active:cursor-grabbing" />
 
               {/* Floating Camera / Controls Tip */}
               <div className="absolute bottom-3 left-3 bg-slate-900/80 backdrop-blur-md px-3 py-1.5 rounded-xl border border-slate-700/80 text-[11px] text-slate-400 flex items-center gap-2">

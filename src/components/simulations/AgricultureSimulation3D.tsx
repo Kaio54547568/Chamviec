@@ -1,3 +1,6 @@
+import { beveledBox, leafBlade } from './labGeometry';
+import { createLabStudio, studioSurface } from './labStudio';
+import { LabToolbar } from './LabToolbar';
 import React, { useEffect, useRef, useState } from 'react';
 import * as THREE from 'three';
 import { 
@@ -89,7 +92,7 @@ export const AgricultureSimulation3D: React.FC<AgricultureSimulation3DProps> = (
 
     // Greenhouse Bed & Floor
     const floorGeo = new THREE.PlaneGeometry(16, 16);
-    const floorMat = new THREE.MeshStandardMaterial({ color: 0x14281f, roughness: 0.9 });
+    const floorMat = studioSurface(0x788777, 0.55);
     const floor = new THREE.Mesh(floorGeo, floorMat);
     floor.rotation.x = -Math.PI / 2;
     floor.position.y = -0.5;
@@ -97,7 +100,7 @@ export const AgricultureSimulation3D: React.FC<AgricultureSimulation3DProps> = (
     scene.add(floor);
 
     // Hydroponic Trough / Planter Box
-    const boxGeo = new THREE.BoxGeometry(4.5, 0.9, 2.2);
+    const boxGeo = beveledBox(4.5, 0.9, 2.2);
     const boxMat = new THREE.MeshStandardMaterial({ color: 0x334155, roughness: 0.5 });
     const box = new THREE.Mesh(boxGeo, boxMat);
     box.position.y = -0.05;
@@ -106,7 +109,7 @@ export const AgricultureSimulation3D: React.FC<AgricultureSimulation3DProps> = (
     scene.add(box);
 
     // Coco-coir substrate (soil substitute)
-    const soilGeo = new THREE.BoxGeometry(4.3, 0.1, 2.0);
+    const soilGeo = beveledBox(4.3, 0.1, 2.0);
     const soilMat = new THREE.MeshStandardMaterial({ color: 0x3e2723, roughness: 0.9 });
     const soil = new THREE.Mesh(soilGeo, soilMat);
     soil.position.y = 0.42;
@@ -163,9 +166,8 @@ export const AgricultureSimulation3D: React.FC<AgricultureSimulation3DProps> = (
     plantGroup.add(stem);
 
     // Foliage / Leaves
-    const leafGeo = new THREE.SphereGeometry(0.45, 12, 12);
-    leafGeo.scale(1.6, 0.25, 0.8);
-    const leafMat = new THREE.MeshStandardMaterial({ color: 0x15803d, roughness: 0.5 });
+    const leafGeo = leafBlade();
+    const leafMat = new THREE.MeshStandardMaterial({ color: 0x45813a, roughness: 0.75, side: THREE.DoubleSide });
 
     leavesRef.current = [];
     const leafPositions = [
@@ -271,9 +273,10 @@ export const AgricultureSimulation3D: React.FC<AgricultureSimulation3DProps> = (
     window.addEventListener('resize', handleResize);
 
     let animId: number;
+    const studio = createLabStudio(scene, renderer, camera, mountRef.current!, 'agriculture');
     const animate = () => {
       animId = requestAnimationFrame(animate);
-      renderer.render(scene, camera);
+      studio.render();
     };
     animate();
 
@@ -289,6 +292,7 @@ export const AgricultureSimulation3D: React.FC<AgricultureSimulation3DProps> = (
       if (mountRef.current && dom) {
         mountRef.current.removeChild(dom);
       }
+      studio.dispose();
       renderer.dispose();
     };
   }, [is2DMode]);
@@ -326,7 +330,7 @@ export const AgricultureSimulation3D: React.FC<AgricultureSimulation3DProps> = (
       (leaf.material as THREE.MeshStandardMaterial).color.setHex(leafColor);
       // Slight scale wilt if health is low
       const s = 0.75 + (health / 100) * 0.25;
-      leaf.scale.set(1.6 * s, 0.25 * s, 0.8 * s);
+      leaf.scale.set(1.1 * s, s, s);
     });
 
     // 3. Fruits scale and color
@@ -336,7 +340,7 @@ export const AgricultureSimulation3D: React.FC<AgricultureSimulation3DProps> = (
       const fruitColor = health > 60 ? 0xdc2626 : 0xca8a04;
       (fruit.material as THREE.MeshStandardMaterial).color.setHex(fruitColor);
     });
-  }, [lightLux, moisture, nutrientEC]);
+  }, [lightLux, moisture, nutrientEC, is2DMode]);
 
   const handleResetCamera = () => {
     cameraAngleRef.current = { theta: Math.PI / 4, phi: Math.PI / 3, radius: 12 };
@@ -350,8 +354,9 @@ export const AgricultureSimulation3D: React.FC<AgricultureSimulation3DProps> = (
   };
 
   return (
-    <div className="fixed inset-0 z-50 bg-slate-950/85 backdrop-blur-md flex items-center justify-center p-2 sm:p-4 animate-fade-in overflow-y-auto">
-      <div className="bg-slate-900 border border-slate-700 rounded-3xl max-w-5xl w-full p-4 sm:p-6 shadow-2xl flex flex-col space-y-4 my-auto max-h-[95vh] overflow-y-auto text-slate-100">
+    <div role="dialog" aria-modal="true" aria-label="LIVING SYSTEMS" className="lab-backdrop fixed inset-0 z-50 bg-slate-950/85 backdrop-blur-md flex items-center justify-center p-2 sm:p-4 animate-fade-in overflow-y-auto">
+      <div className="lab-session lab-agriculture bg-slate-900 border border-slate-700 rounded-3xl max-w-5xl w-full p-4 sm:p-6 shadow-2xl flex flex-col space-y-4 my-auto max-h-[95vh] overflow-y-auto text-slate-100">
+        <LabToolbar name="LIVING SYSTEMS" onClose={onClose} />
         {/* Header */}
         <div className="flex items-center justify-between pb-3 border-b border-slate-800">
           <div className="flex items-center gap-3">
@@ -461,7 +466,7 @@ export const AgricultureSimulation3D: React.FC<AgricultureSimulation3DProps> = (
             </div>
           ) : (
             <>
-              <div ref={mountRef} className="w-full h-full cursor-grab active:cursor-grabbing" />
+              <div ref={mountRef} className="lab-viewport w-full h-full cursor-grab active:cursor-grabbing" />
 
               <div className="absolute bottom-3 left-3 bg-slate-900/80 backdrop-blur-md px-3 py-1.5 rounded-xl border border-slate-700/80 text-[11px] text-slate-400 flex items-center gap-2">
                 <Eye className="w-3.5 h-3.5 text-emerald-400" />

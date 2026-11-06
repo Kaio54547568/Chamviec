@@ -1,3 +1,6 @@
+import { beveledBox, furnishedObject } from './labGeometry';
+import { createLabStudio, studioSurface } from './labStudio';
+import { LabToolbar } from './LabToolbar';
 import React, { useEffect, useRef, useState } from 'react';
 import * as THREE from 'three';
 import { 
@@ -36,6 +39,7 @@ interface PlacedFurniture {
 export const ArchitectureSimulation3D: React.FC<ArchitectureSimulation3DProps> = ({ onClose, onComplete }) => {
   const { t, language } = useLanguage();
   const mountRef = useRef<HTMLDivElement>(null);
+  const [webglError,setWebglError]=useState(false);
 
   // Architectural State
   const [viewMode, setViewMode] = useState<'exterior' | 'cutaway'>('cutaway'); // Default to cutaway floorplan view!
@@ -135,6 +139,7 @@ export const ArchitectureSimulation3D: React.FC<ArchitectureSimulation3DProps> =
       mountRef.current.appendChild(renderer.domElement);
       rendererRef.current = renderer;
     } catch (e) {
+      setWebglError(true);
       console.warn('WebGL init failed:', e);
       return;
     }
@@ -146,7 +151,7 @@ export const ArchitectureSimulation3D: React.FC<ArchitectureSimulation3DProps> =
 
     // Ground Plane
     const groundGeo = new THREE.PlaneGeometry(30, 30);
-    const groundMat = new THREE.MeshStandardMaterial({ color: 0x1e293b, roughness: 0.85 });
+    const groundMat = studioSurface(0x9a9f98, 0.5);
     const ground = new THREE.Mesh(groundGeo, groundMat);
     ground.rotation.x = -Math.PI / 2;
     ground.receiveShadow = true;
@@ -183,7 +188,7 @@ export const ArchitectureSimulation3D: React.FC<ArchitectureSimulation3DProps> =
     roofGroupRef.current = roofGroup;
 
     // 1. Foundation Slab (8m x 6m x 0.3m concrete)
-    const foundationGeo = new THREE.BoxGeometry(8, 0.3, 6);
+    const foundationGeo = beveledBox(8, 0.3, 6);
     const foundationMat = new THREE.MeshStandardMaterial({ color: 0x64748b, roughness: 0.7 });
     const foundation = new THREE.Mesh(foundationGeo, foundationMat);
     foundation.position.y = 0.15;
@@ -192,7 +197,7 @@ export const ArchitectureSimulation3D: React.FC<ArchitectureSimulation3DProps> =
 
     // Floor surface tile grid
     const floorTileGeo = new THREE.PlaneGeometry(7.6, 5.6);
-    const floorTileMat = new THREE.MeshStandardMaterial({ color: 0xe2e8f0, roughness: 0.4 });
+    const floorTileMat = studioSurface(0xb3a18b, 1.1);
     const floorTile = new THREE.Mesh(floorTileGeo, floorTileMat);
     floorTile.rotation.x = -Math.PI / 2;
     floorTile.position.y = 0.31;
@@ -200,12 +205,12 @@ export const ArchitectureSimulation3D: React.FC<ArchitectureSimulation3DProps> =
     houseGroup.add(floorTile);
 
     // 2. Perimeter Walls with Open Cutaway (hollow interior!)
-    const wallMat = new THREE.MeshStandardMaterial({ color: 0xf8fafc, roughness: 0.5 });
+    const wallMat = new THREE.MeshStandardMaterial({ color: 0xe8e2d7, roughness: 0.85 });
     const wallH = 2.4;
     const wallThick = 0.2;
 
     // Back wall (North: z = -2.9)
-    const backWallGeo = new THREE.BoxGeometry(7.8, wallH, wallThick);
+    const backWallGeo = beveledBox(7.8, wallH, wallThick);
     const backWall = new THREE.Mesh(backWallGeo, wallMat);
     backWall.position.set(0, wallH / 2 + 0.3, -2.9);
     backWall.castShadow = true;
@@ -213,7 +218,7 @@ export const ArchitectureSimulation3D: React.FC<ArchitectureSimulation3DProps> =
     houseGroup.add(backWall);
 
     // Left wall (West: x = -3.9)
-    const leftWallGeo = new THREE.BoxGeometry(wallThick, wallH, 5.8);
+    const leftWallGeo = beveledBox(wallThick, wallH, 5.8);
     const leftWall = new THREE.Mesh(leftWallGeo, wallMat);
     leftWall.position.set(-3.9, wallH / 2 + 0.3, 0);
     leftWall.castShadow = true;
@@ -221,15 +226,16 @@ export const ArchitectureSimulation3D: React.FC<ArchitectureSimulation3DProps> =
     houseGroup.add(leftWall);
 
     // Right wall with Window cutout (East: x = 3.9)
-    const rightWallGeo = new THREE.BoxGeometry(wallThick, wallH, 5.8);
-    const rightWall = new THREE.Mesh(rightWallGeo, wallMat);
-    rightWall.position.set(3.9, wallH / 2 + 0.3, 0);
-    rightWall.castShadow = true;
-    rightWall.receiveShadow = true;
-    houseGroup.add(rightWall);
+    for (const [height, depth, y, z] of [[0.85,5.8,0.725,0],[0.5,5.8,2.45,0],[1.05,1.4,1.675,-2.2],[1.05,1.4,1.675,2.2]]) {
+      const wall=new THREE.Mesh(beveledBox(wallThick,height,depth),wallMat);
+      wall.position.set(3.9,y,z);wall.castShadow=true;wall.receiveShadow=true;houseGroup.add(wall);
+    }
+    const windowFrame=new THREE.MeshStandardMaterial({color:0x515b5e,metalness:0.6,roughness:0.35});
+    for(const y of [1.15,2.2]){const frame=new THREE.Mesh(beveledBox(0.24,0.055,3.15),windowFrame);frame.position.set(3.9,y,0);houseGroup.add(frame);}
+    for(const z of [-1.55,0,1.55]){const frame=new THREE.Mesh(beveledBox(0.24,1.05,0.055),windowFrame);frame.position.set(3.9,1.675,z);houseGroup.add(frame);}
 
     // Front wall left section (x: -2.3, z: 2.9)
-    const frontWallLGeo = new THREE.BoxGeometry(3.0, wallH, wallThick);
+    const frontWallLGeo = beveledBox(3.0, wallH, wallThick);
     const frontWallL = new THREE.Mesh(frontWallLGeo, wallMat);
     frontWallL.position.set(-2.4, wallH / 2 + 0.3, 2.9);
     frontWallL.castShadow = true;
@@ -237,7 +243,7 @@ export const ArchitectureSimulation3D: React.FC<ArchitectureSimulation3DProps> =
     houseGroup.add(frontWallL);
 
     // Front wall right section (x: 2.3, z: 2.9)
-    const frontWallRGeo = new THREE.BoxGeometry(3.0, wallH, wallThick);
+    const frontWallRGeo = beveledBox(3.0, wallH, wallThick);
     const frontWallR = new THREE.Mesh(frontWallRGeo, wallMat);
     frontWallR.position.set(2.4, wallH / 2 + 0.3, 2.9);
     frontWallR.castShadow = true;
@@ -245,7 +251,7 @@ export const ArchitectureSimulation3D: React.FC<ArchitectureSimulation3DProps> =
     houseGroup.add(frontWallR);
 
     // Main Door Frame & Door (x = 0, z = 2.9)
-    const doorLeafGeo = new THREE.BoxGeometry(1.2, 2.1, 0.08);
+    const doorLeafGeo = beveledBox(1.2, 2.1, 0.08);
     const doorLeafMat = new THREE.MeshStandardMaterial({ color: 0x9a3412, roughness: 0.3 });
     const doorLeaf = new THREE.Mesh(doorLeafGeo, doorLeafMat);
     doorLeaf.position.set(0, 1.35, 2.9);
@@ -254,14 +260,14 @@ export const ArchitectureSimulation3D: React.FC<ArchitectureSimulation3DProps> =
 
     // 3. Removable Roof (Gable Pitch)
     const roofMat = new THREE.MeshStandardMaterial({ color: 0x991b1b, roughness: 0.4 });
-    const roofLeftGeo = new THREE.BoxGeometry(4.6, 0.15, 6.4);
+    const roofLeftGeo = beveledBox(4.6, 0.15, 6.4);
     const roofLeft = new THREE.Mesh(roofLeftGeo, roofMat);
     roofLeft.rotation.z = Math.PI / 6;
     roofLeft.position.set(-2.0, 3.8, 0);
     roofLeft.castShadow = true;
     roofGroup.add(roofLeft);
 
-    const roofRightGeo = new THREE.BoxGeometry(4.6, 0.15, 6.4);
+    const roofRightGeo = beveledBox(4.6, 0.15, 6.4);
     const roofRight = new THREE.Mesh(roofRightGeo, roofMat);
     roofRight.rotation.z = -Math.PI / 6;
     roofRight.position.set(2.0, 3.8, 0);
@@ -269,7 +275,7 @@ export const ArchitectureSimulation3D: React.FC<ArchitectureSimulation3DProps> =
     roofGroup.add(roofRight);
 
     // 4. Structural Frame Layer (4 corner columns + 2 center columns + beams)
-    const columnGeo = new THREE.BoxGeometry(0.35, wallH + 0.3, 0.35);
+    const columnGeo = beveledBox(0.35, wallH + 0.3, 0.35);
     const columnMat = new THREE.MeshStandardMaterial({ color: 0xf97316, roughness: 0.3 }); // Orange structural frame
     const colPositions = [
       [-3.8, -2.8], [3.8, -2.8],
@@ -284,7 +290,7 @@ export const ArchitectureSimulation3D: React.FC<ArchitectureSimulation3DProps> =
     });
 
     // Ring beam on top
-    const beamGeoX = new THREE.BoxGeometry(7.8, 0.3, 0.35);
+    const beamGeoX = beveledBox(7.8, 0.3, 0.35);
     const beamMat = new THREE.MeshStandardMaterial({ color: 0xf97316, roughness: 0.3 });
     const beamFront = new THREE.Mesh(beamGeoX, beamMat);
     beamFront.position.set(0, wallH + 0.3, 2.8);
@@ -322,26 +328,36 @@ export const ArchitectureSimulation3D: React.FC<ArchitectureSimulation3DProps> =
     };
 
     const dom = renderer.domElement;
+    const touchStart=(event:TouchEvent)=>{const t=event.touches[0];if(t)onMouseDown({clientX:t.clientX,clientY:t.clientY} as MouseEvent);};
+    const touchMove=(event:TouchEvent)=>{const t=event.touches[0];if(t)onMouseMove({clientX:t.clientX,clientY:t.clientY} as MouseEvent);};
+    dom.addEventListener('touchstart',touchStart,{passive:true});
+    dom.addEventListener('touchmove',touchMove,{passive:true});
+    window.addEventListener('touchend',onMouseUp);
     dom.addEventListener('mousedown', onMouseDown);
     window.addEventListener('mousemove', onMouseMove);
     window.addEventListener('mouseup', onMouseUp);
     dom.addEventListener('wheel', onWheel);
 
+    const studio = createLabStudio(scene, renderer, camera, mountRef.current!, 'architecture');
     const animate = () => {
       animFrameIdRef.current = requestAnimationFrame(animate);
-      renderer.render(scene, camera);
+      studio.render();
     };
     animate();
 
     return () => {
       if (animFrameIdRef.current) cancelAnimationFrame(animFrameIdRef.current);
       dom.removeEventListener('mousedown', onMouseDown);
+      dom.removeEventListener('touchstart',touchStart);
+      dom.removeEventListener('touchmove',touchMove);
+      window.removeEventListener('touchend',onMouseUp);
       window.removeEventListener('mousemove', onMouseMove);
       window.removeEventListener('mouseup', onMouseUp);
       dom.removeEventListener('wheel', onWheel);
       if (mountRef.current && dom.parentNode === mountRef.current) {
         mountRef.current.removeChild(dom);
       }
+      studio.dispose();
       renderer.dispose();
     };
   }, []);
@@ -388,52 +404,15 @@ export const ArchitectureSimulation3D: React.FC<ArchitectureSimulation3DProps> =
     if (!furnitureGroupRef.current) return;
     const group = furnitureGroupRef.current;
 
-    // Clear existing furniture meshes
-    while (group.children.length > 0) {
-      const obj = group.children[0] as THREE.Mesh;
-      if (obj.geometry) obj.geometry.dispose();
-      group.remove(obj);
+    for (const child of [...group.children]) {
+      const materials=new Set<THREE.Material>();
+      child.traverse(object=>{if(object instanceof THREE.Mesh){object.geometry.dispose();(Array.isArray(object.material)?object.material:[object.material]).forEach(m=>materials.add(m));}});
+      materials.forEach(material=>material.dispose()); group.remove(child);
     }
-
-    // Build 3D objects for each placed furniture
-    furnitureList.forEach((item) => {
-      let geo: THREE.BufferGeometry;
-      let mat: THREE.Material;
-      let yOffset = 0.45;
-
-      if (item.type === 'bed') {
-        // Bed: 2.0m x 1.6m
-        geo = new THREE.BoxGeometry(2.0, 0.5, 1.6);
-        mat = new THREE.MeshStandardMaterial({ color: 0x3b82f6, roughness: 0.4 }); // Blue bed
-        yOffset = 0.55;
-      } else if (item.type === 'desk') {
-        // Desk: 1.4m x 0.7m
-        geo = new THREE.BoxGeometry(1.4, 0.75, 0.7);
-        mat = new THREE.MeshStandardMaterial({ color: 0xd97706, roughness: 0.3 }); // Wood desk
-        yOffset = 0.68;
-      } else if (item.type === 'sofa') {
-        // Sofa: 2.2m x 0.9m
-        geo = new THREE.BoxGeometry(2.2, 0.65, 0.9);
-        mat = new THREE.MeshStandardMaterial({ color: 0x10b981, roughness: 0.5 }); // Emerald sofa
-        yOffset = 0.62;
-      } else if (item.type === 'dining') {
-        // Dining Table: 1.6m x 0.9m
-        geo = new THREE.BoxGeometry(1.6, 0.75, 0.9);
-        mat = new THREE.MeshStandardMaterial({ color: 0xa855f7, roughness: 0.3 });
-        yOffset = 0.68;
-      } else {
-        // Partition wall: 2.0m x 2.4m x 0.15m
-        geo = new THREE.BoxGeometry(2.0, 2.4, 0.15);
-        mat = new THREE.MeshStandardMaterial({ color: 0x94a3b8, roughness: 0.5 });
-        yOffset = 1.5;
-      }
-
-      const mesh = new THREE.Mesh(geo, mat);
-      mesh.position.set(item.x, yOffset, item.z);
-      mesh.rotation.y = item.rotation;
-      mesh.castShadow = true;
-      mesh.receiveShadow = true;
-      group.add(mesh);
+    furnitureList.forEach(item=>{
+      const furniture=furnishedObject(item.type);
+      furniture.position.set(item.x,0.33,item.z); furniture.rotation.y=item.rotation;
+      group.add(furniture);
     });
   }, [furnitureList]);
 
@@ -487,8 +466,10 @@ export const ArchitectureSimulation3D: React.FC<ArchitectureSimulation3DProps> =
   };
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-950/85 backdrop-blur-md p-2 sm:p-4">
-      <div className="relative w-full max-w-6xl h-[95vh] bg-slate-900 border border-slate-700 rounded-2xl flex flex-col overflow-hidden shadow-2xl">
+    <div role="dialog" aria-modal="true" aria-label="SPATIAL DESIGN" className="lab-backdrop fixed inset-0 z-50 flex items-center justify-center bg-slate-950/85 backdrop-blur-md p-2 sm:p-4">
+      <div className="lab-session lab-architecture relative w-full max-w-6xl h-[95vh] bg-slate-900 border border-slate-700 rounded-2xl flex flex-col overflow-hidden shadow-2xl">
+        <LabToolbar name="SPATIAL DESIGN" onClose={onClose} />
+      {webglError&&<p role="alert" className="lab-webgl-error">{language==='vi'?'Thiết bị không khởi tạo được đồ họa 3D. Bạn vẫn có thể đọc hướng dẫn và sử dụng bảng điều khiển bên dưới. Hãy thử trình duyệt hỗ trợ WebGL để xem mô hình.':'3D graphics are unavailable on this device. Instructions and the control panel remain accessible. Try a WebGL-capable browser to view the model.'}</p>}
         {/* Top Header */}
         <div className="flex items-center justify-between px-6 py-4 border-b border-slate-800 bg-slate-900/90">
           <div className="flex items-center gap-3">
@@ -594,7 +575,7 @@ export const ArchitectureSimulation3D: React.FC<ArchitectureSimulation3DProps> =
         <div className="flex-1 grid grid-cols-1 lg:grid-cols-12 min-h-0 overflow-hidden">
           {/* 3D Viewport (8 cols) */}
           <div className="lg:col-span-8 relative bg-slate-950 flex flex-col">
-            <div ref={mountRef} className="flex-1 w-full h-full cursor-grab active:cursor-grabbing" />
+            <div ref={mountRef} className="lab-viewport flex-1 w-full h-full cursor-grab active:cursor-grabbing" />
 
             {/* Floating circulation warning */}
             {circulationWarning && (

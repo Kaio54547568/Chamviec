@@ -292,7 +292,7 @@ export const RecommendationsView: React.FC<RecommendationsViewProps> = ({
                   <div className="flex items-center gap-2">
                     <div className="px-3.5 py-1.5 rounded-xl bg-white/10 backdrop-blur-md border border-white/20 text-right">
                       <div className="text-[10px] text-teal-200 font-medium uppercase tracking-wider">
-                        {language === 'vi' ? 'Mức độ phù hợp tham khảo' : 'Match Score'}
+                        {language === 'vi' ? (profile.favoriteSubjects.length ? 'Điểm phù hợp sở thích' : 'Điểm sở thích RIASEC') : (profile.favoriteSubjects.length ? 'Interest fit score' : 'RIASEC interest score')}
                       </div>
                       <div className="text-lg font-black text-amber-300">
                         {rec.matchScore} <span className="text-xs font-normal text-white">/ 100</span>

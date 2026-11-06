@@ -1,3 +1,4 @@
+import { authenticatedUser } from '../src/server/database.ts';
 import { processChamAiChat } from '../src/server/chamAiService.ts';
 
 // Vercel Serverless Function handler
@@ -25,6 +26,7 @@ export default async function handler(req: any, res: any) {
   }
 
   try {
+    await authenticatedUser(req);
     const body = typeof req.body === 'string' ? JSON.parse(req.body) : req.body || {};
     const { message, language, profile, currentContext, chatHistory } = body;
 
@@ -47,6 +49,7 @@ export default async function handler(req: any, res: any) {
 
     return res.status(200).json(result);
   } catch (error: any) {
+    if(error?.status === 401) return res.status(401).json({success:false,message:'Vui lòng đăng nhập.'});
     console.error('Unhandled Vercel serverless error in /api/cham-ai:', error);
     return res.status(500).json({
       success: false,

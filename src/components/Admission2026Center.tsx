@@ -1,3 +1,4 @@
+import { authFetch } from '../utils/authSession';
 import React, { useState, useEffect, useMemo } from 'react';
 import { 
   GraduationCap, 
@@ -154,7 +155,7 @@ export const Admission2026Center: React.FC<Admission2026CenterProps> = ({ onOpen
     setEieErrorMessage(null);
 
     try {
-      const res = await fetch('/api/eie/register-english-account', {
+      const res = await authFetch('/api/eie/register-english-account', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({

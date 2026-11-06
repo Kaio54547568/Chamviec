@@ -1,3 +1,4 @@
+import { database } from './database.ts';
 import dotenv from 'dotenv';
 import fs from 'fs';
 import path from 'path';
@@ -14,6 +15,16 @@ import { GoogleGenAI } from '@google/genai';
 import { UNIVERSITIES_DATA, ADMISSION_RECORDS } from '../data/admissions.ts';
 import { CAREERS_DATA } from '../data/careers.ts';
 import { MAJORS_DATA } from '../data/majors.ts';
+
+let catalogLoadedAt=0;
+async function refreshGroundingCatalog(){
+ if(Date.now()-catalogLoadedAt<60000)return;
+ const {data,error}=await database().from('catalog').select('kind,data').in('kind',['careers','majors','universities','admissions']);
+ if(error||!data?.length)return;
+ const arrays:Record<string,any[]>={careers:CAREERS_DATA,majors:MAJORS_DATA,universities:UNIVERSITIES_DATA,admissions:ADMISSION_RECORDS};
+ for(const [kind,array] of Object.entries(arrays)){const records=data.filter(r=>r.kind===kind).map(r=>r.data);if(records.length)array.splice(0,array.length,...records);}
+ catalogLoadedAt=Date.now();
+}
 
 export function getGeminiApiKey(): string {
   if (process.env.GEMINI_API_KEY && process.env.GEMINI_API_KEY.trim()) {
@@ -199,6 +210,7 @@ export interface ChamAiResponseResult {
 
 export async function processChamAiChat(params: ProcessChamAiParams): Promise<ChamAiResponseResult> {
   const { message, language = 'vi', profile, currentContext, chatHistory, customAiClient } = params;
+  await refreshGroundingCatalog().catch(()=>{});
 
   if (!message || !message.trim()) {
     return {
@@ -242,7 +254,7 @@ NGUYÊN TẮC CỐT LÕI (BẮT BUỘC TUÂN THỦ):
 
 2. KHI HỌC SINH HỎI ĐỊNH HƯỚNG / KHÁM PHÁ NGHỀ:
    - Nếu học sinh đã cung cấp hồ sơ (kết quả RIASEC, môn học yêu thích, năng lực, vị trí địa lý, hoàn cảnh): Phải đọc và lồng ghép tự nhiên thông tin đó (ví dụ: "Dựa trên kết quả khám phá bản thân, em có xu hướng nhóm Xã hội và Nghệ thuật...").
-   - Nếu học sinh CHƯA thực hiện khảo sát: KHÔNG được tự bịa kết quả khảo sát. Khuyến khích học sinh làm bài trắc nghiệm 60 câu trong mục "Khám phá bản thân".
+   - Nếu học sinh CHƯA thực hiện khảo sát: KHÔNG được tự bịa kết quả khảo sát. Khuyến khích học sinh làm bài trắc nghiệm 24 câu trong mục "Khám phá bản thân".
    - Khi học sinh hỏi thế mạnh cụ thể (ví dụ: giỏi Văn, Sử, Anh, không thích Toán):
      Đưa ra các hướng ngành có lý giải rõ ràng: Báo chí - Truyền thông, Ngôn ngữ, Luật, Sư phạm (Văn/Sử/Anh), Du lịch - Khách sạn, Quan hệ quốc tế, Tâm lý học, Công tác xã hội... Phân tích cơ hội việc làm và lưu ý thực tế.
    - Cấu trúc tư vấn rõ ràng, súc tích:
@@ -725,6 +737,7 @@ export interface StreamChamAiOptions {
 export async function streamChamAiChat(options: StreamChamAiOptions): Promise<void> {
   const { message, language = 'vi', profile, currentContext, chatHistory, onStart, onChunk, onError, onDone, signal } = options;
 
+  await refreshGroundingCatalog().catch(()=>{});
   const requestId = 'req_' + Date.now().toString(36) + '_' + Math.random().toString(36).substring(2, 6);
   const startTime = Date.now();
 

@@ -1,3 +1,4 @@
+import { authenticatedUser } from '../src/server/database.ts';
 import { streamChamAiChat } from '../src/server/chamAiService.ts';
 
 // Vercel Serverless Function handler for SSE streaming
@@ -25,6 +26,7 @@ export default async function handler(req: any, res: any) {
   }
 
   try {
+    await authenticatedUser(req);
     const body = typeof req.body === 'string' ? JSON.parse(req.body) : req.body || {};
     const { message, language, profile, currentContext, chatHistory } = body;
 
@@ -71,6 +73,7 @@ export default async function handler(req: any, res: any) {
       },
     });
   } catch (error: any) {
+    if(error?.status === 401) return res.status(401).json({success:false,message:'Vui lòng đăng nhập.'});
     console.error('Unhandled Vercel streaming error:', error);
     res.write(
       `data: ${JSON.stringify({

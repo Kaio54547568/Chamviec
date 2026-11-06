@@ -1,3 +1,6 @@
+import { useAuth } from './components/AuthContext';
+import { authFetch } from './utils/authSession';
+import { DEFAULT_PROFILE } from './utils/storage';
 /**
  * @license
  * SPDX-License-Identifier: Apache-2.0
@@ -19,12 +22,15 @@ const EnterpriseExperienceView = lazy(() => import('./components/EnterpriseExper
 const UniversityAdmissionsView = lazy(() => import('./components/UniversityAdmissionsView').then(m => ({ default: m.UniversityAdmissionsView })));
 const VideoStoriesView = lazy(() => import('./components/VideoStoriesView').then(m => ({ default: m.VideoStoriesView })));
 const ReportView = lazy(() => import('./components/ReportView').then(m => ({ default: m.ReportView })));
-const AdminView = lazy(() => import('./components/AdminView').then(m => ({ default: m.AdminView })));
+const AdminView = lazy(() => import('./components/DatabaseAdminView').then(m => ({ default: m.DatabaseAdminView })));
 const PhuongAssistantModal = lazy(() => import('./components/PhuongAssistantModal').then(m => ({ default: m.PhuongAssistantModal })));
 
 export default function App() {
   const { t, language } = useLanguage();
-  const [profile, setProfile] = useState<StudentProfile>(() => loadStudentProfile());
+  const {user,requireLogin}=useAuth();
+  const [profileReady,setProfileReady]=useState(false);
+  const [profileError,setProfileError]=useState('');
+  const [profile, setProfile] = useState<StudentProfile>(() => ({...DEFAULT_PROFILE}));
 
   const [currentTab, setCurrentTab] = useState<string>(() => {
     if (typeof window !== 'undefined') {
@@ -64,9 +70,22 @@ export default function App() {
   }, []);
 
   useEffect(() => {
-    // Keep local storage synced on change
-    saveStudentProfile(profile);
-  }, [profile]);
+    let cancelled=false;setProfileReady(false);setProfileError('');
+    setProfile({...DEFAULT_PROFILE,id:user?.id||'guest'});
+    localStorage.removeItem('cham_viec_riasec_answers');
+    if(!user)return;
+    if(sessionStorage.getItem('cham_viec_test_user')!==user.id){sessionStorage.removeItem('cham_viec_test_idem_key');sessionStorage.setItem('cham_viec_test_user',user.id);}
+    authFetch('/api/account?action=profile').then(async r=>{const d=await r.json();if(!r.ok)throw new Error(d.message);if(cancelled)return;
+      if(d.data){setProfile({...DEFAULT_PROFILE,...d.data.data,id:user.id});localStorage.setItem('cham_viec_riasec_answers',JSON.stringify(d.data.answers||{}));}
+      setProfileReady(true);
+    }).catch(()=>{if(!cancelled)setProfileError('Không tải được hồ sơ. Vui lòng tải lại trang để thử lại.');});
+    return ()=>{cancelled=true;};
+  },[user?.id]);
+  useEffect(()=>{
+    if(!user||!profileReady||profile.id!==user.id)return;
+    const timer=setTimeout(()=>{authFetch('/api/account?action=profile',{method:'PUT',headers:{'Content-Type':'application/json'},body:JSON.stringify({profile,answers:JSON.parse(localStorage.getItem('cham_viec_riasec_answers')||'{}')})}).then(r=>{if(!r.ok)setProfileError('Chưa đồng bộ được hồ sơ lên máy chủ.');}).catch(()=>setProfileError('Chưa đồng bộ được hồ sơ lên máy chủ.'));},700);
+    return ()=>clearTimeout(timer);
+  },[profile,user?.id,profileReady]);
 
   const handleOpenTask = (taskId: string) => {
     setSelectedTaskId(taskId);
@@ -79,6 +98,7 @@ export default function App() {
   };
 
   const handleAskChamAi = (question: string) => {
+    if(!requireLogin())return;
     setChamAiInitialPrompt(question);
     setIsChamAiOpen(true);
   };
@@ -90,11 +110,17 @@ export default function App() {
         currentTab={currentTab}
         setCurrentTab={handleNavigateTab}
         profile={profile}
-        onOpenAssistant={() => setIsChamAiOpen(true)}
+        onOpenAssistant={() => {if(requireLogin())setIsChamAiOpen(true);}}
       />
 
+      {profileError&&<p role="alert" className="p-3 text-rose-700">{profileError}</p>}
       {/* Main Content Area */}
-      <main className="flex-1 max-w-7xl w-full mx-auto px-4 sm:px-6 lg:px-8 pt-6 sm:pt-8">
+      <main onClickCapture={e=>{
+        const element=e.target as HTMLElement;const action=element.closest('button,input,select,textarea');if(!action)return;
+        const label=(action.textContent||'')+' '+(action.getAttribute('aria-label')||'')+' '+(action.getAttribute('title')||'');
+        const mutation=currentTab==='profile'||currentTab==='tasks'||/Lưu|Bỏ lưu|Save|Unsave|Đăng ký|Register|Rất hợp|Chưa hợp|Xuất|Export|Tải|Download|In báo cáo|Print/.test(label);
+        if(mutation&&!user){e.preventDefault();e.stopPropagation();requireLogin();}
+      }} className="flex-1 max-w-7xl w-full mx-auto px-4 sm:px-6 lg:px-8 pt-6 sm:pt-8">
         <Suspense fallback={<p role="status" className="py-10 text-center">{language === 'vi' ? 'Đang tải…' : 'Loading…'}</p>}>
         {currentTab === 'home' && (
           <HomeView
@@ -107,8 +133,9 @@ export default function App() {
           />
         )}
 
-        {currentTab === 'profile' && (
-          <ProfileView
+        {currentTab === 'profile' && user && !profileReady && <p>Đang tải hồ sơ…</p>}
+        {currentTab === 'profile' && (!user || profileReady) && (
+          <ProfileView key={user?.id || 'guest'}
             profile={profile}
             setProfile={setProfile}
             onGoToRecommendations={() => handleNavigateTab('recommendations')}
@@ -158,17 +185,18 @@ export default function App() {
           <ReportView profile={profile} />
         )}
 
-        {currentTab === 'admin' && (
+        {currentTab === 'admin' && user?.role !== 'admin' && <p className="p-6">Chỉ quản trị viên có quyền truy cập trang này.</p>}
+        {currentTab === 'admin' && user?.role === 'admin' && (
           <AdminView />
         )}
         </Suspense>
       </main>
 
       {/* CHẠM AI — Trợ lý hướng nghiệp (Floating Widget & Popup Drawer) */}
-      <ChamAiChatbot
+      <ChamAiChatbot key={user?.id || 'guest'}
         isOpen={isChamAiOpen}
         onClose={() => setIsChamAiOpen(false)}
-        onOpen={() => setIsChamAiOpen(true)}
+        onOpen={() => {if(requireLogin())setIsChamAiOpen(true);}}
         profile={profile}
         currentContext={currentTab}
         initialPrompt={chamAiInitialPrompt}

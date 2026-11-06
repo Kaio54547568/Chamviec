@@ -1,7 +1,7 @@
-import { EnterpriseBatch, EnterpriseRegistration, TestQuotaInfo } from '../types';
+import { EnterpriseBatch } from '../types';
 
-// Curated batches with genuine partner institutions across Vietnam
-export let ENTERPRISE_BATCHES: EnterpriseBatch[] = [
+// Initial 2027 program catalog; runtime bookings are stored in Supabase.
+export const ENTERPRISE_BATCHES: EnterpriseBatch[] = [
   {
     id: 'batch-fpt-01',
     code: 'CV-BATCH-TECH-01',
@@ -10,12 +10,12 @@ export let ENTERPRISE_BATCHES: EnterpriseBatch[] = [
     careerCategory: 'Công nghệ thông tin',
     location: 'Hà Nội',
     address: 'F-Ville 2, Khu Công nghệ cao Hòa Lạc, Thạch Thất, Hà Nội',
-    scheduleDate: '2025-04-19',
+    scheduleDate: '2027-04-19',
     timeRange: '08:30 - 16:30',
-    deadlineDate: '2025-04-12',
+    deadlineDate: '2027-04-12',
     targetGrade: 'Lớp 10 - 12',
     totalSlots: 35,
-    registeredSlots: 18,
+    registeredSlots: 0,
     ticketPriceVND: 0, // Sponsored
     inclusions: [
       'Xe đưa đón học sinh 2 chiều từ trung tâm Hà Nội đến Hòa Lạc',
@@ -52,12 +52,12 @@ export let ENTERPRISE_BATCHES: EnterpriseBatch[] = [
     careerCategory: 'Kỹ thuật - Chế tạo',
     location: 'Hải Phòng',
     address: 'Khu công nghiệp Đình Vũ - Cát Hải, Hải Phòng',
-    scheduleDate: '2025-05-10',
+    scheduleDate: '2027-05-10',
     timeRange: '08:00 - 17:00',
-    deadlineDate: '2025-05-01',
+    deadlineDate: '2027-05-01',
     targetGrade: 'Lớp 11 - 12',
     totalSlots: 30,
-    registeredSlots: 12,
+    registeredSlots: 0,
     ticketPriceVND: 150000,
     inclusions: [
       'Xe ô tô chất lượng cao đưa đón từ Hà Nội & Hải Phòng',
@@ -94,12 +94,12 @@ export let ENTERPRISE_BATCHES: EnterpriseBatch[] = [
     careerCategory: 'Nông nghiệp công nghệ cao',
     location: 'Lâm Đồng',
     address: 'Xã Đạ Ròn, Huyện Đơn Dương, Tỉnh Lâm Đồng',
-    scheduleDate: '2025-05-17',
+    scheduleDate: '2027-05-17',
     timeRange: '08:30 - 16:00',
-    deadlineDate: '2025-05-05',
+    deadlineDate: '2027-05-05',
     targetGrade: 'Lớp 10 - 12',
     totalSlots: 25,
-    registeredSlots: 14,
+    registeredSlots: 0,
     ticketPriceVND: 100000,
     inclusions: [
       'Xe đưa đón từ bến xe Đà Lạt đến trang trại công nghệ cao Đơn Dương',
@@ -135,12 +135,12 @@ export let ENTERPRISE_BATCHES: EnterpriseBatch[] = [
     careerCategory: 'Y tế & Sức khỏe',
     location: 'Hà Nội',
     address: '458 Minh Khai, Khu đô thị Times City, Hai Bà Trưng, Hà Nội',
-    scheduleDate: '2025-05-24',
+    scheduleDate: '2027-05-24',
     timeRange: '09:00 - 16:30',
-    deadlineDate: '2025-05-12',
+    deadlineDate: '2027-05-12',
     targetGrade: 'Lớp 11 - 12',
     totalSlots: 20,
-    registeredSlots: 20,
+    registeredSlots: 0,
     ticketPriceVND: 200000,
     inclusions: [
       'Áo choàng thực hành và khẩu trang kháng khuẩn y tế',
@@ -160,8 +160,8 @@ export let ENTERPRISE_BATCHES: EnterpriseBatch[] = [
       { time: '14:00', activity: 'Tham quan phòng xét nghiệm sinh hóa tự động hóa' },
       { time: '15:30', activity: 'Tọa đàm: Y đức và lộ trình đào tạo trường Y kéo dài 6-9 năm' }
     ],
-    cancellationPolicy: 'Đã hết chỗ. Danh sách chờ nhận đăng ký dự phòng.',
-    status: 'HET_CHO',
+    cancellationPolicy: 'Học sinh có thể liên hệ ban tổ chức để điều chỉnh đăng ký.',
+    status: 'DANG_MO',
     contactPerson: 'Bác sĩ Trần Khánh Linh',
     contactPhone: '024.3974.3556',
     contactEmail: 'vinmec-med@chamviec.vn',
@@ -169,165 +169,3 @@ export let ENTERPRISE_BATCHES: EnterpriseBatch[] = [
     imageAlt: 'Không gian phòng khám và trung tâm mô phỏng y khoa bệnh viện quốc tế'
   }
 ];
-
-export let ENTERPRISE_REGISTRATIONS: EnterpriseRegistration[] = [
-  {
-    registrationCode: 'CV-EXP-104928',
-    batchId: 'batch-fpt-01',
-    batchName: 'Một ngày làm Kỹ sư AI & Phát triển Phần mềm',
-    enterpriseName: 'FPT Software',
-    studentName: 'Nguyễn Văn Minh',
-    schoolName: 'THPT Chu Văn An',
-    grade: 'Lớp 11',
-    studentEmail: 'minh.nguyen11@gmail.com',
-    studentPhone: '0912345678',
-    isInternationalStudent: false,
-    guardianName: 'Nguyễn Văn Hùng',
-    guardianPhone: '0903456789',
-    specialRequests: 'Quan tâm hướng ngành Khoa học Máy tính',
-    registeredAt: '2025-02-20T08:30:00Z',
-    status: 'DA_XAC_NHAN',
-    ticketPriceVND: 0,
-  },
-  {
-    registrationCode: 'CV-EXP-772194',
-    batchId: 'batch-vinfast-01',
-    batchName: 'Tham quan Tổ hợp Nhà máy Sản xuất Ô tô Điện Thông minh',
-    enterpriseName: 'VinFast Auto',
-    studentName: 'Trần Bảo Ngọc',
-    schoolName: 'THPT Chuyên Lê Hồng Phong',
-    grade: 'Lớp 12',
-    studentEmail: 'ngoc.tran@intl-student.org',
-    studentPhone: '',
-    isInternationalStudent: true,
-    guardianName: 'Trần Hữu Long',
-    guardianPhone: '+84918273645',
-    specialRequests: 'Học sinh quốc tế, mong muốn được nghe thuyết minh song ngữ',
-    registeredAt: '2025-02-22T10:15:00Z',
-    status: 'DA_TIEP_NHAN',
-    ticketPriceVND: 150000,
-  }
-];
-
-// In-memory test quota tracker
-interface UserQuotaRecord {
-  email: string;
-  totalAttempts: number;
-  freeAttemptUsed: boolean;
-  retakeCredits: number;
-  history: Array<{
-    attemptNumber: number;
-    timestamp: string;
-    riasecScores: Record<string, number>;
-    idempotencyKey?: string;
-  }>;
-}
-
-const USER_QUOTAS = new Map<string, UserQuotaRecord>();
-
-export function getUserQuota(email: string): TestQuotaInfo {
-  const cleanEmail = (email || 'guest@chamviec.vn').toLowerCase().trim();
-  let user = USER_QUOTAS.get(cleanEmail);
-
-  if (!user) {
-    user = {
-      email: cleanEmail,
-      totalAttempts: 0,
-      freeAttemptUsed: false,
-      retakeCredits: 0,
-      history: []
-    };
-    USER_QUOTAS.set(cleanEmail, user);
-  }
-
-  return {
-    email: user.email,
-    verified: true,
-    totalAttempts: user.totalAttempts,
-    freeAttemptUsed: user.freeAttemptUsed,
-    retakeCredits: user.retakeCredits,
-    feePerRetakeVND: 50000,
-    paymentGatewayStatus: 'NOT_CONFIGURED',
-    noticeMessage: 'Chính sách: Lần 1 miễn phí hoàn toàn. Từ lần 2 trở đi cần 1 tín chỉ khảo sát (50.000 VNĐ). Cổng thanh toán trực tuyến hiện đang tích hợp; học sinh có thể xem lại kết quả cũ hoặc liên hệ nhà trường để nhận mã miễn phí.'
-  };
-}
-
-export function registerTestAttempt(params: {
-  email: string;
-  idempotencyKey: string;
-  riasecScores: Record<string, number>;
-}): {
-  allowed: boolean;
-  attemptNumber?: number;
-  requiresCredit?: boolean;
-  feeVND?: number;
-  errorMessage?: string;
-} {
-  const cleanEmail = (params.email || 'guest@chamviec.vn').toLowerCase().trim();
-  let user = USER_QUOTAS.get(cleanEmail);
-
-  if (!user) {
-    user = {
-      email: cleanEmail,
-      totalAttempts: 0,
-      freeAttemptUsed: false,
-      retakeCredits: 0,
-      history: []
-    };
-    USER_QUOTAS.set(cleanEmail, user);
-  }
-
-  // Idempotency check: if attempt with same idempotencyKey already submitted, return past success without consuming quota
-  const existing = user.history.find(h => h.idempotencyKey === params.idempotencyKey);
-  if (existing) {
-    return {
-      allowed: true,
-      attemptNumber: existing.attemptNumber
-    };
-  }
-
-  // Check 1st attempt
-  if (!user.freeAttemptUsed && user.totalAttempts === 0) {
-    user.totalAttempts += 1;
-    user.freeAttemptUsed = true;
-    const rec = {
-      attemptNumber: 1,
-      timestamp: new Date().toISOString(),
-      riasecScores: params.riasecScores,
-      idempotencyKey: params.idempotencyKey
-    };
-    user.history.push(rec);
-    return { allowed: true, attemptNumber: 1 };
-  }
-
-  // 2nd attempt onwards
-  if (user.retakeCredits > 0) {
-    user.retakeCredits -= 1;
-    user.totalAttempts += 1;
-    const rec = {
-      attemptNumber: user.totalAttempts,
-      timestamp: new Date().toISOString(),
-      riasecScores: params.riasecScores,
-      idempotencyKey: params.idempotencyKey
-    };
-    user.history.push(rec);
-    return { allowed: true, attemptNumber: user.totalAttempts };
-  }
-
-  // No credit
-  return {
-    allowed: false,
-    requiresCredit: true,
-    feeVND: 50000,
-    errorMessage: 'Bạn đã hoàn thành lượt khảo sát miễn phí đầu tiên. Từ lần làm thứ 2 trở đi cần 1 tín chỉ khảo sát (50.000 VNĐ). Cổng thanh toán trực tuyến hiện đang tích hợp, vui lòng liên hệ ban quản trị để nhận mã kích hoạt.'
-  };
-}
-
-export function grantCredit(email: string, amount: number = 1): TestQuotaInfo {
-  const info = getUserQuota(email);
-  const user = USER_QUOTAS.get((email || '').toLowerCase().trim());
-  if (user) {
-    user.retakeCredits += amount;
-  }
-  return getUserQuota(email);
-}

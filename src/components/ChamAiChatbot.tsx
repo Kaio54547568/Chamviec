@@ -1,3 +1,4 @@
+import { authFetch } from '../utils/authSession';
 import React, { useState, useRef, useEffect } from 'react';
 import { 
   Bot, 
@@ -247,7 +248,7 @@ I am here to assist you with:
       // Try SSE Streaming endpoint first (/api/cham-ai/stream)
       let streamWorked = false;
       try {
-        const streamResponse = await fetch('/api/cham-ai/stream', {
+        const streamResponse = await authFetch('/api/cham-ai/stream', {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
           signal: controller.signal,
@@ -340,7 +341,7 @@ I am here to assist you with:
 
       // Non-streaming fallback: /api/cham-ai
       if (!streamWorked) {
-        const response = await fetch('/api/cham-ai', {
+        const response = await authFetch('/api/cham-ai', {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
           signal: controller.signal,

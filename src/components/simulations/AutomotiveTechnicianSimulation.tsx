@@ -1,3 +1,6 @@
+import { beveledBox } from './labGeometry';
+import { createLabStudio, studioSurface } from './labStudio';
+import { LabToolbar } from './LabToolbar';
 import React, { useEffect, useRef, useState } from 'react';
 import * as THREE from 'three';
 import { 
@@ -50,6 +53,7 @@ export const AutomotiveTechnicianSimulation: React.FC<AutomotiveTechnicianSimula
 }) => {
   const { language } = useLanguage();
   const mountRef = useRef<HTMLDivElement>(null);
+  const [webglError,setWebglError]=useState(false);
 
   // 3D Scene Refs
   const sceneRef = useRef<THREE.Scene | null>(null);
@@ -231,6 +235,9 @@ export const AutomotiveTechnicianSimulation: React.FC<AutomotiveTechnicianSimula
     }
   ]);
 
+  const liveEngine=useRef(engineRunning); liveEngine.current=engineRunning;
+  const liveComponents=useRef(components); liveComponents.current=components;
+
   // Kolb Reflection state
   const [reflectionInterest, setReflectionInterest] = useState<number>(5);
   const [reflectionComment, setReflectionComment] = useState<string>('');
@@ -289,7 +296,8 @@ export const AutomotiveTechnicianSimulation: React.FC<AutomotiveTechnicianSimula
     updateCameraPosition();
 
     // 3. Renderer
-    const renderer = new THREE.WebGLRenderer({ antialias: true, powerPreference: 'high-performance' });
+    let renderer:THREE.WebGLRenderer;
+    try { renderer = new THREE.WebGLRenderer({ antialias: true, powerPreference: 'high-performance' }); } catch { setWebglError(true); return; }
     renderer.setSize(width, height);
     renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
     renderer.shadowMap.enabled = true;
@@ -324,11 +332,7 @@ export const AutomotiveTechnicianSimulation: React.FC<AutomotiveTechnicianSimula
 
     // 5. Workshop Garage Floor
     const floorGeo = new THREE.PlaneGeometry(30, 30);
-    const floorMat = new THREE.MeshStandardMaterial({ 
-      color: 0x111827, 
-      roughness: 0.85, 
-      metalness: 0.2 
-    });
+    const floorMat = studioSurface(0x40505a, 0.7);
     const floor = new THREE.Mesh(floorGeo, floorMat);
     floor.rotation.x = -Math.PI / 2;
     floor.position.y = -0.55;
@@ -341,7 +345,7 @@ export const AutomotiveTechnicianSimulation: React.FC<AutomotiveTechnicianSimula
     scene.add(grid);
 
     // Lift Service Pillars
-    const liftPillarGeo = new THREE.BoxGeometry(0.3, 3.5, 0.3);
+    const liftPillarGeo = beveledBox(0.3, 3.5, 0.3);
     const liftMat = new THREE.MeshStandardMaterial({ color: 0x3b82f6, metalness: 0.6, roughness: 0.4 });
     const liftLeft = new THREE.Mesh(liftPillarGeo, liftMat);
     liftLeft.position.set(-2.2, 1.2, 0);
@@ -359,7 +363,8 @@ export const AutomotiveTechnicianSimulation: React.FC<AutomotiveTechnicianSimula
     engineGroupRef.current = carRootGroup;
 
     // --- CAR CHASSIS & FRONT BODY ---
-    const carPaintMat = new THREE.MeshStandardMaterial({ 
+    const carPaintMat = new THREE.MeshPhysicalMaterial({
+      clearcoat: 1, clearcoatRoughness: 0.16, 
       color: 0x0284c7, // Metallic Ocean Blue
       metalness: 0.8, 
       roughness: 0.25 
@@ -372,7 +377,7 @@ export const AutomotiveTechnicianSimulation: React.FC<AutomotiveTechnicianSimula
     });
 
     // Lower front chassis
-    const chassisGeo = new THREE.BoxGeometry(2.4, 0.5, 3.8);
+    const chassisGeo = beveledBox(2.4, 0.5, 3.8);
     const chassis = new THREE.Mesh(chassisGeo, bodyFrameMat);
     chassis.position.set(0, -0.2, 0.4);
     chassis.castShadow = true;
@@ -380,7 +385,7 @@ export const AutomotiveTechnicianSimulation: React.FC<AutomotiveTechnicianSimula
     carRootGroup.add(chassis);
 
     // Left and Right Fenders
-    const fenderGeo = new THREE.BoxGeometry(0.35, 0.8, 2.2);
+    const fenderGeo = beveledBox(0.35, 0.8, 2.2);
     const leftFender = new THREE.Mesh(fenderGeo, carPaintMat);
     leftFender.position.set(-1.25, 0.4, 1.1);
     leftFender.castShadow = true;
@@ -392,20 +397,20 @@ export const AutomotiveTechnicianSimulation: React.FC<AutomotiveTechnicianSimula
     carRootGroup.add(rightFender);
 
     // Front Bumper & Grille
-    const bumperGeo = new THREE.BoxGeometry(2.6, 0.6, 0.4);
+    const bumperGeo = beveledBox(2.6, 0.6, 0.4);
     const bumper = new THREE.Mesh(bumperGeo, carPaintMat);
     bumper.position.set(0, 0.1, 2.3);
     bumper.castShadow = true;
     carRootGroup.add(bumper);
 
-    const grilleGeo = new THREE.BoxGeometry(1.6, 0.35, 0.05);
+    const grilleGeo = beveledBox(1.6, 0.35, 0.05);
     const grilleMat = new THREE.MeshStandardMaterial({ color: 0x0f172a, roughness: 0.9 });
     const grille = new THREE.Mesh(grilleGeo, grilleMat);
     grille.position.set(0, 0.15, 2.51);
     carRootGroup.add(grille);
 
     // Front Headlight lenses
-    const lightLensGeo = new THREE.BoxGeometry(0.4, 0.2, 0.1);
+    const lightLensGeo = beveledBox(0.4, 0.2, 0.1);
     const lightLensMat = new THREE.MeshStandardMaterial({
       color: 0xf8fafc,
       emissive: 0x38bdf8,
@@ -422,7 +427,7 @@ export const AutomotiveTechnicianSimulation: React.FC<AutomotiveTechnicianSimula
     carRootGroup.add(rightLight);
 
     // Open Hood (Capo xe mở nghiêng lên)
-    const hoodGeo = new THREE.BoxGeometry(2.1, 0.06, 1.8);
+    const hoodGeo = beveledBox(2.1, 0.06, 1.8);
     const hood = new THREE.Mesh(hoodGeo, carPaintMat);
     hood.position.set(0, 1.5, 0.4);
     hood.rotation.x = -Math.PI / 4.8; // Angled open
@@ -455,6 +460,23 @@ export const AutomotiveTechnicianSimulation: React.FC<AutomotiveTechnicianSimula
     wheelRight.castShadow = true;
     carRootGroup.add(wheelRight);
 
+    // Alloy hubs and tread bands give the wheels a readable, realistic silhouette.
+    for(const side of [-1,1]){
+      const hub=new THREE.Mesh(new THREE.CylinderGeometry(0.29,0.29,0.04,24),rimMat);
+      hub.rotation.z=Math.PI/2;hub.position.set(side*1.48,-0.1,1.4);carRootGroup.add(hub);
+      const center=new THREE.Mesh(new THREE.CylinderGeometry(0.09,0.09,0.055,16),bodyFrameMat);
+      center.rotation.z=Math.PI/2;center.position.set(side*1.51,-0.1,1.4);carRootGroup.add(center);
+      for(let i=0;i<8;i++){
+        const angle=i*Math.PI/4;
+        const lug=new THREE.Mesh(new THREE.SphereGeometry(0.023,6,6),bodyFrameMat);
+        lug.position.set(side*1.51,-0.1+Math.sin(angle)*0.19,1.4+Math.cos(angle)*0.19);carRootGroup.add(lug);
+      }
+      for(const offset of [-0.1,0,0.1]){
+        const tread=new THREE.Mesh(new THREE.TorusGeometry(0.452,0.012,6,32),bodyFrameMat);
+        tread.rotation.y=Math.PI/2;tread.position.set(side*1.3+offset,-0.1,1.4);carRootGroup.add(tread);
+      }
+    }
+
     // --- ENGINE COMPARTMENT COMPONENTS (Interactive clickable meshes) ---
     const clickableList: THREE.Mesh[] = [];
 
@@ -462,14 +484,14 @@ export const AutomotiveTechnicianSimulation: React.FC<AutomotiveTechnicianSimula
     const engineBlockGroup = new THREE.Group();
     engineBlockGroup.position.set(0, 0.3, 0.9);
 
-    const blockGeo = new THREE.BoxGeometry(0.9, 0.55, 0.85);
+    const blockGeo = beveledBox(0.9, 0.55, 0.85);
     const blockMat = new THREE.MeshStandardMaterial({ color: 0x475569, metalness: 0.8, roughness: 0.35 });
     const engineBlock = new THREE.Mesh(blockGeo, blockMat);
     engineBlock.castShadow = true;
     engineBlockGroup.add(engineBlock);
 
     // Valve cover
-    const valveGeo = new THREE.BoxGeometry(0.85, 0.14, 0.8);
+    const valveGeo = beveledBox(0.85, 0.14, 0.8);
     const valveMat = new THREE.MeshStandardMaterial({ color: 0xb91c1c, metalness: 0.5, roughness: 0.3 }); // Red valve head
     const valveCover = new THREE.Mesh(valveGeo, valveMat);
     valveCover.position.y = 0.33;
@@ -486,7 +508,7 @@ export const AutomotiveTechnicianSimulation: React.FC<AutomotiveTechnicianSimula
     carRootGroup.add(engineBlockGroup);
 
     // 2. 12V BATTERY (Ắc-quy xe) - Clickable Target
-    const batteryGeo = new THREE.BoxGeometry(0.48, 0.42, 0.38);
+    const batteryGeo = beveledBox(0.48, 0.42, 0.38);
     const batteryMat = new THREE.MeshStandardMaterial({ 
       color: 0x1e3a8a, 
       roughness: 0.4,
@@ -513,7 +535,7 @@ export const AutomotiveTechnicianSimulation: React.FC<AutomotiveTechnicianSimula
     batteryMesh.add(negTerm);
 
     // 3. AIR FILTER BOX (Hộp lọc gió) - Clickable Target
-    const airFilterGeo = new THREE.BoxGeometry(0.55, 0.3, 0.45);
+    const airFilterGeo = beveledBox(0.55, 0.3, 0.45);
     const airFilterMat = new THREE.MeshStandardMaterial({ 
       color: 0x27272a, 
       roughness: 0.6 
@@ -546,7 +568,7 @@ export const AutomotiveTechnicianSimulation: React.FC<AutomotiveTechnicianSimula
       plugsGroup.add(coil);
     }
     // Invisible click bounding box for spark plugs
-    const sparkClickGeo = new THREE.BoxGeometry(0.8, 0.2, 0.3);
+    const sparkClickGeo = beveledBox(0.8, 0.2, 0.3);
     const sparkClickMat = new THREE.MeshBasicMaterial({ visible: false });
     const sparkClickMesh = new THREE.Mesh(sparkClickGeo, sparkClickMat);
     sparkClickMesh.userData = { componentId: 'spark_plugs' };
@@ -595,7 +617,7 @@ export const AutomotiveTechnicianSimulation: React.FC<AutomotiveTechnicianSimula
     stick.position.y = -0.12;
     dipstickGroup.add(stick);
 
-    const dipClickGeo = new THREE.BoxGeometry(0.2, 0.3, 0.2);
+    const dipClickGeo = beveledBox(0.2, 0.3, 0.2);
     const dipClickMat = new THREE.MeshBasicMaterial({ visible: false });
     const dipClickMesh = new THREE.Mesh(dipClickGeo, dipClickMat);
     dipClickMesh.userData = { componentId: 'oil_dipstick' };
@@ -664,7 +686,7 @@ export const AutomotiveTechnicianSimulation: React.FC<AutomotiveTechnicianSimula
         if (hitObject?.userData?.componentId) {
           const compId = hitObject.userData.componentId;
           setSelectedComponentId(compId);
-          const found = components.find((c) => c.id === compId);
+          const found = liveComponents.current.find((c) => c.id === compId);
           if (found) {
             const cText = getCompText(found);
             setActiveToast({
@@ -692,12 +714,13 @@ export const AutomotiveTechnicianSimulation: React.FC<AutomotiveTechnicianSimula
 
     // --- ANIMATION LOOP ---
     let vibrationClock = 0;
+    const studio = createLabStudio(scene, renderer, camera, mountRef.current!, 'automotive');
     const animate = () => {
       animFrameIdRef.current = requestAnimationFrame(animate);
 
       // Engine Vibration when running
       if (engineGroupRef.current) {
-        if (engineRunning) {
+        if (liveEngine.current && !studio.reducedMotion) {
           vibrationClock += 0.35;
           engineGroupRef.current.position.y = Math.sin(vibrationClock) * 0.012;
           engineGroupRef.current.position.x = Math.cos(vibrationClock * 1.5) * 0.006;
@@ -710,7 +733,7 @@ export const AutomotiveTechnicianSimulation: React.FC<AutomotiveTechnicianSimula
         }
       }
 
-      renderer.render(scene, camera);
+      studio.render();
     };
     animate();
 
@@ -739,10 +762,11 @@ export const AutomotiveTechnicianSimulation: React.FC<AutomotiveTechnicianSimula
 
       if (rendererRef.current && rendererRef.current.domElement) {
         container.removeChild(rendererRef.current.domElement);
+        studio.dispose();
         rendererRef.current.dispose();
       }
     };
-  }, [engineRunning]);
+  }, []);
 
   // Handle checking & fixing a component
   const handleCheckAndFixComponent = (componentId: string) => {
@@ -851,7 +875,9 @@ export const AutomotiveTechnicianSimulation: React.FC<AutomotiveTechnicianSimula
   const isAllCompleted = completedCount === components.length;
 
   return (
-    <div className={`relative flex flex-col bg-slate-950 text-white rounded-3xl overflow-hidden shadow-2xl border border-slate-800 ${embedded ? 'w-full h-full' : 'max-w-6xl mx-auto my-6'}`}>
+    <div role="dialog" aria-modal="true" aria-label="AUTOMOTIVE WORKSHOP" className={`lab-session lab-automotive relative flex flex-col bg-slate-950 text-white rounded-3xl overflow-hidden shadow-2xl border border-slate-800 ${embedded ? 'w-full h-full' : 'max-w-6xl mx-auto my-6'}`}>
+      <LabToolbar name="AUTOMOTIVE WORKSHOP" onClose={onClose} />
+      {webglError&&<p role="alert" className="lab-webgl-error">{language==='vi'?'Thiết bị không khởi tạo được đồ họa 3D. Bạn vẫn có thể đọc hướng dẫn và sử dụng bảng điều khiển bên dưới. Hãy thử trình duyệt hỗ trợ WebGL để xem mô hình.':'3D graphics are unavailable on this device. Instructions and the control panel remain accessible. Try a WebGL-capable browser to view the model.'}</p>}
       {/* Top Header Bar */}
       <div className="flex items-center justify-between px-6 py-4 bg-slate-900/90 border-b border-slate-800 backdrop-blur-md z-20">
         <div className="flex items-center gap-3">
@@ -902,7 +928,7 @@ export const AutomotiveTechnicianSimulation: React.FC<AutomotiveTechnicianSimula
       <div className="relative flex-1 grid grid-cols-1 lg:grid-cols-12 min-h-[580px]">
         {/* 3D Canvas Area (Left / Center) */}
         <div className="relative lg:col-span-8 flex flex-col bg-slate-950">
-          <div ref={mountRef} className="w-full h-[400px] sm:h-[480px] lg:h-full cursor-grab active:cursor-grabbing relative">
+          <div ref={mountRef} className="lab-viewport w-full h-[400px] sm:h-[480px] lg:h-full cursor-grab active:cursor-grabbing relative">
             {/* Overlay 3D Navigation Controls */}
             <div className="absolute top-4 left-4 z-10 flex flex-wrap gap-1.5 bg-slate-900/80 p-1.5 rounded-2xl border border-slate-700/70 backdrop-blur-md text-xs">
               <button

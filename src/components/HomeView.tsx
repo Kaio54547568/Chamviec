@@ -1,3 +1,4 @@
+import { enterpriseCatalog } from '../utils/catalog';
 import React, { useState } from 'react';
 import {
   Compass,
@@ -50,77 +51,12 @@ export const HomeView: React.FC<HomeViewProps> = ({
   const isEn = language === 'en';
   const [selectedCategory, setSelectedCategory] = useState<string>('ALL');
 
-  const featuredEnterprises = isEn
-    ? [
-        {
-          id: 'ent-1',
-          name: 'Half-Day Job Shadowing: Observing AI & Software Engineers',
-          partner: 'FPT Software Academy & Hola Park',
-          location: 'Hoa Lac High-Tech Park, Hanoi',
-          date: 'Saturday, Nov 15, 2026',
-          slotsLeft: 4,
-          totalSlots: 25,
-          badge: 'Information Technology',
-          color: 'teal',
-        },
-        {
-          id: 'ent-2',
-          name: 'Factory Tour: Exploring Robotics & Electric Vehicle Assembly',
-          partner: 'VinFast Manufacturing Complex & Vocational Center',
-          location: 'Cat Hai, Hai Phong',
-          date: 'Sunday, Nov 23, 2026',
-          slotsLeft: 7,
-          totalSlots: 30,
-          badge: 'Mechanical & Electrical Eng.',
-          color: 'blue',
-        },
-        {
-          id: 'ent-3',
-          name: 'Studio Experience: Live Television Newsroom & Control Room',
-          partner: 'Educational TV Production Center & Media Academy',
-          location: 'Ba Dinh, Hanoi',
-          date: 'Saturday, Dec 05, 2026',
-          slotsLeft: 3,
-          totalSlots: 20,
-          badge: 'Media & Journalism',
-          color: 'amber',
-        },
-      ]
-    : [
-        {
-          id: 'ent-1',
-          name: 'Half-day Job Shadowing: Quan sát Kỹ sư Phần mềm & AI',
-          partner: 'FPT Software Academy & Hola Park',
-          location: 'Khu CNC Hòa Lạc, Hà Nội',
-          date: 'Thứ Bảy, 15/11/2026',
-          slotsLeft: 4,
-          totalSlots: 25,
-          badge: 'Công nghệ thông tin',
-          color: 'teal',
-        },
-        {
-          id: 'ent-2',
-          name: 'Factory Tour: Khám phá Dây chuyền Robot & Kỹ thuật Ô tô Điện',
-          partner: 'Tổ hợp Sản xuất VinFast & Trung tâm Đào tạo Nghề',
-          location: 'Cát Hải, Hải Phòng',
-          date: 'Chủ Nhật, 23/11/2026',
-          slotsLeft: 7,
-          totalSlots: 30,
-          badge: 'Kỹ thuật Cơ - Điện',
-          color: 'blue',
-        },
-        {
-          id: 'ent-3',
-          name: 'Trải nghiệm Trường quay: Quy trình Sản xuất Bản tin Truyền hình',
-          partner: 'Trung tâm Sản xuất Truyền hình Giáo dục & Học viện Báo chí',
-          location: 'Ba Đình, Hà Nội',
-          date: 'Thứ Bảy, 05/12/2026',
-          slotsLeft: 3,
-          totalSlots: 20,
-          badge: 'Truyền thông & Báo chí',
-          color: 'amber',
-        },
-      ];
+  const featuredEnterprises = enterpriseCatalog.slice(0,3).map((batch,index)=>({
+    id:batch.id,name:batch.programName,partner:batch.enterpriseName,location:batch.location,
+    date:new Date(`${batch.scheduleDate}T12:00:00+07:00`).toLocaleDateString(isEn?'en-US':'vi-VN'),
+    slotsLeft:Math.max(0,batch.totalSlots-batch.registeredSlots),totalSlots:batch.totalSlots,
+    badge:batch.careerCategory,color:['teal','blue','amber'][index],
+  }));
 
   const careerCategories = [
     {
@@ -261,8 +197,8 @@ export const HomeView: React.FC<HomeViewProps> = ({
                 <CheckCircle className="w-4 h-4 text-emerald-400 shrink-0" />
                 <span>
                   {isEn
-                    ? '60 Scientific RIASEC Questions'
-                    : '60 Câu hỏi RIASEC khoa học'}
+                    ? '24 Scientific RIASEC Questions'
+                    : '24 Câu hỏi RIASEC khoa học'}
                 </span>
               </div>
               <div className="flex items-center space-x-2">
@@ -356,12 +292,12 @@ export const HomeView: React.FC<HomeViewProps> = ({
             <div className="p-5 flex-1 flex flex-col justify-between space-y-4">
               <div className="space-y-2">
                 <h3 className="text-lg font-bold text-slate-900 group-hover:text-teal-700 transition-colors">
-                  {isEn ? '60-Question Holland RIASEC Test' : 'Trắc Nghiệm 60 Câu Holland'}
+                  {isEn ? '24-Question Holland RIASEC Test' : 'Trắc Nghiệm 24 Câu Holland'}
                 </h3>
                 <p className="text-xs sm:text-sm text-slate-600 leading-relaxed">
                   {isEn
-                    ? 'Assess 6 career interest dimensions (R-I-A-S-E-C) with 10 questions per group, combined with your favorite high school subjects and core values.'
-                    : 'Đánh giá 6 nhóm sở thích nghề nghiệp (R-I-A-S-E-C) với 10 câu hỏi/nhóm, kết hợp môn học yêu thích và điều kiện gia đình.'}
+                    ? 'Assess 6 career interest dimensions (R-I-A-S-E-C) with 4 questions per group, combined with your favorite high school subjects and core values.'
+                    : 'Đánh giá 6 nhóm sở thích nghề nghiệp (R-I-A-S-E-C) với 4 câu hỏi/nhóm, kết hợp môn học yêu thích và điều kiện gia đình.'}
                 </p>
               </div>
               <div className="flex items-center text-teal-700 font-bold text-xs sm:text-sm group-hover:translate-x-1 transition-transform">

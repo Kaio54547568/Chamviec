@@ -1,1 +1,1 @@
-export { eieHandler as default } from '../src/server/supplementalApi.ts';
+export { eieHandler as default } from '../src/server/persistentHandlers.ts';
