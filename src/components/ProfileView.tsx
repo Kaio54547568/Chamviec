@@ -1,13 +1,13 @@
 import { authFetch } from '../utils/authSession';
 import React, { useState, useEffect } from 'react';
-import { 
-  Sparkles, 
-  User, 
-  HelpCircle, 
-  RefreshCw, 
-  Download, 
-  CheckCircle2, 
-  Info, 
+import {
+  Sparkles,
+  User,
+  HelpCircle,
+  RefreshCw,
+  Download,
+  CheckCircle2,
+  Info,
   AlertCircle,
   BarChart3,
   Bookmark,
@@ -45,7 +45,6 @@ export const ProfileView: React.FC<ProfileViewProps> = ({
     }
     return {};
   });
-  const [questionPage,setQuestionPage]=useState(0);
   const [saveToast, setSaveToast] = useState(false);
 
   // Quota & Retake Policy State
@@ -82,7 +81,7 @@ export const ProfileView: React.FC<ProfileViewProps> = ({
 
   // Subject options
   const SUBJECT_OPTIONS = language === 'vi' ? [
-    'Toán học', 'Ngữ văn', 'Tiếng Anh', 'Vật lý', 'Hóa học', 'Sinh học', 
+    'Toán học', 'Ngữ văn', 'Tiếng Anh', 'Vật lý', 'Hóa học', 'Sinh học',
     'Lịch sử', 'Địa lý', 'Tin học', 'Giáo dục kinh tế & Pháp luật', 'Công nghệ', 'Mỹ thuật / Âm nhạc'
   ] : [
     'Mathematics', 'Literature', 'English', 'Physics', 'Chemistry', 'Biology',
@@ -181,7 +180,6 @@ export const ProfileView: React.FC<ProfileViewProps> = ({
       const clean = {...profile,riasecScores:{R:0,I:0,A:0,S:0,E:0,C:0},riasecAnswerCount:0};
       setProfile(clean);
       setQuestionAnswers({});
-      setQuestionPage(0);
       localStorage.removeItem('cham_viec_riasec_answers');
       sessionStorage.removeItem('cham_viec_test_idem_key');
     }
@@ -204,13 +202,13 @@ export const ProfileView: React.FC<ProfileViewProps> = ({
           <div>
             <div className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-teal-50 text-teal-900 text-xs font-bold border border-teal-200">
               <Sparkles className="w-3.5 h-3.5 text-teal-600" />
-              <span>{language === "vi" ? "Khảo sát sở thích RIASEC" : "RIASEC interest assessment"}</span>
+              <span>{language === "vi" ? "Cơ sở khoa học: RIASEC (John Holland) & SCCT" : "Scientific Framework: RIASEC (John Holland) & SCCT"}</span>
             </div>
             <h1 className="text-2xl sm:text-3xl font-extrabold text-slate-900 tracking-tight mt-1">
-              {language === 'vi' ? 'Khám phá điều bạn thích' : 'Discover your interests'}
+              {t.riasec.title}
             </h1>
             <p className="text-xs sm:text-sm text-slate-600 max-w-3xl leading-relaxed mt-1">
-              {language === 'vi' ? '24 câu hỏi về các hoạt động bạn thích. Không có đáp án đúng hoặc sai.' : '24 questions about activities you enjoy. There are no right or wrong answers.'}
+              {t.riasec.subtitle}
             </p>
           </div>
 
@@ -223,7 +221,7 @@ export const ProfileView: React.FC<ProfileViewProps> = ({
                   : 'bg-slate-100 text-slate-700 hover:bg-slate-200'
               }`}
             >
-              {language === "vi" ? "Sở thích của bạn" : "Your interests"}
+              {language === "vi" ? "1. Khảo sát câu hỏi (RIASEC)" : "1. RIASEC Assessment"}
             </button>
             <button
               onClick={() => setActiveTab('profile')}
@@ -233,13 +231,12 @@ export const ProfileView: React.FC<ProfileViewProps> = ({
                   : 'bg-slate-100 text-slate-700 hover:bg-slate-200'
               }`}
             >
-              {language === "vi" ? "Học tập & nguyện vọng" : "Studies & goals"}
+              {language === "vi" ? "2. Hồ sơ học tập & Nguyện vọng" : "2. Academic Profile & Goals"}
             </button>
           </div>
         </div>
 
         {/* Retake Policy & Attempt Quota Banner */}
-        <details className="disclosure-panel"><summary>{language==='vi'?'Lượt đầu miễn phí · Lượt tiếp theo 50.000đ':'First assessment free · Retakes 50,000 VND'}</summary>
         <div className="p-4 rounded-2xl bg-amber-50/70 border border-amber-200 text-xs text-amber-950 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3">
           <div className="flex items-start gap-2.5">
             <ShieldCheck className="w-4 h-4 text-amber-700 shrink-0 mt-0.5" />
@@ -263,7 +260,6 @@ export const ProfileView: React.FC<ProfileViewProps> = ({
           </div>
         </div>
 
-        </details>
         {quotaNotice && (
           <div className="p-3 rounded-xl bg-rose-50 border border-rose-200 text-rose-800 text-xs flex items-center gap-2">
             <AlertCircle className="w-4 h-4 shrink-0" />
@@ -326,7 +322,9 @@ export const ProfileView: React.FC<ProfileViewProps> = ({
           <div className="bg-white rounded-3xl p-6 sm:p-8 border border-slate-200/80 shadow-xs space-y-6">
             <div className="flex items-center justify-between pb-3 border-b border-slate-200">
               <span className="text-xs font-bold text-slate-800">
-                {language === 'vi' ? 'Chọn mức độ phù hợp với bạn' : 'Choose what feels right for you'}
+                {language === "vi"
+                  ? `Thang đo 5 mức độ: 1 (${t.riasec.scale1}) đến 5 (${t.riasec.scale5})`
+                  : `Rate each activity on a scale from 1 (${t.riasec.scale1}) to 5 (${t.riasec.scale5}).`}
               </span>
               <button
                 onClick={handleResetData}
@@ -337,14 +335,8 @@ export const ProfileView: React.FC<ProfileViewProps> = ({
               </button>
             </div>
 
-            <div className="survey-pagination">
-              <button type="button" disabled={questionPage===0} onClick={()=>setQuestionPage(p=>p-1)}>{language==='vi'?'Trước':'Previous'}</button>
-              <strong aria-live="polite">{language==='vi'?'Bước':'Step'} {questionPage+1} / 6</strong>
-              <button type="button" disabled={questionPage===5} onClick={()=>setQuestionPage(p=>p+1)}>{language==='vi'?'Tiếp theo':'Next'}</button>
-            </div>
             <div className="space-y-4">
-              {RIASEC_QUESTIONS.slice(questionPage*4,questionPage*4+4).map((q, pageIndex) => {
-                const idx=questionPage*4+pageIndex;
+              {RIASEC_QUESTIONS.map((q, idx) => {
                 const ans = questionAnswers[q.id] || { rating: 0, hasTried: false };
                 const info = RIASEC_INFO[q.code];
 
@@ -357,7 +349,7 @@ export const ProfileView: React.FC<ProfileViewProps> = ({
                         : 'bg-white border-slate-200 hover:border-teal-300'
                     }`}
                   >
-                    <div className="flex flex-col gap-3">
+                    <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
                       <div className="space-y-1 max-w-2xl">
                         <div className="flex items-center gap-2">
                           <span className="font-mono text-xs font-bold text-slate-400">
@@ -370,13 +362,13 @@ export const ProfileView: React.FC<ProfileViewProps> = ({
                         <p className="text-xs sm:text-sm font-bold text-slate-900 leading-snug">
                           {q.text[language]}
                         </p>
-                        <details className="text-xs text-slate-600 mt-2"><summary className="cursor-pointer">{language==='vi'?'Xem ví dụ thực tế':'See a practical example'}</summary><p className="mt-2 leading-relaxed">
-                          {language === "vi" ? q.hint.vi : q.hint.en}
-                        </p></details>
+                        <p className="text-[11px] text-slate-500 italic">
+                          {language === "vi" ? `💡 Gợi ý thực tế: ${q.hint.vi}` : `💡 Practical example: ${q.hint.en}`}
+                        </p>
                       </div>
 
                       {/* 5-point Likert Scale Buttons */}
-                      <div className="survey-question-options">
+                      <div className="flex items-center gap-1.5 shrink-0">
                         {SCALE_OPTIONS.map((btn) => (
                           <button
                             key={btn.val}
@@ -386,13 +378,13 @@ export const ProfileView: React.FC<ProfileViewProps> = ({
                             }
                             className={`px-2.5 sm:px-3 py-1.5 rounded-xl text-xs font-bold transition-all ${
                               ans.rating === btn.val
-                                ? 'bg-teal-600 text-white shadow-xs'
+                                ? 'bg-teal-600 text-white shadow-xs scale-105'
                                 : 'bg-slate-100 text-slate-600 hover:bg-slate-200 border border-slate-200'
                             }`}
-                            aria-pressed={ans.rating===btn.val}
                             title={btn.label}
                           >
-                            <span>{btn.label}</span>
+                            <span className="sm:hidden">{btn.shortLabel}</span>
+                            <span className="hidden sm:inline">{btn.label}</span>
                           </button>
                         ))}
                       </div>
@@ -402,9 +394,8 @@ export const ProfileView: React.FC<ProfileViewProps> = ({
               })}
             </div>
 
-            {questionPage<5&&<button className="action-primary mt-5" type="button" onClick={()=>{setQuestionPage(p=>p+1);window.scrollTo({top:180,behavior:'instant'});}}>{language==='vi'?'Tiếp tục 4 câu tiếp theo':'Continue to the next 4 questions'}<ArrowRight size={16}/></button>}
             {/* Bottom Next Step Trigger */}
-            {questionPage===5 && <div className="pt-6 border-t border-slate-200 flex flex-col sm:flex-row items-center justify-between gap-4">
+            <div className="pt-6 border-t border-slate-200 flex flex-col sm:flex-row items-center justify-between gap-4">
               <span className="text-xs text-slate-500">
                 {language === "vi" ? "Lần làm bài đầu tiên miễn phí 100%. Đổi ngôn ngữ giữa chừng không làm mất câu trả lời." : "First assessment is 100% free. Switching languages will not affect your answers."}
               </span>
@@ -417,7 +408,7 @@ export const ProfileView: React.FC<ProfileViewProps> = ({
                 <span>{isSubmittingAttempt ? (language === 'vi' ? 'Đang xác nhận kết quả...' : 'Validating results...') : (language === 'vi' ? 'Xem gợi ý nghề có giải thích' : 'View Recommended Careers')}</span>
                 <ArrowRight className="w-4 h-4" />
               </button>
-            </div>}
+            </div>
           </div>
         </div>
       )}

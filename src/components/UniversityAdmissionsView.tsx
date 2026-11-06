@@ -65,10 +65,9 @@ export const UniversityAdmissionsView: React.FC<UniversityAdmissionsViewProps> =
   const [selectedMajorId, setSelectedMajorId] = useState<string>(selectedMajorFilter || 'all');
   const [selectedCombination, setSelectedCombination] = useState<string>('all'); // A00, D01, etc.
   const [selectedYear, setSelectedYear] = useState<number>(2024);
-  const [resultLimit, setResultLimit] = useState(10);
 
   // View Mode: 'admissions2026' for 2026 MOET rules & 100 exams, 'search' for table search & filters, 'stats2025' for comprehensive 2025 statistical center
-  const [viewMode, setViewMode] = useState<'admissions2026' | 'search' | 'stats2025'>('search');
+  const [viewMode, setViewMode] = useState<'admissions2026' | 'search' | 'stats2025'>('admissions2026');
   const [stats2025Category, setStats2025Category] = useState<string>('all');
   const [stats2025Region, setStats2025Region] = useState<string>('all');
   const [stats2025Search, setStats2025Search] = useState<string>('');
@@ -372,13 +371,13 @@ export const UniversityAdmissionsView: React.FC<UniversityAdmissionsViewProps> =
           <div>
             <div className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-teal-50 text-teal-800 text-xs font-bold mb-2">
               <GraduationCap className="w-3.5 h-3.5 text-teal-600" />
-              <span>{language === 'vi' ? 'Chọn ngành & trường' : 'Majors & universities'}</span>
+              <span>{t.admissions.badge}</span>
             </div>
             <h1 className="text-2xl sm:text-3xl font-extrabold text-slate-900 tracking-tight">
               {t.admissions.title}
             </h1>
             <p className="text-xs sm:text-sm text-slate-600 max-w-3xl mt-1 leading-relaxed">
-              {language === 'vi' ? 'Tra cứu ngành học, trường và điểm chuẩn tham khảo.' : 'Explore majors, universities and historical admission scores.'}
+              {t.admissions.subtitle}
             </p>
           </div>
 
@@ -406,7 +405,10 @@ export const UniversityAdmissionsView: React.FC<UniversityAdmissionsViewProps> =
               }`}
             >
               <Sparkles className="w-4 h-4 text-amber-300" />
-              <span>{language === 'vi' ? 'Thông tin 2026' : '2026 guide'}</span>
+              <span>{t.admissions.tab2026}</span>
+              <span className="px-1.5 py-0.5 rounded-md bg-amber-400 text-slate-950 text-[10px] font-black">
+                {language === 'vi' ? 'MỚI' : 'NEW'}
+              </span>
             </button>
             <button
               onClick={() => setViewMode('search')}
@@ -417,7 +419,7 @@ export const UniversityAdmissionsView: React.FC<UniversityAdmissionsViewProps> =
               }`}
             >
               <Search className="w-4 h-4" />
-              <span>{language === 'vi' ? 'Tra cứu' : 'Search'}</span>
+              <span>{t.admissions.tabSearch}</span>
             </button>
             <button
               onClick={() => setViewMode('stats2025')}
@@ -428,7 +430,7 @@ export const UniversityAdmissionsView: React.FC<UniversityAdmissionsViewProps> =
               }`}
             >
               <BarChart3 className="w-4 h-4" />
-              <span>{language === 'vi' ? 'Thống kê 2025' : '2025 statistics'}</span>
+              <span>{t.admissions.tabStats2025} ({records2025.length} {language === 'vi' ? 'ngành' : 'majors'})</span>
             </button>
           </div>
 
@@ -449,16 +451,16 @@ export const UniversityAdmissionsView: React.FC<UniversityAdmissionsViewProps> =
         </div>
 
         {/* Mandatory Regulatory Warning (Section 9 & 15) */}
-        <details className="disclosure-panel bg-amber-50/80 text-amber-950 text-xs sm:text-sm">
-          <summary className="text-amber-900">
+        <div className="p-4 rounded-2xl bg-amber-50/80 border border-amber-300 text-amber-950 text-xs sm:text-sm space-y-1">
+          <div className="flex items-center gap-2 font-bold text-amber-900">
             <AlertTriangle className="w-4 h-4 text-amber-700 shrink-0" />
-            <span>{language === 'vi' ? 'Điểm các năm trước chỉ để tham khảo' : 'Past scores are for reference'}</span>
-          </summary>
+            <span>{t.admissions.rulesWarningTitle}</span>
+          </div>
           <p className="leading-relaxed pl-6">
             <strong>1.</strong> {t.admissions.rulesWarning1} <br />
             <strong>2.</strong> {t.admissions.rulesWarning2}
           </p>
-        </details>
+        </div>
       </div>
 
       {/* RENDER VIEW MODE: 2026 CENTER, STATS 2025 OR STANDARD SEARCH */}
@@ -895,7 +897,6 @@ export const UniversityAdmissionsView: React.FC<UniversityAdmissionsViewProps> =
         /* STANDARD SEARCH & BROWSE ADMISSIONS VIEW                  */
         /* ========================================================= */
         <>
-          <details className="disclosure-panel"><summary>{language==='vi'?'Thông tin bổ sung về phương án tuyển sinh 2025':'Additional information on 2025 admission schemes'}</summary>
           {/* 2025 ADMISSIONS SCHEMES HIGHLIGHT & STATISTICS CARD */}
           <div className="bg-gradient-to-br from-indigo-900 via-slate-900 to-teal-950 text-white rounded-3xl p-6 sm:p-7 shadow-lg border border-indigo-700/50 space-y-4">
             <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
@@ -996,7 +997,6 @@ export const UniversityAdmissionsView: React.FC<UniversityAdmissionsViewProps> =
             </div>
           </div>
 
-          </details>
       {/* Comparison Floating Bar */}
       {comparisonList.length > 0 && (
         <div className="sticky top-20 z-30 bg-slate-900 text-white p-4 rounded-2xl shadow-xl flex items-center justify-between gap-4 border border-slate-700 animate-in fade-in slide-in-from-top-2">
@@ -1106,7 +1106,6 @@ export const UniversityAdmissionsView: React.FC<UniversityAdmissionsViewProps> =
           </div>
         </div>
 
-        <details className="disclosure-panel"><summary>{language==='vi'?'Bộ lọc nâng cao: ngành, tổ hợp, năm và điểm dự kiến':'Advanced filters: majors, combinations, year and estimated score'}</summary>
         {/* Row 2: Ownership Type, Major Category, Specific Major, Combination, Year */}
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-3">
           {/* FILTER 3: Ownership Type */}
@@ -1247,7 +1246,6 @@ export const UniversityAdmissionsView: React.FC<UniversityAdmissionsViewProps> =
             </div>
           )}
         </div>
-        </details>
       </div>
 
       {/* RESULTS LIST: Divided into "Có thể tham khảo" vs "Cần cân nhắc" if score filter is enabled */}
@@ -1288,45 +1286,212 @@ export const UniversityAdmissionsView: React.FC<UniversityAdmissionsViewProps> =
           </div>
         )}
 
-        {/* Admission cards keep the decision essentials visible; secondary details are opt-in. */}
-        <div className="admission-result-grid">
-          {filteredRecords.length === 0 && <p role="status" className="disclosure-panel">{language === 'vi' ? 'Không có kết quả phù hợp. Hãy thử đổi bộ lọc.' : 'No results match. Try changing your filters.'}</p>}
-          {filteredRecords.slice(0, resultLimit).map(rawRec => {
-            const rec = localizeAdmissionRecord(rawRec, language);
-            const rawUni = UNIVERSITIES_DATA.find(u => u.id === rawRec.universityId);
-            const uni = rawUni ? localizeUniversity(rawUni, language) : undefined;
-            const isSaved = profile.savedAdmissions.includes(rec.id);
-            const isCompared = comparisonList.includes(rec.id);
-            return <article key={rec.id} className="admission-result-card" data-compared={isCompared}>
-              <div className="admission-card-top">
-                <span>{rec.year} · {rec.method}</span>
-                <span className="admission-score"><strong>{rec.cutoffScore}</strong><small>{rec.year === 2025 ? (language === 'vi' ? 'Điểm sàn' : 'Floor score') : (language === 'vi' ? 'Điểm chuẩn' : 'Cutoff')} · {rec.scoreScale}</small></span>
-              </div>
-              <h3>{rec.majorName}</h3>
-              <p className="admission-university">{rec.universityName}</p>
-              <p className="admission-location">{uni?.province} · {uni?.ownershipType}</p>
-              <p className="admission-combinations">{rec.subjectCombination}</p>
-              <details className="admission-card-details">
-                <summary>{language === 'vi' ? 'Học phí, điều kiện & nguồn dữ liệu' : 'Tuition, requirements & sources'}</summary>
-                <dl>
-                  <dt>{language === 'vi' ? 'Chương trình' : 'Program'}</dt><dd>{rec.programName || rec.program} · {rec.majorCode}</dd>
-                  <dt>{language === 'vi' ? 'Cách tính điểm' : 'Score calculation'}</dt><dd>{rec.scoreScale} · {rec.calculationFormula}</dd>
-                  <dt>{language === 'vi' ? 'Học phí' : 'Tuition'}</dt><dd>{rec.tuitionInfo || rec.tuition}</dd>
-                  {rec.subCriteria && <><dt>{language === 'vi' ? 'Tiêu chí phụ' : 'Additional criteria'}</dt><dd>{rec.subCriteria}</dd></>}
-                </dl>
-                <a href={rec.sourceUrl} target="_blank" rel="noopener noreferrer" title={rec.sourceDocument}>{language === 'vi' ? 'Xem nguồn chính thức' : 'View official source'} <ExternalLink size={13}/></a>
-                <p>{language === 'vi' ? 'Ngày kiểm duyệt: ' : 'Verified: '}{rec.verifiedDate}</p>
-                {onAskAiAboutSchool && <button onClick={() => onAskAiAboutSchool(language === 'vi' ? `Hãy giải thích chương trình đào tạo và cơ hội việc làm ngành ${rec.majorName} tại ${rec.universityName}?` : `Explain the curriculum and career opportunities for ${rec.majorName} at ${rec.universityName}.`)}><Sparkles size={14}/>{language === 'vi' ? 'Hỏi CHẠM AI' : 'Ask CHẠM AI'}</button>}
-              </details>
-              <div className="admission-card-actions">
-                <button aria-pressed={isSaved} onClick={() => handleToggleSaveAdmission(rec.id)}><Bookmark size={16}/>{isSaved ? (language === 'vi' ? 'Đã lưu' : 'Saved') : (language === 'vi' ? 'Lưu phương án' : 'Save option')}</button>
-                <button aria-pressed={isCompared} disabled={!isCompared && comparisonList.length >= 3} onClick={() => handleToggleComparison(rec.id)}><Layers size={16}/>{isCompared ? (language === 'vi' ? 'Đang so sánh' : 'Comparing') : (language === 'vi' ? 'So sánh' : 'Compare')}</button>
-              </div>
-            </article>;
-          })}
-        </div>
-        {resultLimit < filteredRecords.length && <button className="show-more-results" onClick={() => setResultLimit(n => n + 10)}>{language === 'vi' ? 'Xem thêm phương án' : 'Show more options'} ({Math.min(resultLimit, filteredRecords.length)}/{filteredRecords.length})</button>}
+        {/* RESULTS TABLE */}
+        <div className="bg-white rounded-3xl border border-slate-200 overflow-hidden shadow-xs">
+          <div className="overflow-x-auto">
+            <table className="w-full text-left text-xs border-collapse">
+              <thead>
+                <tr className="bg-slate-100 text-slate-700 border-b border-slate-200 font-bold uppercase tracking-wider text-[11px]">
+                  <th className="p-3.5 whitespace-nowrap">{language === 'vi' ? 'Chọn / Lưu' : 'Compare / Save'}</th>
+                  <th className="p-3.5 min-w-[210px]">{language === 'vi' ? 'Trường / Địa điểm' : 'University / Location'}</th>
+                  <th className="p-3.5 min-w-[190px]">{language === 'vi' ? 'Ngành & Mã ngành' : 'Major & Code'}</th>
+                  <th className="p-3.5 whitespace-nowrap">{language === 'vi' ? 'Chương trình' : 'Program'}</th>
+                  <th className="p-3.5 whitespace-nowrap">{language === 'vi' ? 'Năm' : 'Year'}</th>
+                  <th className="p-3.5 min-w-[150px]">{language === 'vi' ? 'Phương thức' : 'Method'}</th>
+                  <th className="p-3.5 min-w-[160px]">{language === 'vi' ? 'Tổ hợp xét tuyển' : 'Combinations'}</th>
+                  <th className="p-3.5 whitespace-nowrap text-teal-800 font-extrabold">{language === 'vi' ? 'Điểm chuẩn' : 'Cutoff Score'}</th>
+                  <th className="p-3.5 min-w-[140px]">{language === 'vi' ? 'Thang & Cách tính' : 'Scale & Formula'}</th>
+                  <th className="p-3.5 min-w-[170px]">{language === 'vi' ? 'Học phí & Tiêu chí phụ' : 'Tuition & Sub-criteria'}</th>
+                  <th className="p-3.5 whitespace-nowrap">{language === 'vi' ? 'Nguồn & Trợ lý' : 'Source & AI'}</th>
+                </tr>
+              </thead>
+              <tbody className="divide-y divide-slate-200/80">
+                {filteredRecords.length === 0 ? (
+                  <tr>
+                    <td colSpan={11} className="p-8 text-center text-slate-400">
+                      {language === 'vi'
+                        ? 'Không tìm thấy dữ liệu nào phù hợp với bộ lọc hiện tại. Hãy bấm "Đặt lại bộ lọc" để tìm kiếm lại.'
+                        : 'No admission records match your current filters. Click "Reset Filters" to start over.'}
+                    </td>
+                  </tr>
+                ) : (
+                  filteredRecords.map((rawRec) => {
+                    const rec = localizeAdmissionRecord(rawRec, language);
+                    const rawUni = UNIVERSITIES_DATA.find((u) => u.id === rawRec.universityId);
+                    const uni = rawUni ? localizeUniversity(rawUni, language) : undefined;
+                    const isSaved = profile.savedAdmissions.includes(rec.id);
+                    const isCompared = comparisonList.includes(rec.id);
 
+                    return (
+                      <tr
+                        key={rec.id}
+                        className={`hover:bg-teal-50/40 transition-colors ${
+                          isCompared ? 'bg-amber-50/70' : ''
+                        }`}
+                      >
+                        {/* Comparison & Bookmark */}
+                        <td className="p-3.5 whitespace-nowrap">
+                          <div className="flex items-center gap-1.5">
+                            <button
+                              onClick={() => handleToggleComparison(rec.id)}
+                              className={`p-1.5 rounded-lg text-xs font-semibold border transition-all ${
+                                isCompared
+                                  ? 'bg-amber-500 text-slate-950 border-amber-600'
+                                  : 'bg-white text-slate-600 hover:bg-slate-100 border-slate-200'
+                              }`}
+                              title={language === 'vi' ? 'Thêm vào danh sách so sánh' : 'Add to comparison'}
+                            >
+                              <Layers className="w-3.5 h-3.5" />
+                            </button>
+
+                            <button
+                              onClick={() => handleToggleSaveAdmission(rec.id)}
+                              className={`p-1.5 rounded-lg text-xs transition-colors ${
+                                isSaved
+                                  ? 'text-teal-700 bg-teal-100'
+                                  : 'text-slate-400 hover:text-slate-600 bg-slate-50'
+                              }`}
+                              title={isSaved ? (language === 'vi' ? 'Đã lưu' : 'Saved') : (language === 'vi' ? 'Lưu lại' : 'Save')}
+                            >
+                              <Bookmark className="w-3.5 h-3.5 fill-current" />
+                            </button>
+                          </div>
+                        </td>
+
+                        {/* University & Location */}
+                        <td className="p-3.5">
+                          <div className="flex items-center gap-1.5">
+                            <span className="font-bold text-slate-900 leading-snug">
+                              {rec.universityName}
+                            </span>
+                            {uni?.institutionCode && (
+                              <span className="text-[10px] font-mono font-bold bg-slate-100 text-slate-700 px-1.5 py-0.5 rounded">
+                                {uni.institutionCode}
+                              </span>
+                            )}
+                          </div>
+                          <div className="text-[11px] text-slate-500 flex items-center gap-1 mt-0.5">
+                            <MapPin className="w-3 h-3 text-slate-400" />
+                            <span>{uni?.province} ({uni?.region})</span>
+                            <span>•</span>
+                            <span className="font-semibold text-slate-600">{uni?.ownershipType}</span>
+                          </div>
+                        </td>
+
+                        {/* Major */}
+                        <td className="p-3.5">
+                          <div className="font-bold text-teal-800 leading-snug">
+                            {rec.majorName}
+                          </div>
+                          <div className="text-[11px] text-slate-400 font-mono mt-0.5">
+                            {language === 'vi' ? 'Mã:' : 'Code:'} {rec.majorCode}
+                          </div>
+                        </td>
+
+                        {/* Program */}
+                        <td className="p-3.5 whitespace-nowrap">
+                          <span className="px-2 py-0.5 rounded-md bg-slate-100 text-slate-700 text-[11px] font-medium border border-slate-200">
+                            {rec.programName || rec.program}
+                          </span>
+                        </td>
+
+                        {/* Year */}
+                        <td className="p-3.5 whitespace-nowrap">
+                          {rec.year === 2025 ? (
+                            <span className="font-extrabold px-2 py-0.5 rounded-md bg-indigo-50 text-indigo-900 border border-indigo-200 text-[11px] inline-flex items-center gap-1">
+                              <Sparkles className="w-2.5 h-2.5 text-indigo-600" />
+                              <span>{language === 'vi' ? '2025 (Đề án)' : '2025 (Scheme)'}</span>
+                            </span>
+                          ) : (
+                            <span className="font-bold text-slate-900 px-2 py-0.5 rounded-md bg-teal-50 text-teal-900 border border-teal-200 text-xs">
+                              {rec.year}
+                            </span>
+                          )}
+                        </td>
+
+                        {/* Method */}
+                        <td className="p-3.5 text-slate-700">
+                          {rec.method}
+                        </td>
+
+                        {/* Combinations */}
+                        <td className="p-3.5 font-medium text-slate-800">
+                          {rec.subjectCombination}
+                        </td>
+
+                        {/* Cutoff Score */}
+                        <td className="p-3.5 whitespace-nowrap">
+                          <span className={`font-black text-sm ${rec.year === 2025 ? 'text-indigo-700' : 'text-teal-700'}`}>
+                            {rec.cutoffScore}
+                          </span>
+                          {rec.year === 2025 && (
+                            <span className="block text-[10px] text-indigo-600 font-medium">
+                              {language === 'vi' ? 'Điểm sàn đề án' : 'Floor Score'}
+                            </span>
+                          )}
+                        </td>
+
+                        {/* Scale & Formula */}
+                        <td className="p-3.5 text-slate-600">
+                          <div className="font-semibold text-slate-800">{rec.scoreScale}</div>
+                          <div className="text-[11px] text-slate-500 leading-tight mt-0.5">
+                            {rec.calculationFormula}
+                          </div>
+                        </td>
+
+                        {/* Tuition & Subcriteria */}
+                        <td className="p-3.5 text-slate-600">
+                          <div className="text-[11px] text-slate-700 font-medium">
+                            {rec.tuitionInfo || rec.tuition}
+                          </div>
+                          {rec.subCriteria && (
+                            <div className="text-[11px] text-slate-500 mt-1 leading-snug">
+                              <strong>{language === 'vi' ? 'Phụ:' : 'Sub:'}</strong> {rec.subCriteria}
+                            </div>
+                          )}
+                        </td>
+
+                        {/* Source URL & CHẠM AI Trigger */}
+                        <td className="p-3.5 whitespace-nowrap space-y-1">
+                          <div>
+                            <a
+                              href={rec.sourceUrl}
+                              target="_blank"
+                              rel="noopener noreferrer"
+                              className="inline-flex items-center gap-1 text-[11px] font-semibold text-teal-700 hover:text-teal-900 underline"
+                              title={rec.sourceDocument}
+                            >
+                              <span>{language === 'vi' ? 'Nguồn đề án ↗' : 'Official Source ↗'}</span>
+                            </a>
+                            <div className="text-[10px] text-slate-400">
+                              {language === 'vi' ? 'Duyệt:' : 'Verified:'} {rec.verifiedDate}
+                            </div>
+                          </div>
+
+                          {onAskAiAboutSchool && (
+                            <button
+                              onClick={() =>
+                                onAskAiAboutSchool(
+                                  language === 'vi'
+                                    ? `Hãy giải thích chi tiết về cơ hội việc làm và chương trình đào tạo ngành ${rec.majorName} tại ${rec.universityName}?`
+                                    : `Please explain the curriculum and career opportunities for ${rec.majorName} at ${rec.universityName}.`
+                                )
+                              }
+                              className="inline-flex items-center gap-1 text-[10px] font-bold text-amber-700 bg-amber-50 hover:bg-amber-100 px-2 py-0.5 rounded border border-amber-200"
+                            >
+                              <Sparkles className="w-2.5 h-2.5" />
+                              <span>{language === 'vi' ? 'Hỏi CHẠM AI' : 'Ask CHẠM AI'}</span>
+                            </button>
+                          )}
+                        </td>
+                      </tr>
+                    );
+                  })
+                )}
+              </tbody>
+            </table>
+          </div>
+        </div>
       </div>
       </>
       )}

@@ -631,10 +631,12 @@ I am here to assist you with:
         <button
           onClick={onOpen}
           aria-label={language === "vi" ? "Mở CHẠM AI Trợ lý hướng nghiệp" : "Open CHẠM AI Career Assistant"}
-          className="chat-launcher fixed bottom-5 right-5 z-40 flex items-center gap-2.5 px-4 py-3 rounded-full bg-teal-800 text-white shadow-lg hover:bg-teal-700 transition-colors duration-150 group border border-teal-400/40 cursor-pointer"
+          className="chat-launcher fixed bottom-5 right-5 z-40 flex items-center gap-2.5 px-4 py-3 rounded-full bg-gradient-to-r from-teal-700 via-teal-800 to-emerald-800 text-white shadow-xl hover:shadow-2xl hover:scale-105 active:scale-95 transition-all duration-200 group border border-teal-400/40 cursor-pointer"
         >
           <div className="relative w-8 h-8 rounded-full bg-white p-0.5 flex items-center justify-center shadow-xs">
             <img src="/logo.png" alt="CHẠM AI" className="w-full h-full object-contain" />
+            <span className="absolute -top-1 -right-1 w-3 h-3 bg-amber-400 rounded-full animate-ping"></span>
+            <span className="absolute -top-1 -right-1 w-3 h-3 bg-amber-400 rounded-full border-2 border-teal-900"></span>
           </div>
 
           <div className="text-left hidden sm:block">
@@ -642,13 +644,14 @@ I am here to assist you with:
               <span>CHẠM AI</span>
               <Sparkles className="w-3.5 h-3.5 text-amber-300" />
             </div>
+            <div className="text-[10px] text-teal-200 font-medium">{language === "vi" ? "Bạn đồng hành hướng nghiệp" : "Career Companion"}</div>
           </div>
         </button>
       )}
 
       {/* CHAT POPUP / DRAWER */}
       {isOpen && (
-        <div className="chat-panel fixed bottom-0 right-0 sm:bottom-4 sm:right-4 z-50 flex flex-col items-end w-full sm:w-auto">
+        <div className="chat-panel fixed bottom-0 right-0 sm:bottom-4 sm:right-4 z-50 flex flex-col items-end w-full sm:w-auto animate-in fade-in slide-in-from-bottom-4 duration-200">
           <div
             className={`bg-white rounded-t-3xl sm:rounded-3xl border border-slate-200 shadow-2xl flex flex-col overflow-hidden transition-all duration-300 ${
               isExpanded

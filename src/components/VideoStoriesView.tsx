@@ -32,7 +32,6 @@ export const VideoStoriesView: React.FC<VideoStoriesViewProps> = ({
   onOpenTask
 }) => {
   const { t, language } = useLanguage();
-  const [videoLimit,setVideoLimit]=useState(6);
   const [selectedVideo, setSelectedVideo] = useState<VideoStory | null>(null);
   const [reflectionAnswer, setReflectionAnswer] = useState('');
   const [reflectionSuccess, setReflectionSuccess] = useState(false);
@@ -245,7 +244,7 @@ export const VideoStoriesView: React.FC<VideoStoriesViewProps> = ({
         </div>
       ) : (
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-          {filteredVideos.slice(0,videoLimit).map((video) => {
+          {filteredVideos.map((video) => {
             const isSaved = profile.savedVideos.includes(video.id);
 
             return (
@@ -337,7 +336,6 @@ export const VideoStoriesView: React.FC<VideoStoriesViewProps> = ({
       )}
 
       {/* DETAIL & REFLECTION MODAL (WITH PROMINENT CLOSE BUTTON) */}
-      {videoLimit<filteredVideos.length&&<button className="show-more-results" onClick={()=>setVideoLimit(n=>n+6)}>{language==='vi'?'Xem thêm chuyện nghề':'Show more stories'}</button>}
       {activeSelectedVideo && (
         <div 
           onClick={() => {

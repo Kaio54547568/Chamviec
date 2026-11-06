@@ -105,8 +105,10 @@ test('enterprise confirmations remain non-bookable partners, with legal names fr
 test('enterprise navigation is primary and the partner directory does not offer unconfirmed bookings', () => {
   const navigation = renderToStaticMarkup(React.createElement(Navbar, {currentTab: 'enterprise', setCurrentTab: () => {}, profile: DEFAULT_PROFILE, onOpenAssistant: () => {}}));
   const enterprisePosition = navigation.indexOf('aria-label="Trải nghiệm doanh nghiệp"');
-  assert.ok(enterprisePosition > 0 && enterprisePosition < navigation.indexOf('<details'));
-  assert.equal((navigation.match(/aria-label="Trải nghiệm doanh nghiệp"/g) || []).length, 1);
+  assert.ok(enterprisePosition > 0);
+  assert.doesNotMatch(navigation, /<details|more-nav/);
+  // The restored header exposes the same entry in desktop and wrapped mobile navigation.
+  assert.equal((navigation.match(/aria-label="Trải nghiệm doanh nghiệp"/g) || []).length, 2);
   const directory = renderToStaticMarkup(React.createElement(EnterprisePartners));
   assert.equal((directory.match(/<article/g) || []).length, 6);
   assert.match(directory, /15 đơn vị đã đồng ý hỗ trợ/);
