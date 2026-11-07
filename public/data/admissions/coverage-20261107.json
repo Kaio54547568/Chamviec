@@ -1,0 +1,985 @@
+[
+  {
+    "id": "hust",
+    "universityId": "hust",
+    "programs": 69,
+    "catalogueYear": 2026,
+    "checkedAt": "2026-11-07",
+    "years": [
+      {
+        "year": 2024,
+        "records": 64,
+        "officialRecords": 64,
+        "referenceRecords": 0,
+        "unknownScaleRecords": 0,
+        "status": "published",
+        "sources": [
+          "https://ts.hust.edu.vn/index.php/tin-tuc/diem-chuan-dai-hoc-bach-khoa-ha-noi-nam-2024"
+        ]
+      },
+      {
+        "year": 2025,
+        "records": 65,
+        "officialRecords": 65,
+        "referenceRecords": 0,
+        "unknownScaleRecords": 0,
+        "status": "published",
+        "sources": [
+          "https://ts.hust.edu.vn/index.php/tin-tuc/diem-chuan-dai-hoc-bach-khoa-ha-noi-nam-2025"
+        ]
+      },
+      {
+        "year": 2026,
+        "records": 68,
+        "officialRecords": 68,
+        "referenceRecords": 0,
+        "unknownScaleRecords": 0,
+        "status": "published",
+        "sources": [
+          "https://ts.hust.edu.vn/en/tin-tuc/diem-chuan-dai-hoc-bach-khoa-ha-noi-nam-2026"
+        ]
+      }
+    ],
+    "note": "Số ngành/chương trình theo danh mục công bố; nhóm ngành và chuyên ngành được phân biệt. Nguồn tổng hợp chưa được coi là xác minh chính thức."
+  },
+  {
+    "id": "ftu",
+    "universityId": "ftu",
+    "programs": 51,
+    "catalogueYear": 2026,
+    "checkedAt": "2026-11-07",
+    "years": [
+      {
+        "year": 2024,
+        "records": 93,
+        "officialRecords": 0,
+        "referenceRecords": 93,
+        "unknownScaleRecords": 93,
+        "status": "published",
+        "sources": [
+          "https://diemthi.tuyensinh247.com/api/common/cutoff-score?school_id=382&year=2024"
+        ]
+      },
+      {
+        "year": 2025,
+        "records": 487,
+        "officialRecords": 487,
+        "referenceRecords": 0,
+        "unknownScaleRecords": 0,
+        "status": "published",
+        "sources": [
+          "https://thongtintuyensinh.ftu.edu.vn/score-comparison"
+        ]
+      },
+      {
+        "year": 2026,
+        "records": 51,
+        "officialRecords": 51,
+        "referenceRecords": 0,
+        "unknownScaleRecords": 0,
+        "status": "published",
+        "sources": [
+          "https://drive.google.com/file/d/120XeyBDATqTd-UHEyHh2cNudSt_OqgNK/view"
+        ]
+      }
+    ],
+    "note": "Số ngành/chương trình theo danh mục công bố; nhóm ngành và chuyên ngành được phân biệt. Nguồn tổng hợp chưa được coi là xác minh chính thức."
+  },
+  {
+    "id": "neu",
+    "universityId": "neu",
+    "programs": 88,
+    "catalogueYear": 2026,
+    "checkedAt": "2026-11-07",
+    "years": [
+      {
+        "year": 2024,
+        "records": 66,
+        "officialRecords": 0,
+        "referenceRecords": 66,
+        "unknownScaleRecords": 54,
+        "status": "published",
+        "sources": [
+          "https://diemthi.tuyensinh247.com/api/common/cutoff-score?school_id=357&year=2024"
+        ]
+      },
+      {
+        "year": 2025,
+        "records": 73,
+        "officialRecords": 73,
+        "referenceRecords": 0,
+        "unknownScaleRecords": 0,
+        "status": "published",
+        "sources": [
+          "https://fit.neu.edu.vn/post/diem-chuan-trung-tuyen-dai-hoc-chinh-quy-nam-2025-cua-neu-1"
+        ]
+      },
+      {
+        "year": 2026,
+        "records": 88,
+        "officialRecords": 88,
+        "referenceRecords": 0,
+        "unknownScaleRecords": 0,
+        "status": "published",
+        "sources": [
+          "https://neu.edu.vn/wp-content/uploads/2026/08/Thong-bao-Trung-tuyen-DHCQ-2026.pdf"
+        ]
+      }
+    ],
+    "note": "Số ngành/chương trình theo danh mục công bố; nhóm ngành và chuyên ngành được phân biệt. Nguồn tổng hợp chưa được coi là xác minh chính thức."
+  },
+  {
+    "id": "uet-vnu",
+    "universityId": "uet-vnu",
+    "programs": 20,
+    "catalogueYear": 2026,
+    "checkedAt": "2026-11-07",
+    "years": [
+      {
+        "year": 2024,
+        "records": 17,
+        "officialRecords": 17,
+        "referenceRecords": 0,
+        "unknownScaleRecords": 0,
+        "status": "published",
+        "sources": [
+          "https://uet.vnu.edu.vn/diem-trung-tuyen-vao-truong-dh-cong-nghe-dhqghn-nam-2024-theo-phuong-thuc-thpt/"
+        ]
+      },
+      {
+        "year": 2025,
+        "records": 20,
+        "officialRecords": 20,
+        "referenceRecords": 0,
+        "unknownScaleRecords": 0,
+        "status": "published",
+        "sources": [
+          "https://tuyensinh.uet.vnu.edu.vn/uncategorized/thong-bao-diem-trung-tuyen-dai-hoc-chinh-quy-vao-truong-dai-hoc-cong-nghe-dhqghn-nam-2025/"
+        ]
+      },
+      {
+        "year": 2026,
+        "records": 20,
+        "officialRecords": 20,
+        "referenceRecords": 0,
+        "unknownScaleRecords": 0,
+        "status": "published",
+        "sources": [
+          "https://uet.vnu.edu.vn/truong-dai-hoc-cong-nghe-dhqghn-cong-bo-diem-chuan-dai-hoc-chinh-quy-nam-2026/"
+        ]
+      }
+    ],
+    "note": "Số ngành/chương trình theo danh mục công bố; nhóm ngành và chuyên ngành được phân biệt. Nguồn tổng hợp chưa được coi là xác minh chính thức."
+  },
+  {
+    "id": "hnue",
+    "universityId": "hnue",
+    "programs": 57,
+    "catalogueYear": 2026,
+    "checkedAt": "2026-11-07",
+    "years": [
+      {
+        "year": 2024,
+        "records": 77,
+        "officialRecords": 77,
+        "referenceRecords": 0,
+        "unknownScaleRecords": 0,
+        "status": "published",
+        "sources": [
+          "https://hnue.edu.vn/tin-tuc/10582"
+        ]
+      },
+      {
+        "year": 2025,
+        "records": 48,
+        "officialRecords": 48,
+        "referenceRecords": 0,
+        "unknownScaleRecords": 0,
+        "status": "published",
+        "sources": [
+          "https://hnue.edu.vn/tin-tuc/10941/thong-bao-diem-chuan-xet-tuyen-dai-hoc-nam-2025.html"
+        ]
+      },
+      {
+        "year": 2026,
+        "records": 57,
+        "officialRecords": 57,
+        "referenceRecords": 0,
+        "unknownScaleRecords": 0,
+        "status": "published",
+        "sources": [
+          "https://tuyensinh.hnue.edu.vn/tin-tuc/698"
+        ]
+      }
+    ],
+    "note": "Số ngành/chương trình theo danh mục công bố; nhóm ngành và chuyên ngành được phân biệt. Nguồn tổng hợp chưa được coi là xác minh chính thức."
+  },
+  {
+    "id": "hmu",
+    "universityId": "hmu",
+    "programs": 20,
+    "catalogueYear": 2026,
+    "checkedAt": "2026-11-07",
+    "years": [
+      {
+        "year": 2024,
+        "records": 21,
+        "officialRecords": 0,
+        "referenceRecords": 21,
+        "unknownScaleRecords": 19,
+        "status": "published",
+        "sources": [
+          "https://diemthi.tuyensinh247.com/api/common/cutoff-score?school_id=448&year=2024"
+        ]
+      },
+      {
+        "year": 2025,
+        "records": 22,
+        "officialRecords": 0,
+        "referenceRecords": 22,
+        "unknownScaleRecords": 6,
+        "status": "published",
+        "sources": [
+          "https://diemthi.tuyensinh247.com/api/common/cutoff-score?school_id=448&year=2025"
+        ]
+      },
+      {
+        "year": 2026,
+        "records": 20,
+        "officialRecords": 20,
+        "referenceRecords": 0,
+        "unknownScaleRecords": 0,
+        "status": "published",
+        "sources": [
+          "https://hmu.edu.vn/vn/tID7444_thong-bao-diem-trung-tuyen-dot-1-tuyen-sinh-dai-hoc-he-chinh-qui-cua-truong-dai-hoc-y-ha-noi-nam-2026.html"
+        ]
+      }
+    ],
+    "note": "Số ngành/chương trình theo danh mục công bố; nhóm ngành và chuyên ngành được phân biệt. Nguồn tổng hợp chưa được coi là xác minh chính thức."
+  },
+  {
+    "id": "ajc",
+    "universityId": "ajc",
+    "programs": 32,
+    "catalogueYear": 2026,
+    "checkedAt": "2026-11-07",
+    "years": [
+      {
+        "year": 2024,
+        "records": 122,
+        "officialRecords": 0,
+        "referenceRecords": 122,
+        "unknownScaleRecords": 120,
+        "status": "published",
+        "sources": [
+          "https://diemthi.tuyensinh247.com/api/common/cutoff-score?school_id=224&year=2024"
+        ]
+      },
+      {
+        "year": 2025,
+        "records": 101,
+        "officialRecords": 0,
+        "referenceRecords": 101,
+        "unknownScaleRecords": 75,
+        "status": "published",
+        "sources": [
+          "https://diemthi.tuyensinh247.com/api/common/cutoff-score?school_id=224&year=2025"
+        ]
+      },
+      {
+        "year": 2026,
+        "records": 66,
+        "officialRecords": 0,
+        "referenceRecords": 66,
+        "unknownScaleRecords": 66,
+        "status": "published",
+        "sources": [
+          "https://diemthi.tuyensinh247.com/api/common/cutoff-score?school_id=224&year=2026"
+        ]
+      }
+    ],
+    "note": "Số ngành/chương trình theo danh mục công bố; nhóm ngành và chuyên ngành được phân biệt. Nguồn tổng hợp chưa được coi là xác minh chính thức."
+  },
+  {
+    "id": "hlu",
+    "universityId": "hlu",
+    "programs": 6,
+    "catalogueYear": 2026,
+    "checkedAt": "2026-11-07",
+    "years": [
+      {
+        "year": 2024,
+        "records": 9,
+        "officialRecords": 9,
+        "referenceRecords": 0,
+        "unknownScaleRecords": 0,
+        "status": "published",
+        "sources": [
+          "https://tuyensinh.hlu.edu.vn/Images/Post/files/Tuyensinh/DHCQ/K49/QD%20DTT%20%20K49%20%20TTN.pdf"
+        ]
+      },
+      {
+        "year": 2025,
+        "records": 5,
+        "officialRecords": 5,
+        "referenceRecords": 0,
+        "unknownScaleRecords": 0,
+        "status": "published",
+        "sources": [
+          "https://tuyensinh.hlu.edu.vn/Images/Post/files/Tuyensinh/DHCQ/QD%20DTT%20K50.pdf"
+        ]
+      },
+      {
+        "year": 2026,
+        "records": 5,
+        "officialRecords": 5,
+        "referenceRecords": 0,
+        "unknownScaleRecords": 0,
+        "status": "published",
+        "sources": [
+          "https://tuyensinh.hlu.edu.vn/Images/Post/files/Tuyensinh/DHCQ/K51/BD%20DTT%20K51.pdf"
+        ]
+      }
+    ],
+    "note": "Số ngành/chương trình theo danh mục công bố; nhóm ngành và chuyên ngành được phân biệt. Nguồn tổng hợp chưa được coi là xác minh chính thức."
+  },
+  {
+    "id": "vnua",
+    "universityId": "vnua",
+    "programs": 23,
+    "catalogueYear": 2026,
+    "checkedAt": "2026-11-07",
+    "years": [
+      {
+        "year": 2024,
+        "records": 18,
+        "officialRecords": 18,
+        "referenceRecords": 0,
+        "unknownScaleRecords": 0,
+        "status": "published",
+        "sources": [
+          "https://vnua.edu.vn/thong-bao/diem-chuan-trung-tuyen-dai-hoc-chinh-quy-xet-tuyen-theo-ket-qua-thi-tot-nghiep-thpt-nam-2024-56411"
+        ]
+      },
+      {
+        "year": 2025,
+        "records": 38,
+        "officialRecords": 38,
+        "referenceRecords": 0,
+        "unknownScaleRecords": 0,
+        "status": "published",
+        "sources": [
+          "https://khoathuysan.vnua.edu.vn/thong-bao-diem-chuan-trung-tuyen-dai-hoc-chinh-quy-xet-tuyen-theo-ket-qua-thi-tot-nghiep-thpt-nam-2025.html"
+        ]
+      },
+      {
+        "year": 2026,
+        "records": 46,
+        "officialRecords": 46,
+        "referenceRecords": 0,
+        "unknownScaleRecords": 0,
+        "status": "published",
+        "sources": [
+          "https://xahoi.vnua.edu.vn/thong-bao/diem-chuan-trung-tuyen-dai-hoc-chinh-quy-nam-2026-70959"
+        ]
+      }
+    ],
+    "note": "Số ngành/chương trình theo danh mục công bố; nhóm ngành và chuyên ngành được phân biệt. Nguồn tổng hợp chưa được coi là xác minh chính thức."
+  },
+  {
+    "id": "tmu",
+    "universityId": "tmu",
+    "programs": 51,
+    "catalogueYear": 2026,
+    "checkedAt": "2026-11-07",
+    "years": [
+      {
+        "year": 2024,
+        "records": 38,
+        "officialRecords": 38,
+        "referenceRecords": 0,
+        "unknownScaleRecords": 0,
+        "status": "published",
+        "sources": [
+          "https://tuyensinh.tmu.edu.vn/chuong-trinh-dao-tao/diem-chuan-trung-tuyen-nam-2024-va-2025-363"
+        ]
+      },
+      {
+        "year": 2025,
+        "records": 44,
+        "officialRecords": 44,
+        "referenceRecords": 0,
+        "unknownScaleRecords": 0,
+        "status": "published",
+        "sources": [
+          "https://tuyensinh.tmu.edu.vn/chuong-trinh-dao-tao/diem-chuan-trung-tuyen-nam-2024-va-2025-363"
+        ]
+      },
+      {
+        "year": 2026,
+        "records": 51,
+        "officialRecords": 51,
+        "referenceRecords": 0,
+        "unknownScaleRecords": 0,
+        "status": "published",
+        "sources": [
+          "https://tmu.edu.vn/upload/files/shares/Q%C4%90%202079%20%C4%90I%E1%BB%82M%20TT%202026_0001.pdf"
+        ]
+      }
+    ],
+    "note": "Số ngành/chương trình theo danh mục công bố; nhóm ngành và chuyên ngành được phân biệt. Nguồn tổng hợp chưa được coi là xác minh chính thức."
+  },
+  {
+    "id": "fpt-hn",
+    "universityId": "fpt-hn",
+    "programs": 35,
+    "catalogueYear": 2026,
+    "checkedAt": "2026-11-07",
+    "years": [
+      {
+        "year": 2024,
+        "records": 7,
+        "officialRecords": 0,
+        "referenceRecords": 7,
+        "unknownScaleRecords": 5,
+        "status": "published",
+        "sources": [
+          "https://diemthi.tuyensinh247.com/api/common/cutoff-score?school_id=329&year=2024"
+        ]
+      },
+      {
+        "year": 2025,
+        "records": 16,
+        "officialRecords": 16,
+        "referenceRecords": 0,
+        "unknownScaleRecords": 0,
+        "status": "published",
+        "sources": [
+          "https://daihoc.fpt.edu.vn/tin-noi-bat-muc-tin-tuc/truong-dai-hoc-fpt-cong-bo-ket-qua-tuyen-sinh-2025/"
+        ]
+      },
+      {
+        "year": 2026,
+        "records": 8,
+        "officialRecords": 8,
+        "referenceRecords": 0,
+        "unknownScaleRecords": 0,
+        "status": "published",
+        "sources": [
+          "https://daihoc.fpt.edu.vn/thong-bao-tuyen-sinh/truong-dai-hoc-fpt-cong-bo-diem-chuan-nam-2026-tiep-tuc-nhan-ho-so-xet-tuyen-mot-so-nganh/"
+        ]
+      }
+    ],
+    "note": "Số ngành/chương trình theo danh mục công bố; nhóm ngành và chuyên ngành được phân biệt. Nguồn tổng hợp chưa được coi là xác minh chính thức."
+  },
+  {
+    "id": "tnu-med",
+    "universityId": "tnu-med",
+    "programs": 9,
+    "catalogueYear": 2026,
+    "checkedAt": "2026-11-07",
+    "years": [
+      {
+        "year": 2024,
+        "records": 9,
+        "officialRecords": 0,
+        "referenceRecords": 9,
+        "unknownScaleRecords": 5,
+        "status": "published",
+        "sources": [
+          "https://diemthi.tuyensinh247.com/api/common/cutoff-score?school_id=445&year=2024"
+        ]
+      },
+      {
+        "year": 2025,
+        "records": 9,
+        "officialRecords": 0,
+        "referenceRecords": 9,
+        "unknownScaleRecords": 6,
+        "status": "published",
+        "sources": [
+          "https://diemthi.tuyensinh247.com/api/common/cutoff-score?school_id=445&year=2025"
+        ]
+      },
+      {
+        "year": 2026,
+        "records": 9,
+        "officialRecords": 0,
+        "referenceRecords": 9,
+        "unknownScaleRecords": 9,
+        "status": "published",
+        "sources": [
+          "https://diemthi.tuyensinh247.com/api/common/cutoff-score?school_id=445&year=2026"
+        ]
+      }
+    ],
+    "note": "Số ngành/chương trình theo danh mục công bố; nhóm ngành và chuyên ngành được phân biệt. Nguồn tổng hợp chưa được coi là xác minh chính thức."
+  },
+  {
+    "id": "hpmu",
+    "universityId": "hpmu",
+    "programs": 7,
+    "catalogueYear": 2026,
+    "checkedAt": "2026-11-07",
+    "years": [
+      {
+        "year": 2024,
+        "records": 17,
+        "officialRecords": 17,
+        "referenceRecords": 0,
+        "unknownScaleRecords": 0,
+        "status": "published",
+        "sources": [
+          "https://hpmu.edu.vn/hpmu/news/THONG-TIN-TUYEN-SINH/Thong-bao-diem-trung-tuyen-dai-hoc-he-chinh-quy-nam-2024-3904/"
+        ]
+      },
+      {
+        "year": 2025,
+        "records": 7,
+        "officialRecords": 7,
+        "referenceRecords": 0,
+        "unknownScaleRecords": 0,
+        "status": "published",
+        "sources": [
+          "https://hpmu.edu.vn/hpmu/uploads/news/2025_08/tb-diem-trung-tuyen-dh-he-cq-2025.pdf"
+        ]
+      },
+      {
+        "year": 2026,
+        "records": 7,
+        "officialRecords": 7,
+        "referenceRecords": 0,
+        "unknownScaleRecords": 0,
+        "status": "published",
+        "sources": [
+          "https://hpmu.edu.vn/hpmu/uploads/news/2026_08/tb-diem-trung-tuyen-dh-he-cq-2026_1.pdf"
+        ]
+      }
+    ],
+    "note": "Số ngành/chương trình theo danh mục công bố; nhóm ngành và chuyên ngành được phân biệt. Nguồn tổng hợp chưa được coi là xác minh chính thức."
+  },
+  {
+    "id": "ued-udn",
+    "universityId": "ued-udn",
+    "programs": 38,
+    "catalogueYear": 2026,
+    "checkedAt": "2026-11-07",
+    "years": [
+      {
+        "year": 2024,
+        "records": 33,
+        "officialRecords": 33,
+        "referenceRecords": 0,
+        "unknownScaleRecords": 0,
+        "status": "published",
+        "sources": [
+          "https://ts.udn.vn/DHCD/Chinhquy/diemchuan/13365"
+        ]
+      },
+      {
+        "year": 2025,
+        "records": 34,
+        "officialRecords": 34,
+        "referenceRecords": 0,
+        "unknownScaleRecords": 0,
+        "status": "published",
+        "sources": [
+          "https://ts.udn.vn/DHCD/Chinhquy/diemchuan/15062"
+        ]
+      },
+      {
+        "year": 2026,
+        "records": 38,
+        "officialRecords": 38,
+        "referenceRecords": 0,
+        "unknownScaleRecords": 0,
+        "status": "published",
+        "sources": [
+          "https://ts.udn.vn/DHCD/Chinhquy/diemchuan/19567"
+        ]
+      }
+    ],
+    "note": "Số ngành/chương trình theo danh mục công bố; nhóm ngành và chuyên ngành được phân biệt. Nguồn tổng hợp chưa được coi là xác minh chính thức."
+  },
+  {
+    "id": "dut-udn",
+    "universityId": "dut-udn",
+    "programs": 49,
+    "catalogueYear": 2026,
+    "checkedAt": "2026-11-07",
+    "years": [
+      {
+        "year": 2024,
+        "records": 37,
+        "officialRecords": 37,
+        "referenceRecords": 0,
+        "unknownScaleRecords": 0,
+        "status": "published",
+        "sources": [
+          "https://ts.udn.vn/DHCD/Chinhquy/diemchuan/13365"
+        ]
+      },
+      {
+        "year": 2025,
+        "records": 39,
+        "officialRecords": 39,
+        "referenceRecords": 0,
+        "unknownScaleRecords": 0,
+        "status": "published",
+        "sources": [
+          "https://ts.udn.vn/DHCD/Chinhquy/diemchuan/15062"
+        ]
+      },
+      {
+        "year": 2026,
+        "records": 49,
+        "officialRecords": 49,
+        "referenceRecords": 0,
+        "unknownScaleRecords": 0,
+        "status": "published",
+        "sources": [
+          "https://ts.udn.vn/DHCD/Chinhquy/diemchuan/19567"
+        ]
+      }
+    ],
+    "note": "Số ngành/chương trình theo danh mục công bố; nhóm ngành và chuyên ngành được phân biệt. Nguồn tổng hợp chưa được coi là xác minh chính thức."
+  },
+  {
+    "id": "hue-med",
+    "universityId": "hue-med",
+    "programs": 11,
+    "catalogueYear": 2026,
+    "checkedAt": "2026-11-07",
+    "years": [
+      {
+        "year": 2024,
+        "records": 14,
+        "officialRecords": 0,
+        "referenceRecords": 14,
+        "unknownScaleRecords": 8,
+        "status": "published",
+        "sources": [
+          "https://diemthi.tuyensinh247.com/api/common/cutoff-score?school_id=444&year=2024"
+        ]
+      },
+      {
+        "year": 2025,
+        "records": 11,
+        "officialRecords": 0,
+        "referenceRecords": 11,
+        "unknownScaleRecords": 2,
+        "status": "published",
+        "sources": [
+          "https://diemthi.tuyensinh247.com/api/common/cutoff-score?school_id=444&year=2025"
+        ]
+      },
+      {
+        "year": 2026,
+        "records": 11,
+        "officialRecords": 11,
+        "referenceRecords": 0,
+        "unknownScaleRecords": 0,
+        "status": "published",
+        "sources": [
+          "https://tuyensinh.hueuni.edu.vn/News/Download/10722"
+        ]
+      }
+    ],
+    "note": "Số ngành/chương trình theo danh mục công bố; nhóm ngành và chuyên ngành được phân biệt. Nguồn tổng hợp chưa được coi là xác minh chính thức."
+  },
+  {
+    "id": "qnu",
+    "universityId": "qnu",
+    "programs": 57,
+    "catalogueYear": 2026,
+    "checkedAt": "2026-11-07",
+    "years": [
+      {
+        "year": 2024,
+        "records": 50,
+        "officialRecords": 0,
+        "referenceRecords": 50,
+        "unknownScaleRecords": 23,
+        "status": "published",
+        "sources": [
+          "https://diemthi.tuyensinh247.com/api/common/cutoff-score?school_id=399&year=2024"
+        ]
+      },
+      {
+        "year": 2025,
+        "records": 52,
+        "officialRecords": 52,
+        "referenceRecords": 0,
+        "unknownScaleRecords": 0,
+        "status": "published",
+        "sources": [
+          "https://tuyensinh.qnu.edu.vn/vi/diem-chuan-cac-nam/diem-chuan-trung-tuyen-dai-hoc-he-chinh-quy-nam-2025"
+        ]
+      },
+      {
+        "year": 2026,
+        "records": 54,
+        "officialRecords": 0,
+        "referenceRecords": 54,
+        "unknownScaleRecords": 54,
+        "status": "published",
+        "sources": [
+          "https://diemthi.tuyensinh247.com/api/common/cutoff-score?school_id=399&year=2026"
+        ]
+      }
+    ],
+    "note": "Số ngành/chương trình theo danh mục công bố; nhóm ngành và chuyên ngành được phân biệt. Nguồn tổng hợp chưa được coi là xác minh chính thức."
+  },
+  {
+    "id": "hcmut-vnuhcm",
+    "universityId": "hcmut-vnuhcm",
+    "programs": 73,
+    "catalogueYear": 2026,
+    "checkedAt": "2026-11-07",
+    "years": [
+      {
+        "year": 2024,
+        "records": 44,
+        "officialRecords": 0,
+        "referenceRecords": 44,
+        "unknownScaleRecords": 0,
+        "status": "published",
+        "sources": [
+          "https://diemthi.tuyensinh247.com/api/common/cutoff-score?school_id=300&year=2024"
+        ]
+      },
+      {
+        "year": 2025,
+        "records": 64,
+        "officialRecords": 0,
+        "referenceRecords": 64,
+        "unknownScaleRecords": 0,
+        "status": "published",
+        "sources": [
+          "https://diemthi.tuyensinh247.com/api/common/cutoff-score?school_id=300&year=2025"
+        ]
+      },
+      {
+        "year": 2026,
+        "records": 73,
+        "officialRecords": 73,
+        "referenceRecords": 0,
+        "unknownScaleRecords": 0,
+        "status": "published",
+        "sources": [
+          "https://hcmut.edu.vn/tintuc/cong-bo-diem-trung-tuyen-phuong-thuc-xet-tuyen-tong-hop-nam-2026"
+        ]
+      }
+    ],
+    "note": "Số ngành/chương trình theo danh mục công bố; nhóm ngành và chuyên ngành được phân biệt. Nguồn tổng hợp chưa được coi là xác minh chính thức."
+  },
+  {
+    "id": "uit-vnuhcm",
+    "universityId": "uit-vnuhcm",
+    "programs": 20,
+    "catalogueYear": 2026,
+    "checkedAt": "2026-11-07",
+    "years": [
+      {
+        "year": 2024,
+        "records": 13,
+        "officialRecords": 0,
+        "referenceRecords": 13,
+        "unknownScaleRecords": 9,
+        "status": "published",
+        "sources": [
+          "https://diemthi.tuyensinh247.com/api/common/cutoff-score?school_id=313&year=2024"
+        ]
+      },
+      {
+        "year": 2025,
+        "records": 14,
+        "officialRecords": 0,
+        "referenceRecords": 14,
+        "unknownScaleRecords": 11,
+        "status": "published",
+        "sources": [
+          "https://diemthi.tuyensinh247.com/api/common/cutoff-score?school_id=313&year=2025"
+        ]
+      },
+      {
+        "year": 2026,
+        "records": 19,
+        "officialRecords": 19,
+        "referenceRecords": 0,
+        "unknownScaleRecords": 0,
+        "status": "published",
+        "sources": [
+          "https://www.uit.edu.vn/bai-viet/truong-dai-hoc-cong-nghe-thong-tin-cong-bo-diem-chuan-trung-tuyen-nam-2026"
+        ]
+      }
+    ],
+    "note": "Số ngành/chương trình theo danh mục công bố; nhóm ngành và chuyên ngành được phân biệt. Nguồn tổng hợp chưa được coi là xác minh chính thức."
+  },
+  {
+    "id": "ueh",
+    "universityId": "ueh",
+    "programs": 97,
+    "catalogueYear": 2026,
+    "checkedAt": "2026-11-07",
+    "years": [
+      {
+        "year": 2024,
+        "records": 71,
+        "officialRecords": 71,
+        "referenceRecords": 0,
+        "unknownScaleRecords": 0,
+        "status": "published",
+        "sources": [
+          "https://tuyensinh.ueh.edu.vn/bai-viet/ueh-cong-bo-diem-chuan-cac-phuong-thuc-xet-tuyen-dai-hoc-chinh-quy-2024-ke-hoach-nhap-hoc-va-chuong-trinh-hoc-bong-tin-dung-hoc-tap/"
+        ]
+      },
+      {
+        "year": 2025,
+        "records": 74,
+        "officialRecords": 74,
+        "referenceRecords": 0,
+        "unknownScaleRecords": 0,
+        "status": "published",
+        "sources": [
+          "https://tuyensinh.ueh.edu.vn/bai-viet/ueh-cong-bo-diem-chuan-cac-phuong-thuc-xet-tuyen-khoa-51-dai-hoc-chinh-quy-nam-2025-va-doi-moi-quy-trinh-nhap-hoc-voi-hinh-thuc-truc-tuyen-hoan-toan/"
+        ]
+      },
+      {
+        "year": 2026,
+        "records": 97,
+        "officialRecords": 97,
+        "referenceRecords": 0,
+        "unknownScaleRecords": 0,
+        "status": "published",
+        "sources": [
+          "https://tuyensinh.ueh.edu.vn/bai-viet/ueh-cong-bo-ket-qua-xet-tuyen-khoa-52-dai-hoc-chinh-quy-nam-2026-gia-tang-co-hoi-hoc-tap-quoc-te/"
+        ]
+      }
+    ],
+    "note": "Số ngành/chương trình theo danh mục công bố; nhóm ngành và chuyên ngành được phân biệt. Nguồn tổng hợp chưa được coi là xác minh chính thức."
+  },
+  {
+    "id": "ump-hcm",
+    "universityId": "ump-hcm",
+    "programs": 18,
+    "catalogueYear": 2026,
+    "checkedAt": "2026-11-07",
+    "years": [
+      {
+        "year": 2024,
+        "records": 15,
+        "officialRecords": 0,
+        "referenceRecords": 15,
+        "unknownScaleRecords": 1,
+        "status": "published",
+        "sources": [
+          "https://diemthi.tuyensinh247.com/api/common/cutoff-score?school_id=447&year=2024"
+        ]
+      },
+      {
+        "year": 2025,
+        "records": 16,
+        "officialRecords": 0,
+        "referenceRecords": 16,
+        "unknownScaleRecords": 0,
+        "status": "published",
+        "sources": [
+          "https://diemthi.tuyensinh247.com/api/common/cutoff-score?school_id=447&year=2025"
+        ]
+      },
+      {
+        "year": 2026,
+        "records": 36,
+        "officialRecords": 36,
+        "referenceRecords": 0,
+        "unknownScaleRecords": 0,
+        "status": "published",
+        "sources": [
+          "https://ump.edu.vn/tuyen-sinh-dao-tao/dai-hoc/tuyen-sinh/10836/thong-bao-diem-trung-tuyen-dai-hoc-he-chinh-quy-nam-2026/"
+        ]
+      }
+    ],
+    "note": "Số ngành/chương trình theo danh mục công bố; nhóm ngành và chuyên ngành được phân biệt. Nguồn tổng hợp chưa được coi là xác minh chính thức."
+  },
+  {
+    "id": "rmit-vn",
+    "universityId": "rmit-vn",
+    "programs": 20,
+    "catalogueYear": 2026,
+    "checkedAt": "2026-11-07",
+    "years": [
+      {
+        "year": 2024,
+        "records": 0,
+        "officialRecords": 0,
+        "referenceRecords": 0,
+        "unknownScaleRecords": 0,
+        "status": "criteria_based",
+        "sources": []
+      },
+      {
+        "year": 2025,
+        "records": 0,
+        "officialRecords": 0,
+        "referenceRecords": 0,
+        "unknownScaleRecords": 0,
+        "status": "criteria_based",
+        "sources": []
+      },
+      {
+        "year": 2026,
+        "records": 0,
+        "officialRecords": 0,
+        "referenceRecords": 0,
+        "unknownScaleRecords": 0,
+        "status": "criteria_based",
+        "sources": []
+      }
+    ],
+    "note": "Xem điều kiện học thuật và tiếng Anh từng chương trình; không áp dụng một bảng điểm chuẩn THPT chung."
+  },
+  {
+    "id": "ctu",
+    "universityId": "ctu",
+    "programs": 127,
+    "catalogueYear": 2026,
+    "checkedAt": "2026-11-07",
+    "years": [
+      {
+        "year": 2024,
+        "records": 109,
+        "officialRecords": 109,
+        "referenceRecords": 0,
+        "unknownScaleRecords": 0,
+        "status": "published",
+        "sources": [
+          "https://tuyensinh.ctu.edu.vn/images/upload/TT_TS/2026/TTTS_DHCT_2026.pdf"
+        ]
+      },
+      {
+        "year": 2025,
+        "records": 121,
+        "officialRecords": 121,
+        "referenceRecords": 0,
+        "unknownScaleRecords": 0,
+        "status": "published",
+        "sources": [
+          "https://tuyensinh.ctu.edu.vn/images/upload/TT_TS/2026/TTTS_DHCT_2026.pdf"
+        ]
+      },
+      {
+        "year": 2026,
+        "records": 127,
+        "officialRecords": 127,
+        "referenceRecords": 0,
+        "unknownScaleRecords": 0,
+        "status": "published",
+        "sources": [
+          "https://tuyensinh.ctu.edu.vn/images/upload/TT_TS/2026/TB2532_Thong-bao-ket-qua-va-diem-chuan_2026_web.pdf"
+        ]
+      }
+    ],
+    "note": "Số ngành/chương trình theo danh mục công bố; nhóm ngành và chuyên ngành được phân biệt. Nguồn tổng hợp chưa được coi là xác minh chính thức."
+  }
+]

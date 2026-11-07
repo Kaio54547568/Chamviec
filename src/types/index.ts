@@ -160,7 +160,16 @@ export interface AdmissionRecord {
   majorName: string;
   programName: string; // "Chuẩn", "Chất lượng cao", "Tiên tiến", "Song bằng"
   program?: string; // alias for programName
-  year: number; // 2024, 2023, 2022
+  year: number;
+  scoreType?: 'cutoff' | 'floor';
+  admissionCode?: string; // Institutional application code; may differ from MOET major code
+  sourcePage?: number;
+  sourceSha256?: string;
+  sourceDataUrl?: string;
+  sourceType?: 'official' | 'reference';
+  applicantGroup?: string;
+  campusProvince?: string | null;
+  campusRegion?: string | null;
   method: string; // "Điểm thi tốt nghiệp THPT", "Đánh giá năng lực ĐHQG", "Xét học bạ THPT", v.v.
   methodName?: string; // alias for method
   admissionMethods?: string[];
@@ -179,6 +188,40 @@ export interface AdmissionRecord {
   verifiedDate: string;
   isVerifiedOfficial: boolean; // true = nguồn đề án / cổng thông tin trường
   isDemoData?: boolean;
+}
+
+export interface UniversityProgram {
+  id: string;
+  universityId: string;
+  year: number;
+  admissionCode: string;
+  name: string;
+  campus: string;
+  kind: 'program' | 'group' | 'specialization';
+  parentName: string;
+  sourceUrl: string;
+  sourceType: 'official' | 'reference';
+  isVerifiedOfficial: boolean;
+  verifiedDate: string;
+  sourceSha256: string;
+}
+
+export interface AdmissionCoverage {
+  id: string;
+  universityId: string;
+  programs: number;
+  catalogueYear: number;
+  checkedAt: string;
+  note: string;
+  years: {
+    year: number;
+    records: number;
+    officialRecords: number;
+    referenceRecords: number;
+    unknownScaleRecords: number;
+    status: 'published' | 'criteria_based';
+    sources: string[];
+  }[];
 }
 
 export interface VideoStory {

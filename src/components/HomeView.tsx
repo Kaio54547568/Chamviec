@@ -213,7 +213,7 @@ export const HomeView: React.FC<HomeViewProps> = ({
                 <CheckCircle className="w-4 h-4 text-emerald-400 shrink-0" />
                 <span>
                   {isEn
-                    ? '3-Year Cutoff Lookup (2023–2025)'
+                    ? '3-Year Cutoff Lookup (2024–2026)'
                     : 'Tra cứu điểm chuẩn 3 năm'}
                 </span>
               </div>

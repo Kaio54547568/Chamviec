@@ -1,4 +1,5 @@
 import { database } from './database.ts';
+import { readCatalog } from './catalog.ts';
 import dotenv from 'dotenv';
 import fs from 'fs';
 import path from 'path';
@@ -19,8 +20,8 @@ import { MAJORS_DATA } from '../data/majors.ts';
 let catalogLoadedAt=0;
 async function refreshGroundingCatalog(){
  if(Date.now()-catalogLoadedAt<60000)return;
- const {data,error}=await database().from('catalog').select('kind,data').in('kind',['careers','majors','universities','admissions']);
- if(error||!data?.length)return;
+ const data=await readCatalog(['careers','majors','universities','admissions']);
+ if(!data.length)return;
  const arrays:Record<string,any[]>={careers:CAREERS_DATA,majors:MAJORS_DATA,universities:UNIVERSITIES_DATA,admissions:ADMISSION_RECORDS};
  for(const [kind,array] of Object.entries(arrays)){const records=data.filter(r=>r.kind===kind).map(r=>r.data);if(records.length)array.splice(0,array.length,...records);}
  catalogLoadedAt=Date.now();
@@ -140,16 +141,16 @@ export function buildDynamicGroundingContext(query: string = '', profile?: any):
       (major && allTokens.includes(major)) ||
       (combo && allTokens.includes(combo))
     );
-  }).slice(0, 4);
+  }).sort((a,b)=>b.year-a.year || Number(b.isVerifiedOfficial)-Number(a.isVerifiedOfficial)).slice(0, 4);
 
   if (matchedAdmissions.length === 0) {
-    matchedAdmissions = ADMISSION_RECORDS.slice(0, 4);
+    matchedAdmissions = [...ADMISSION_RECORDS].sort((a,b)=>b.year-a.year).slice(0, 4);
   }
 
   const admSummary = matchedAdmissions
     .map(
       (a) =>
-        `- Trường: ${a.universityName} | Ngành: ${a.majorName} (${a.majorCode}) | Điểm chuẩn/sàn: ${a.cutoffScore} | Tổ hợp: ${a.subjectCombination} | Năm: ${a.year}`
+        `- Trường: ${a.universityName} | Ngành: ${a.majorName} (${a.majorCode}) | Loại: ${a.scoreType || 'chưa phân loại'} | Điểm: ${a.cutoffScore} | Thang: ${a.scoreScale} | Phương thức: ${a.method} | Nguồn (${a.sourceType}): ${a.sourceUrl} | Tổ hợp: ${a.subjectCombination} | Năm: ${a.year}`
     )
     .join('\n');
 
@@ -247,9 +248,9 @@ VAI TRÒ & SỨ MỆNH:
 
 NGUYÊN TẮC CỐT LÕI (BẮT BUỘC TUÂN THỦ):
 1. VỀ ĐIỂM CHUẨN VÀ TUYỂN SINH:
-   - CHỈ cung cấp số liệu điểm chuẩn, tổ hợp, phương thức dựa trên DỮ LIỆU ĐÃ XÁC MINH trong cơ sở dữ liệu bên dưới.
+   - Chỉ cung cấp số liệu có trong cơ sở dữ liệu bên dưới. sourceType=official là nguồn chính thức; sourceType=reference phải nói rõ nguồn tham khảo cần đối chiếu, không khẳng định đã xác minh chính thức.
    - Nêu rõ năm, phương thức xét tuyển, tổ hợp môn và nguồn đề án/văn bản xác minh.
-   - ĐỐI VỚI NĂM 2025: Nêu rõ đây là số liệu ĐỀ ÁN TUYỂN SINH CHÍNH THỨC VÀ ĐIỂM SÀN NHẬN HỒ SƠ THEO CHƯƠNG TRÌNH GDPT 2018 MỚI (vì kỳ thi tốt nghiệp 2025 chưa diễn ra). Nêu rõ các điểm mới: tổ hợp Tin học K01 (Toán, Tin, Anh), giảm phụ thuộc vào xét học bạ sớm, đề án môn tự chọn.
+   - Không suy loại điểm từ năm. scoreType=cutoff là điểm trúng tuyển, scoreType=floor là điểm sàn nhận hồ sơ. Năm 2025 và 2026 đã có công bố chính thức ở nhiều trường. Nêu đúng phương thức, tổ hợp, thang điểm, nguồn và tình trạng có dữ liệu của từng bản ghi; không coi điểm sàn là điểm trúng tuyển.
    - Nếu trong cơ sở dữ liệu KHÔNG có trường/ngành học sinh hỏi: Phải nói rõ "CHẠM AI hiện chưa có dữ liệu điểm chuẩn xác minh cho trường/ngành này. Bạn nên kiểm tra trực tiếp tại website tuyển sinh chính thức của trường nhé." Tuyệt đối không tự suy đoán hay bịa điểm.
 
 2. KHI HỌC SINH HỎI ĐỊNH HƯỚNG / KHÁM PHÁ NGHỀ:
@@ -712,7 +713,7 @@ ${listStr}
 
   return `[Thông tin từ kho nghề - Dữ liệu hướng nghiệp CHẠM VIỆC]
 
-Chào em! CHẠM VIỆC hiện đang lưu trữ cơ sở dữ liệu ${CAREERS_DATA.length} nghề nghiệp phân theo 20 nhóm ngành chuẩn và số liệu tuyển sinh 3 năm có nguồn xác minh.
+Chào em! CHẠM VIỆC hiện đang lưu trữ cơ sở dữ liệu ${CAREERS_DATA.length} nghề nghiệp phân theo 20 nhóm ngành chuẩn và số liệu tuyển sinh 2024–2026 có phân biệt nguồn chính thức và nguồn tham khảo.
 
 Em có thể tìm hiểu thêm bằng cách:
 1. Nhấp vào các gợi ý câu hỏi bên dưới.
@@ -787,7 +788,7 @@ NGUYÊN TẮC CỐT LÕI (BẮT BUỘC TUÂN THỦ):
 1. VỀ ĐIỂM CHUẨN VÀ TUYỂN SINH:
    - CHỈ cung cấp số liệu điểm chuẩn, tổ hợp, phương thức dựa trên DỮ LIỆU ĐÃ XÁC MINH trong cơ sở dữ liệu.
    - Nêu rõ năm, phương thức xét tuyển, tổ hợp môn và nguồn đề án/văn bản xác minh.
-   - NĂM 2025: Nêu rõ đây là số liệu ĐỀ ÁN TUYỂN SINH CHÍNH THỨC VÀ ĐIỂM SÀN NHẬN HỒ SƠ THEO CHƯƠNG TRÌNH GDPT 2018 MỚI.
+   - Không suy loại điểm từ năm. scoreType=cutoff là điểm trúng tuyển, scoreType=floor là điểm sàn nhận hồ sơ. Năm 2025 và 2026 đã có công bố chính thức ở nhiều trường. Nêu đúng phương thức, tổ hợp, thang điểm, nguồn và tình trạng có dữ liệu của từng bản ghi; không coi điểm sàn là điểm trúng tuyển.
    - Nếu trong cơ sở dữ liệu KHÔNG có trường/ngành học sinh hỏi: Phải nói rõ "CHẠM AI hiện chưa có dữ liệu điểm chuẩn xác minh cho trường/ngành này. Bạn nên kiểm tra trực tiếp tại website tuyển sinh chính thức của trường nhé."
 2. KHI HỌC SINH HỎI ĐỊNH HƯỚNG / KHÁM PHÁ NGHỀ:
    - Đọc hồ sơ học sinh (nếu có) và tích hợp tự nhiên.

@@ -4,7 +4,9 @@ import {Client} from 'pg';
 import {database,checked} from '../src/server/database.ts';
 import {CAREERS_DATA} from '../src/data/careers.ts';
 import {MAJORS_DATA,MAJOR_CATEGORIES} from '../src/data/majors.ts';
-import {UNIVERSITIES_DATA,ADMISSION_RECORDS} from '../src/data/admissions.ts';
+import {UNIVERSITIES_DATA} from '../src/data/admissions.ts';
+const snapshot=(kind:string)=>JSON.parse(readFileSync(`public/data/admissions/${kind}-20261107.json`,'utf8'));
+const ADMISSION_RECORDS=snapshot('records');
 import {SIMULATION_TASKS} from '../src/data/tasks.ts';
 import {VIDEO_STORIES_DATA} from '../src/data/videoStories.ts';
 import {RIASEC_QUESTIONS,CAREER_VALUES_LIST,RIASEC_INFO} from '../src/data/riasecQuestions.ts';
@@ -33,6 +35,8 @@ async function migrate(){
  // Preserve editable records: seeding again never overwrites administrator changes.
  const groups:Record<string,any[]>={careers:CAREERS_DATA,majors:MAJORS_DATA,major_categories:MAJOR_CATEGORIES,universities:UNIVERSITIES_DATA,admissions:ADMISSION_RECORDS,tasks:SIMULATION_TASKS,videos:VIDEO_STORIES_DATA,riasec_questions:RIASEC_QUESTIONS,career_values:CAREER_VALUES_LIST,riasec_info:Object.entries(RIASEC_INFO).map(([id,data])=>({id,...data})),admission_tickers:admissions2026.ADMISSION_TICKER_2026,admission_regulations:admissions2026.MOET_REGULATIONS_2026,exam_libraries:admissions2026.OFFICIAL_EXAM_LIBRARIES,exam_sets:admissions2026.PRACTICE_EXAM_SETS,exam_stats:[{id:'2026',...admissions2026.EXAM_TARGET_STATS}]};
  groups.enterprise_partners=ENTERPRISE_PARTNERS;
+ groups.university_programs=snapshot('programs');
+ groups.admission_coverage=snapshot('coverage');
  for(const [kind,items] of Object.entries(groups)){
   const rows=items.map((data,i)=>({kind,id:String(data.id||i),data}));
   for(let i=0;i<rows.length;i+=100)checked(await db.from('catalog').upsert(rows.slice(i,i+100),{onConflict:'kind,id',ignoreDuplicates:true}));

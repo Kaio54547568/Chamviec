@@ -71,7 +71,10 @@ export function matchAdmissionRecord(rec: AdmissionRecord, query: string, univer
   const cleanQuery = removeVietnameseTones(query);
 
   if (matchQuery(rec.majorName, cleanQuery)) return true;
-  if (rec.majorCode && rec.majorCode.includes(cleanQuery)) return true;
+  if (matchQuery(rec.majorCode, cleanQuery)) return true;
+  if (matchQuery(rec.admissionCode || '', cleanQuery)) return true;
+  if (matchQuery(rec.programName || '', cleanQuery)) return true;
+  if (matchQuery(rec.campus || '', cleanQuery)) return true;
   if (matchQuery(rec.universityName, cleanQuery)) return true;
   if (rec.subjectCombination && matchQuery(rec.subjectCombination, cleanQuery)) return true;
   if (rec.subjectCombinations && rec.subjectCombinations.some((c) => matchQuery(c, cleanQuery))) return true;

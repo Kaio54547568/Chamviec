@@ -1,0 +1,42 @@
+{
+  "projectRef": "mguxggsythajedmxsuws",
+  "importedAt": "2026-11-07T04:35:21.799Z",
+  "version": "20261107",
+  "counts": {
+    "admissions": 3304,
+    "university_programs": 978,
+    "admission_coverage": 23
+  },
+  "removedLegacyRecords": 45,
+  "protectedTablesUnchanged": true,
+  "postgrestReadbackVerified": true,
+  "manifest": {
+    "version": "20261107",
+    "years": [
+      2024,
+      2025,
+      2026
+    ],
+    "checkedAt": "2026-11-07",
+    "universities": 23,
+    "records": 3304,
+    "programs": 978,
+    "officialRecords": 2484,
+    "referenceRecords": 820,
+    "unknownScaleRecords": 566,
+    "files": {
+      "records": {
+        "path": "records-20261107.json",
+        "sha256": "f1ba5886555c4cdf012510b9a62f24e688cf1de8afb53e9a8b1eb98df7fb506c"
+      },
+      "programs": {
+        "path": "programs-20261107.json",
+        "sha256": "3d4048dfaa8e20aafffd086cd934f8385ec24718305dcb6c39d84c7ccea6709a"
+      },
+      "coverage": {
+        "path": "coverage-20261107.json",
+        "sha256": "5c75e732de9bb9b82b599d432f407a4bbe9e0417bc732bfc27f74d9e13cbddf4"
+      }
+    }
+  }
+}

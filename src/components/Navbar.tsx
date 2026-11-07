@@ -34,7 +34,7 @@ export const Navbar: React.FC<NavbarProps> = ({
     { id: "tasks", label: vi ? "Thử nghề 3D" : "3D Studios", icon: PlayCircle },
     {
       id: "admissions",
-      label: vi ? "Chọn trường" : "Admissions",
+      label: vi ? "Điểm chuẩn & Trường" : "Scores & Universities",
       icon: GraduationCap,
     },
     {

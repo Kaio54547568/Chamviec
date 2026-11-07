@@ -1,4 +1,4 @@
-import React, { useState, useMemo } from 'react';
+import React, { useState, useMemo, useEffect } from 'react';
 import { 
   GraduationCap, 
   Search, 
@@ -29,6 +29,9 @@ import {
 } from 'lucide-react';
 import { AdmissionRecord, University, StudentProfile } from '../types';
 import { ADMISSION_RECORDS, UNIVERSITIES_DATA } from '../data/admissions';
+import { ADMISSION_YEARS, latestAdmissionYear, isThptComparable, admissionCampus, admissionCategory } from '../utils/admissionData';
+import { UniversityProgramDirectory, AdmissionsCoverage } from './UniversityProgramDirectory';
+import { catalogState } from '../utils/catalog';
 import { MAJORS_DATA, MAJOR_CATEGORIES } from '../data/majors';
 import { removeVietnameseTones, matchQuery, matchUniversity, matchAdmissionRecord } from '../utils/vietnameseSearch';
 import { saveStudentProfile } from '../utils/storage';
@@ -64,15 +67,10 @@ export const UniversityAdmissionsView: React.FC<UniversityAdmissionsViewProps> =
   const [selectedMajorCategory, setSelectedMajorCategory] = useState<string>('all');
   const [selectedMajorId, setSelectedMajorId] = useState<string>(selectedMajorFilter || 'all');
   const [selectedCombination, setSelectedCombination] = useState<string>('all'); // A00, D01, etc.
-  const [selectedYear, setSelectedYear] = useState<number>(2024);
+  const [selectedYear, setSelectedYear] = useState<number>(latestAdmissionYear());
 
-  // View Mode: 'admissions2026' for 2026 MOET rules & 100 exams, 'search' for table search & filters, 'stats2025' for comprehensive 2025 statistical center
-  const [viewMode, setViewMode] = useState<'admissions2026' | 'search' | 'stats2025'>('admissions2026');
-  const [stats2025Category, setStats2025Category] = useState<string>('all');
-  const [stats2025Region, setStats2025Region] = useState<string>('all');
-  const [stats2025Search, setStats2025Search] = useState<string>('');
-  const [stats2025OnlyInformatics, setStats2025OnlyInformatics] = useState<boolean>(false);
-
+  const [viewMode, setViewMode] = useState<'admissions2026' | 'search' | 'programs'>('search');
+  const [resultsPage, setResultsPage] = useState(0);
   // Score Filter (Section 9)
   const [enableScoreFilter, setEnableScoreFilter] = useState<boolean>(false);
   const [estimatedScore, setEstimatedScore] = useState<number>(profile.estimatedScore || 25.0);
@@ -81,74 +79,15 @@ export const UniversityAdmissionsView: React.FC<UniversityAdmissionsViewProps> =
   const [comparisonList, setComparisonList] = useState<string[]>([]);
   const [showComparisonModal, setShowComparisonModal] = useState<boolean>(false);
 
-  // Statistics Computations for 2025
-  const records2025 = useMemo(() => {
-    return ADMISSION_RECORDS.filter((r) => r.year === 2025);
-  }, []);
 
-  const uniqueUnis2025 = useMemo(() => {
-    return Array.from(new Set(records2025.map((r) => r.universityId)));
-  }, [records2025]);
-
-  const informaticsRecords2025 = useMemo(() => {
-    return records2025.filter(
-      (r) =>
-        r.subjectCombination.toLowerCase().includes('tin') ||
-        r.subjectCombination.includes('K01') ||
-        (r.subjectCombinations && r.subjectCombinations.some((c) => c.includes('K01') || c.includes('Tin')))
-    );
-  }, [records2025]);
-
-  const filteredStats2025Records = useMemo(() => {
-    return records2025.filter((rec) => {
-      const uni = UNIVERSITIES_DATA.find((u) => u.id === rec.universityId);
-      if (!uni) return false;
-
-      // 1. Region
-      if (stats2025Region !== 'all' && uni.region !== stats2025Region) {
-        return false;
-      }
-
-      // 2. Category
-      if (stats2025Category !== 'all') {
-        const majorObj = MAJORS_DATA.find(
-          (m) =>
-            m.name === rec.majorName ||
-            m.code === rec.majorCode ||
-            m.name.toLowerCase().includes(rec.majorName.toLowerCase()) ||
-            rec.majorName.toLowerCase().includes(m.name.toLowerCase())
-        );
-        if (!majorObj || majorObj.category !== stats2025Category) {
-          return false;
-        }
-      }
-
-      // 3. Only Informatics
-      if (stats2025OnlyInformatics) {
-        const hasInfo =
-          rec.subjectCombination.toLowerCase().includes('tin') ||
-          rec.subjectCombination.includes('K01') ||
-          (rec.subjectCombinations && rec.subjectCombinations.some((c) => c.includes('K01') || c.includes('Tin')));
-        if (!hasInfo) return false;
-      }
-
-      // 4. Keyword search
-      if (stats2025Search.trim()) {
-        const matchesRecord = matchAdmissionRecord(rec, stats2025Search, uni);
-        if (!matchesRecord) return false;
-      }
-
-      return true;
-    });
-  }, [records2025, stats2025Region, stats2025Category, stats2025OnlyInformatics, stats2025Search]);
 
   // Dynamic province list based on selectedRegion (Section 5)
   const provinceList = useMemo(() => {
-    let unis = UNIVERSITIES_DATA;
-    if (selectedRegion !== 'all') {
-      unis = UNIVERSITIES_DATA.filter((u) => u.region === selectedRegion);
-    }
-    const list = Array.from(new Set(unis.map((u) => u.province))).filter(Boolean);
+    const locations = ADMISSION_RECORDS.map(record => {
+      const uni = UNIVERSITIES_DATA.find(u => u.id === record.universityId);
+      return uni ? admissionCampus(record, uni) : {province:null,region:null};
+    }).filter(location => selectedRegion === 'all' || location.region === selectedRegion);
+    const list = Array.from(new Set(locations.map(location => location.province))).filter((p):p is string => !!p);
     return list.sort((a, b) => a.localeCompare(b, 'vi'));
   }, [selectedRegion]);
 
@@ -157,11 +96,15 @@ export const UniversityAdmissionsView: React.FC<UniversityAdmissionsViewProps> =
     const base = selectedMajorCategory === 'all'
       ? MAJORS_DATA
       : MAJORS_DATA.filter((m) => m.category === selectedMajorCategory);
-    return base.map((m) => ({
+    const listedNames = new Set(base.map(m => m.name));
+    const extra = [...new Map(ADMISSION_RECORDS.filter(r => (selectedYear === 0 || r.year === selectedYear)
+      && (selectedMajorCategory === 'all' || admissionCategory(r) === selectedMajorCategory)
+      && !listedNames.has(r.majorName)).map(r => [r.majorName, {id:`name:${r.majorName}`,name:r.majorName}])).values()];
+    return [...base, ...extra].map((m) => ({
       ...m,
       displayName: localizeMajorName(m.name, language)
     }));
-  }, [selectedMajorCategory, language]);
+  }, [selectedMajorCategory, language, selectedYear]);
 
   const MAJOR_CATEGORY_EN: Record<string, string> = {
     all: 'All Major Categories',
@@ -254,7 +197,7 @@ export const UniversityAdmissionsView: React.FC<UniversityAdmissionsViewProps> =
     setSelectedMajorCategory('all');
     setSelectedMajorId('all');
     setSelectedCombination('all');
-    setSelectedYear(2024);
+    setSelectedYear(latestAdmissionYear());
     setEnableScoreFilter(false);
   };
 
@@ -270,6 +213,8 @@ export const UniversityAdmissionsView: React.FC<UniversityAdmissionsViewProps> =
         if (!matchesRecord) return false;
       }
 
+      if (enableScoreFilter && !isThptComparable(rec)) return false;
+
       // 2. Year Filter
       if (selectedYear !== 0 && rec.year !== selectedYear) {
         return false;
@@ -277,12 +222,12 @@ export const UniversityAdmissionsView: React.FC<UniversityAdmissionsViewProps> =
 
       // 3. Region Filter
       if (selectedRegion !== 'all') {
-        if (uni.region !== selectedRegion) return false;
+        if (admissionCampus(rec, uni).region !== selectedRegion) return false;
       }
 
       // 4. Province Filter
       if (selectedProvince !== 'all') {
-        if (uni.province !== selectedProvince) return false;
+        if (admissionCampus(rec, uni).province !== selectedProvince) return false;
       }
 
       // 5. Ownership Type
@@ -292,20 +237,14 @@ export const UniversityAdmissionsView: React.FC<UniversityAdmissionsViewProps> =
 
       // 6. Major Category
       if (selectedMajorCategory !== 'all') {
-        const majorObj = MAJORS_DATA.find(
-          (m) =>
-            m.name === rec.majorName ||
-            m.code === rec.majorCode ||
-            m.name.toLowerCase().includes(rec.majorName.toLowerCase()) ||
-            rec.majorName.toLowerCase().includes(m.name.toLowerCase())
-        );
-        if (!majorObj || majorObj.category !== selectedMajorCategory) {
+        if (admissionCategory(rec) !== selectedMajorCategory) {
           return false;
         }
       }
 
       // 7. Specific Major Filter
       if (selectedMajorId !== 'all') {
+        if (selectedMajorId.startsWith('name:') && rec.majorName !== selectedMajorId.slice(5)) return false;
         const targetMajor = MAJORS_DATA.find((m) => m.id === selectedMajorId);
         if (targetMajor) {
           const match =
@@ -334,8 +273,15 @@ export const UniversityAdmissionsView: React.FC<UniversityAdmissionsViewProps> =
     selectedType,
     selectedMajorCategory,
     selectedMajorId,
-    selectedCombination
+    selectedCombination,
+    enableScoreFilter
   ]);
+
+  useEffect(() => setResultsPage(0), [searchQuery, selectedYear, selectedRegion, selectedProvince, selectedType,
+    selectedMajorCategory, selectedMajorId, selectedCombination, enableScoreFilter]);
+  const resultPages = Math.max(1, Math.ceil(filteredRecords.length / 50));
+  const resultPage = Math.min(resultsPage, resultPages - 1);
+  const visibleRecords = filteredRecords.slice(resultPage * 50, (resultPage + 1) * 50);
 
   // Group by Score Category if enabled (Section 9)
   const categorizedRecords = useMemo(() => {
@@ -348,15 +294,15 @@ export const UniversityAdmissionsView: React.FC<UniversityAdmissionsViewProps> =
 
     filteredRecords.forEach((rec) => {
       // For standard 30-point scale:
-      if (rec.scoreScale.includes('Thang 30')) {
-        if (rec.cutoffScore <= estimatedScore + 1.0) {
+      if (isThptComparable(rec)) {
+        if (rec.cutoffScore <= estimatedScore) {
           reachable.push(rec);
         } else {
           consider.push(rec);
         }
       } else {
         // Other scales (e.g. 1200)
-        reachable.push(rec);
+        consider.push(rec);
       }
     });
 
@@ -371,13 +317,13 @@ export const UniversityAdmissionsView: React.FC<UniversityAdmissionsViewProps> =
           <div>
             <div className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-teal-50 text-teal-800 text-xs font-bold mb-2">
               <GraduationCap className="w-3.5 h-3.5 text-teal-600" />
-              <span>{t.admissions.badge}</span>
+              <span>{language === 'vi' ? '23 trường · Dữ liệu 2024–2026' : '23 universities · 2024–2026 data'}</span>
             </div>
             <h1 className="text-2xl sm:text-3xl font-extrabold text-slate-900 tracking-tight">
               {t.admissions.title}
             </h1>
             <p className="text-xs sm:text-sm text-slate-600 max-w-3xl mt-1 leading-relaxed">
-              {t.admissions.subtitle}
+              {language === 'vi' ? 'Tra cứu điểm trúng tuyển theo năm, phương thức và thang điểm. Mỗi bản ghi ghi rõ nguồn chính thức hoặc nguồn tham khảo cần đối chiếu.' : 'Browse admission cutoffs by year, method and score scale. Each record identifies official sources or references requiring confirmation.'}
             </p>
           </div>
 
@@ -396,6 +342,9 @@ export const UniversityAdmissionsView: React.FC<UniversityAdmissionsViewProps> =
         {/* VIEW NAVIGATION TABS */}
         <div className="flex flex-wrap items-center justify-between gap-3 pt-3 border-t border-slate-100">
           <div className="flex flex-wrap items-center gap-2 p-1.5 bg-slate-100 rounded-2xl">
+            <button onClick={() => setViewMode('programs')} className={`px-4 py-2 rounded-xl text-xs sm:text-sm font-bold ${viewMode === 'programs' ? 'bg-white text-teal-900 shadow-xs' : 'text-slate-600 hover:text-slate-900'}`}>
+              {language === 'vi' ? 'Danh mục ngành của 23 trường' : 'Programs at 23 universities'}
+            </button>
             <button
               onClick={() => setViewMode('admissions2026')}
               className={`px-4 py-2 rounded-xl text-xs sm:text-sm font-bold flex items-center gap-2 transition-all ${
@@ -421,17 +370,7 @@ export const UniversityAdmissionsView: React.FC<UniversityAdmissionsViewProps> =
               <Search className="w-4 h-4" />
               <span>{t.admissions.tabSearch}</span>
             </button>
-            <button
-              onClick={() => setViewMode('stats2025')}
-              className={`px-4 py-2 rounded-xl text-xs sm:text-sm font-bold flex items-center gap-2 transition-all ${
-                viewMode === 'stats2025'
-                  ? 'bg-gradient-to-r from-indigo-600 to-indigo-700 text-white shadow-xs'
-                  : 'text-indigo-700 hover:bg-indigo-100/60'
-              }`}
-            >
-              <BarChart3 className="w-4 h-4" />
-              <span>{t.admissions.tabStats2025} ({records2025.length} {language === 'vi' ? 'ngành' : 'majors'})</span>
-            </button>
+
           </div>
 
           <div className="text-xs text-slate-500 font-medium hidden md:block">
@@ -442,10 +381,8 @@ export const UniversityAdmissionsView: React.FC<UniversityAdmissionsViewProps> =
               : viewMode === 'search' 
               ? (language === 'vi'
                   ? `Hiển thị ${filteredRecords.length} phương án tuyển sinh`
-                  : `Showing ${filteredRecords.length} verified admission records`)
-              : (language === 'vi'
-                  ? `Thống kê ${filteredStats2025Records.length}/${records2025.length} ngành đề án 2025`
-                  : `Statistics for ${filteredStats2025Records.length}/${records2025.length} 2025 admission schemes`)
+                  : `Showing ${filteredRecords.length} admission records`)
+              : ''
             }
           </div>
         </div>
@@ -463,538 +400,26 @@ export const UniversityAdmissionsView: React.FC<UniversityAdmissionsViewProps> =
         </div>
       </div>
 
-      {/* RENDER VIEW MODE: 2026 CENTER, STATS 2025 OR STANDARD SEARCH */}
+      {catalogState.source !== 'database' && <p className="rounded-2xl bg-amber-50 p-4 text-sm text-amber-900" role="status">
+        {catalogState.source === 'bundled'
+          ? (language === 'vi' ? 'Chưa tải được danh mục mới. Đang xem bản lưu tham khảo ngày 07/11/2026.' : 'The current catalog is unavailable. Showing the reference snapshot dated 7 November 2026.')
+          : (language === 'vi' ? 'Chưa tải được dữ liệu tuyển sinh. Vui lòng thử tải lại trang.' : 'Admission data is unavailable. Please reload the page.')}
+      </p>}
+      <AdmissionsCoverage />
+      {/* Admission records, program directory and existing admissions resources */}
       {viewMode === 'admissions2026' ? (
         <Admission2026Center onOpenChamAi={onAskAiAboutSchool} />
-      ) : viewMode === 'stats2025' ? (
-        /* ========================================================= */
-        /* DEDICATED 2025 ADMISSIONS & MAJORS STATISTICAL CENTER    */
-        /* ========================================================= */
-        <div className="space-y-6 animate-in fade-in slide-in-from-top-3 duration-300">
-          {/* 2025 Header Hero */}
-          <div className="bg-gradient-to-br from-indigo-950 via-slate-900 to-teal-950 text-white rounded-3xl p-6 sm:p-8 shadow-xl border border-indigo-700/50 space-y-5">
-            <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-6">
-              <div className="space-y-2">
-                <div className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-indigo-500/20 text-indigo-300 text-xs font-bold border border-indigo-400/30">
-                  <Sparkles className="w-3.5 h-3.5 text-amber-300" />
-                  <span>
-                    {language === 'vi'
-                      ? 'Trung tâm Dữ liệu & Thống kê Tuyển sinh Đại học 2025 (Chương trình GDPT 2018)'
-                      : '2025 University Admissions Statistical Center (2018 General Education Curriculum)'}
-                  </span>
-                </div>
-                <h2 className="text-2xl sm:text-3xl font-black text-white tracking-tight">
-                  {language === 'vi' ? 'Thống kê Ngành & Đề án Tuyển sinh 2025' : '2025 University Majors & Admission Schemes'}
-                </h2>
-                <p className="text-xs sm:text-sm text-slate-300 max-w-3xl leading-relaxed">
-                  {language === 'vi'
-                    ? `Năm 2025 là năm đầu tiên học sinh thi tốt nghiệp THPT theo chương trình GDPT 2018 mới (2 môn bắt buộc Toán, Ngữ văn + 2 môn tự chọn). Dưới đây là thống kê toàn diện ${records2025.length} ngành trọng điểm đã công bố đề án tuyển sinh chính thức từ ${uniqueUnis2025.length} trường đại học hàng đầu Việt Nam.`
-                    : `2025 marks the first cohort graduating under the 2018 General Education Curriculum (2 compulsory subjects: Math & Literature + 2 electives). Below is a comprehensive breakdown of ${records2025.length} key majors from ${uniqueUnis2025.length} leading universities across Vietnam.`}
-                </p>
-              </div>
-
-              <div className="flex flex-wrap items-center gap-2.5 shrink-0">
-                <button
-                  onClick={() =>
-                    onAskAiAboutSchool &&
-                    onAskAiAboutSchool(
-                      language === 'vi'
-                        ? 'Hãy thống kê chi tiết các ngành và phương án tuyển sinh năm 2025 theo chương trình mới trong hệ thống?'
-                        : 'Please summarize the 2025 university admission schemes and new subject combinations in the system.'
-                    )
-                  }
-                  className="px-4 py-2.5 rounded-2xl bg-amber-400 hover:bg-amber-300 text-slate-950 font-black text-xs transition-all shadow-md flex items-center gap-1.5"
-                >
-                  <Sparkles className="w-4 h-4 text-slate-950" />
-                  <span>{language === 'vi' ? 'Hỏi CHẠM AI phân tích 2025' : 'Ask CHẠM AI to Analyze 2025'}</span>
-                </button>
-                <button
-                  onClick={() => setViewMode('search')}
-                  className="px-4 py-2.5 rounded-2xl bg-white/10 hover:bg-white/20 text-white font-bold text-xs border border-white/20 transition-all flex items-center gap-1.5"
-                >
-                  <Search className="w-4 h-4" />
-                  <span>{language === 'vi' ? 'Chuyển sang Tra cứu & Bộ lọc' : 'Switch to Multi-Criteria Search'}</span>
-                </button>
-              </div>
-            </div>
-
-            {/* 4 Statistical KPI Metrics */}
-            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3.5 pt-2">
-              <div className="p-4 rounded-2xl bg-white/10 border border-white/15 backdrop-blur-xs">
-                <div className="text-[11px] font-bold text-indigo-200 uppercase tracking-wider">
-                  {language === 'vi' ? 'Tổng ngành đã công bố' : 'Total Published Majors'}
-                </div>
-                <div className="text-2xl font-black text-white mt-1 flex items-baseline gap-1.5">
-                  <span>{records2025.length} {language === 'vi' ? 'Ngành' : 'Majors'}</span>
-                  <span className="text-[11px] font-semibold text-emerald-300">
-                    {language === 'vi' ? 'Đề án chính thức' : 'Official Schemes'}
-                  </span>
-                </div>
-                <div className="text-[11px] text-slate-300 mt-1">
-                  {language === 'vi'
-                    ? `Thuộc ${uniqueUnis2025.length} cơ sở đào tạo đại học trọng điểm cả 3 miền`
-                    : `Across ${uniqueUnis2025.length} flagship universities nationwide`}
-                </div>
-              </div>
-
-              <div className="p-4 rounded-2xl bg-white/10 border border-white/15 backdrop-blur-xs">
-                <div className="text-[11px] font-bold text-emerald-200 uppercase tracking-wider">
-                  {language === 'vi' ? 'Đột phá: Môn Tin học' : 'Breakthrough: Informatics'}
-                </div>
-                <div className="text-2xl font-black text-emerald-300 mt-1 flex items-baseline gap-1.5">
-                  <span>{informaticsRecords2025.length} {language === 'vi' ? 'Ngành' : 'Majors'}</span>
-                  <span className="text-[11px] font-semibold text-emerald-200">~{Math.round((informaticsRecords2025.length / records2025.length) * 100)}%</span>
-                </div>
-                <div className="text-[11px] text-slate-300 mt-1">
-                  {language === 'vi'
-                    ? 'Xuất hiện tổ hợp K01 (Toán-Lý-Tin) & Toán-Tin-Anh'
-                    : 'Includes new K01 (Math-Physics-Informatics) & Math-IT-English'}
-                </div>
-              </div>
-
-              <div className="p-4 rounded-2xl bg-white/10 border border-white/15 backdrop-blur-xs">
-                <div className="text-[11px] font-bold text-amber-200 uppercase tracking-wider">
-                  {language === 'vi' ? 'Ngưỡng sàn nhận hồ sơ' : 'Minimum Qualifying Score'}
-                </div>
-                <div className="text-2xl font-black text-amber-300 mt-1">18.00 – 24.50</div>
-                <div className="text-[11px] text-slate-300 mt-1">
-                  {language === 'vi'
-                    ? 'Thang 30 (Ngưỡng sơ tuyển / điểm sàn đề án các trường)'
-                    : '30-Point Scale (Institutional floor threshold)'}
-                </div>
-              </div>
-
-              <div className="p-4 rounded-2xl bg-white/10 border border-white/15 backdrop-blur-xs">
-                <div className="text-[11px] font-bold text-teal-200 uppercase tracking-wider">
-                  {language === 'vi' ? 'Phương thức tuyển sinh' : 'Admission Pathways'}
-                </div>
-                <div className="text-2xl font-black text-teal-300 mt-1">
-                  {language === 'vi' ? 'Đa dạng ĐGNL / ĐGTD' : 'Multi-Modal Aptitude'}
-                </div>
-                <div className="text-[11px] text-slate-300 mt-1">
-                  {language === 'vi'
-                    ? 'Kỳ thi HSA ĐHQGHN, TSA Bách khoa, ĐGNL ĐHQG-HCM, SPT...'
-                    : 'VNU-HN HSA, HUST TSA, VNU-HCM Aptitude Test, HNUE SPT...'}
-                </div>
-              </div>
-            </div>
-          </div>
-
-          {/* Educational Insights Box: 3 Major Shifts in 2025 Admissions */}
-          <div className="bg-white rounded-3xl p-6 border border-indigo-200/80 shadow-xs space-y-3">
-            <div className="flex items-center gap-2 text-indigo-900 font-bold text-sm">
-              <BookOpen className="w-4 h-4 text-indigo-600" />
-              <span>
-                {language === 'vi'
-                  ? '3 Điểm thay đổi cốt lõi học sinh lớp 12 cần lưu ý trong tuyển sinh năm 2025:'
-                  : '3 Core Admission Shifts Grade 12 Students Should Note for 2025–2026:'}
-              </span>
-            </div>
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-3 text-xs leading-relaxed text-slate-700">
-              <div className="p-3.5 rounded-2xl bg-indigo-50/60 border border-indigo-100 space-y-1">
-                <div className="font-bold text-indigo-900 flex items-center gap-1.5">
-                  <CheckCircle2 className="w-3.5 h-3.5 text-indigo-600" />
-                  <span>{language === 'vi' ? '1. Cấu trúc kỳ thi tốt nghiệp 2 + 2' : '1. The 2 + 2 Graduation Exam Format'}</span>
-                </div>
-                <p className="text-slate-600">
-                  {language === 'vi'
-                    ? 'Thí sinh chỉ thi 4 môn: Toán & Ngữ văn (bắt buộc) cùng 2 môn tự chọn trong các môn đã học. Giảm tải số môn so với chương trình cũ.'
-                    : 'Candidates take 4 subjects: Math & Literature (compulsory) plus 2 electives chosen from high school subjects, reducing exam load.'}
-                </p>
-              </div>
-
-              <div className="p-3.5 rounded-2xl bg-teal-50/60 border border-teal-100 space-y-1">
-                <div className="font-bold text-teal-900 flex items-center gap-1.5">
-                  <CheckCircle2 className="w-3.5 h-3.5 text-teal-600" />
-                  <span>{language === 'vi' ? '2. Xuất hiện môn Tin học (K01)' : '2. Informatics Combinations (K01)'}</span>
-                </div>
-                <p className="text-slate-600">
-                  {language === 'vi'
-                    ? 'Các khối ngành Công nghệ thông tin, Trí tuệ nhân tạo, Tự động hóa, Kinh tế số tại Bách khoa Hà Nội, ĐHQGHN, ĐH Kinh tế Quốc dân, ĐH Cần Thơ, UIT... chính thức xét tuyển tổ hợp có môn Tin học.'
-                    : 'IT, AI, Automation, and Digital Economy programs at HUST, VNU, NEU, CTU, and UIT officially accept Informatics combinations (K01).'}
-                </p>
-              </div>
-
-              <div className="p-3.5 rounded-2xl bg-amber-50/60 border border-amber-100 space-y-1">
-                <div className="font-bold text-amber-950 flex items-center gap-1.5">
-                  <CheckCircle2 className="w-3.5 h-3.5 text-amber-700" />
-                  <span>{language === 'vi' ? '3. Trọng số ĐGNL / ĐGTD gia tăng' : '3. Expanded Aptitude & Thinking Tests'}</span>
-                </div>
-                <p className="text-slate-600">
-                  {language === 'vi'
-                    ? 'Tỷ lệ chỉ tiêu dành cho các kỳ thi đánh giá năng lực (HSA, TSA, ĐGNL ĐHQG-HCM, SPT) tiếp tục tăng. Thí sinh nên chuẩn bị sớm từ học kỳ 1 lớp 12.'
-                    : 'Quota shares for university aptitude tests (HSA, TSA, VNU-HCM, SPT) continue to grow. Early preparation from Semester 1 of Grade 12 is recommended.'}
-                </p>
-              </div>
-            </div>
-          </div>
-
-          {/* Interactive 2025 Filter Bar */}
-          <div className="bg-white rounded-3xl p-5 sm:p-6 border border-slate-200/80 shadow-xs space-y-4">
-            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
-              <div className="flex items-center gap-2 text-xs font-bold text-slate-800">
-                <Filter className="w-4 h-4 text-indigo-600" />
-                <span>
-                  {language === 'vi'
-                    ? `Bộ lọc chuyên sâu ngành 2025 (${filteredStats2025Records.length} ngành đang hiển thị)`
-                    : `2025 Scheme Filter (${filteredStats2025Records.length} majors displayed)`}
-                </span>
-              </div>
-
-              {/* Checkbox Only Informatics */}
-              <label className="inline-flex items-center gap-2 cursor-pointer text-xs font-bold text-indigo-900 bg-indigo-50 hover:bg-indigo-100 px-3 py-1.5 rounded-xl border border-indigo-200 transition-colors">
-                <input
-                  type="checkbox"
-                  checked={stats2025OnlyInformatics}
-                  onChange={(e) => setStats2025OnlyInformatics(e.target.checked)}
-                  className="rounded text-indigo-600 focus:ring-indigo-500 w-3.5 h-3.5"
-                />
-                <span>
-                  {language === 'vi'
-                    ? 'Chỉ hiện ngành có tổ hợp môn Tin học (K01 / Toán-Tin-Anh)'
-                    : 'Only show majors accepting Informatics (K01 / Math-IT-English)'}
-                </span>
-              </label>
-            </div>
-
-            <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
-              {/* Quick Search */}
-              <div className="relative">
-                <Search className="w-4 h-4 text-slate-400 absolute left-3.5 top-3" />
-                <input
-                  type="text"
-                  value={stats2025Search}
-                  onChange={(e) => setStats2025Search(e.target.value)}
-                  placeholder={language === 'vi' ? 'Tìm ngành, trường đề án 2025...' : 'Search 2025 major, university...'}
-                  className="w-full pl-10 pr-4 py-2.5 rounded-xl border border-slate-300 text-xs focus:ring-2 focus:ring-indigo-500 focus:outline-none"
-                />
-              </div>
-
-              {/* Major Category Filter */}
-              <div>
-                <select
-                  value={stats2025Category}
-                  onChange={(e) => setStats2025Category(e.target.value)}
-                  className="w-full px-3 py-2.5 rounded-xl border border-slate-300 text-xs focus:ring-2 focus:ring-indigo-500 focus:outline-none bg-white font-medium"
-                >
-                  <option value="all">{language === 'vi' ? 'Khối ngành: Tất cả khối ngành' : 'Category: All Major Fields'}</option>
-                  <option value="cong-nghe">{language === 'vi' ? 'Công nghệ – Kỹ thuật' : 'Engineering & Technology'}</option>
-                  <option value="kinh-te">{language === 'vi' ? 'Kinh tế – Kinh doanh' : 'Economics & Business'}</option>
-                  <option value="suc-khoe">{language === 'vi' ? 'Y Dược – Sức khỏe' : 'Medicine & Health Sciences'}</option>
-                  <option value="su-pham">{language === 'vi' ? 'Sư phạm – Giáo dục' : 'Education & Pedagogy'}</option>
-                  <option value="xa-hoi">{language === 'vi' ? 'Xã hội – Luật – Báo chí' : 'Social Sciences, Law & Media'}</option>
-                  <option value="nong-nghiep">{language === 'vi' ? 'Nông nghiệp' : 'Agriculture & Biotech'}</option>
-                </select>
-              </div>
-
-              {/* Region Filter */}
-              <div>
-                <select
-                  value={stats2025Region}
-                  onChange={(e) => setStats2025Region(e.target.value)}
-                  className="w-full px-3 py-2.5 rounded-xl border border-slate-300 text-xs focus:ring-2 focus:ring-indigo-500 focus:outline-none bg-white font-medium"
-                >
-                  <option value="all">{language === 'vi' ? 'Khu vực: Toàn quốc' : 'Region: Nationwide'}</option>
-                  <option value="Miền Bắc">{language === 'vi' ? 'Miền Bắc' : 'Northern Vietnam'}</option>
-                  <option value="Miền Trung">{language === 'vi' ? 'Miền Trung' : 'Central Vietnam'}</option>
-                  <option value="Miền Nam">{language === 'vi' ? 'Miền Nam' : 'Southern Vietnam'}</option>
-                </select>
-              </div>
-            </div>
-          </div>
-
-          {/* Full Detailed 2025 Statistics Table */}
-          <div className="bg-white rounded-3xl border border-slate-200/80 shadow-xs overflow-hidden">
-            <div className="p-4 sm:p-5 border-b border-slate-200 bg-slate-50/70 flex items-center justify-between">
-              <div>
-                <h3 className="font-bold text-slate-900 text-sm flex items-center gap-2">
-                  <BarChart3 className="w-4 h-4 text-indigo-600" />
-                  <span>
-                    {language === 'vi'
-                      ? 'Bảng Thống kê Chi tiết Ngành Tuyển sinh Năm 2025 (Chương trình GDPT 2018)'
-                      : 'Detailed 2025 University Admission Schemes Table (2018 Curriculum)'}
-                  </span>
-                </h3>
-                <p className="text-[11px] text-slate-500 mt-0.5">
-                  {language === 'vi'
-                    ? 'Dữ liệu được trích xuất trực tiếp từ các thông báo tuyển sinh và đề án 2025 chính thức của từng trường.'
-                    : 'Data extracted directly from official 2025 institutional admission schemes and announcements.'}
-                </p>
-              </div>
-              <span className="text-xs font-bold px-2.5 py-1 rounded-full bg-indigo-100 text-indigo-800">
-                {filteredStats2025Records.length} {language === 'vi' ? 'ngành phù hợp' : 'matching majors'}
-              </span>
-            </div>
-
-            <div className="overflow-x-auto">
-              <table className="w-full text-left text-xs">
-                <thead className="bg-slate-100/80 text-slate-700 font-bold border-b border-slate-200">
-                  <tr>
-                    <th className="p-3.5 whitespace-nowrap">#</th>
-                    <th className="p-3.5 min-w-[200px]">{language === 'vi' ? 'Cơ sở đào tạo' : 'University'}</th>
-                    <th className="p-3.5 min-w-[180px]">{language === 'vi' ? 'Ngành tuyển sinh 2025' : '2025 Major'}</th>
-                    <th className="p-3.5 min-w-[170px]">{language === 'vi' ? 'Tổ hợp xét tuyển mới' : 'Subject Combinations'}</th>
-                    <th className="p-3.5 whitespace-nowrap text-indigo-800 font-black">{language === 'vi' ? 'Điểm sàn đề án' : 'Floor Score'}</th>
-                    <th className="p-3.5 min-w-[160px]">{language === 'vi' ? 'Phương thức xét tuyển 2025' : '2025 Admission Method'}</th>
-                    <th className="p-3.5 min-w-[150px]">{language === 'vi' ? 'Học phí dự kiến' : 'Estimated Tuition'}</th>
-                    <th className="p-3.5 whitespace-nowrap">{language === 'vi' ? 'Đề án & Hỏi AI' : 'Source & AI'}</th>
-                  </tr>
-                </thead>
-                <tbody className="divide-y divide-slate-200/80">
-                  {filteredStats2025Records.length === 0 ? (
-                    <tr>
-                      <td colSpan={8} className="p-8 text-center text-slate-400">
-                        {language === 'vi'
-                          ? 'Không có ngành nào phù hợp với bộ lọc thống kê 2025 hiện tại.'
-                          : 'No majors match the current 2025 statistical filter.'}
-                      </td>
-                    </tr>
-                  ) : (
-                    filteredStats2025Records.map((rawRec, index) => {
-                      const rec = localizeAdmissionRecord(rawRec, language);
-                      const rawUni = UNIVERSITIES_DATA.find((u) => u.id === rawRec.universityId);
-                      const uni = rawUni ? localizeUniversity(rawUni, language) : undefined;
-                      const hasTinHoc =
-                        rawRec.subjectCombination.toLowerCase().includes('tin') ||
-                        rawRec.subjectCombination.includes('K01');
-
-                      return (
-                        <tr
-                          key={rec.id}
-                          className="hover:bg-indigo-50/40 transition-colors"
-                        >
-                          {/* STT */}
-                          <td className="p-3.5 font-bold text-slate-400">
-                            {index + 1}
-                          </td>
-
-                          {/* University */}
-                          <td className="p-3.5">
-                            <div className="flex items-center gap-1.5">
-                              <span className="font-bold text-slate-900 leading-snug">
-                                {rec.universityName}
-                              </span>
-                              {uni?.institutionCode && (
-                                <span className="text-[10px] font-mono font-bold bg-indigo-50 text-indigo-700 px-1.5 py-0.5 rounded border border-indigo-200">
-                                  {uni.institutionCode}
-                                </span>
-                              )}
-                            </div>
-                            <div className="text-[11px] text-slate-500 flex items-center gap-1 mt-0.5">
-                              <MapPin className="w-3 h-3 text-slate-400" />
-                              <span>{uni?.province} ({uni?.region})</span>
-                              <span>•</span>
-                              <span className="font-semibold text-slate-600">{uni?.ownershipType}</span>
-                            </div>
-                          </td>
-
-                          {/* Major */}
-                          <td className="p-3.5">
-                            <div className="font-bold text-indigo-950 leading-snug flex items-center gap-1.5">
-                              <span>{rec.majorName}</span>
-                              <span className="text-[10px] font-bold px-1.5 py-0.2 rounded bg-indigo-100 text-indigo-800">
-                                2025
-                              </span>
-                            </div>
-                            <div className="text-[11px] text-slate-400 font-mono mt-0.5">
-                              {language === 'vi' ? 'Mã:' : 'Code:'} {rec.majorCode}
-                            </div>
-                            <div className="text-[10px] text-slate-500 mt-0.5 font-medium">
-                              {language === 'vi' ? 'Chương trình:' : 'Program:'} {rec.programName || rec.program}
-                            </div>
-                          </td>
-
-                          {/* Combination */}
-                          <td className="p-3.5">
-                            <div className="font-semibold text-slate-800">
-                              {rec.subjectCombination}
-                            </div>
-                            {hasTinHoc && (
-                              <span className="inline-flex items-center gap-1 text-[10px] font-bold text-emerald-800 bg-emerald-100/90 px-1.5 py-0.5 rounded mt-1 border border-emerald-200">
-                                <Sparkles className="w-2.5 h-2.5 text-emerald-700" />
-                                <span>{language === 'vi' ? 'Có môn Tin học (K01 / Mới)' : 'Includes Informatics (K01)'}</span>
-                              </span>
-                            )}
-                          </td>
-
-                          {/* Floor Score */}
-                          <td className="p-3.5 whitespace-nowrap">
-                            <div className="font-black text-sm text-indigo-700">
-                              {rec.cutoffScore}
-                            </div>
-                            <div className="text-[10px] text-slate-500">
-                              {language === 'vi' ? 'Điểm sàn nhận hồ sơ' : 'Minimum floor score'}
-                            </div>
-                            <div className="text-[10px] text-slate-400">
-                              {rec.scoreScale}
-                            </div>
-                          </td>
-
-                          {/* Method */}
-                          <td className="p-3.5 text-slate-700 leading-snug">
-                            {rec.method}
-                            {rec.admissionMethods && rec.admissionMethods.length > 0 && (
-                              <div className="text-[10px] text-slate-500 mt-0.5">
-                                {language === 'vi' ? 'Các phương thức:' : 'Methods:'} {rec.admissionMethods.join(' • ')}
-                              </div>
-                            )}
-                          </td>
-
-                          {/* Tuition */}
-                          <td className="p-3.5 text-slate-700 leading-snug">
-                            <div className="font-medium text-slate-800">
-                              {rec.tuitionInfo || rec.tuition}
-                            </div>
-                            {rec.subCriteria && (
-                              <div className="text-[10px] text-slate-500 mt-0.5">
-                                {language === 'vi' ? 'Tiêu chí phụ:' : 'Sub-criteria:'} {rec.subCriteria}
-                              </div>
-                            )}
-                          </td>
-
-                          {/* Sources & AI */}
-                          <td className="p-3.5 whitespace-nowrap space-y-1.5">
-                            <div>
-                              <a
-                                href={rec.sourceUrl}
-                                target="_blank"
-                                rel="noopener noreferrer"
-                                className="inline-flex items-center gap-1 text-[11px] font-bold text-indigo-700 hover:text-indigo-900 underline"
-                                title={language === 'vi' ? 'Xem văn bản đề án 2025 gốc' : 'View official 2025 admission scheme'}
-                              >
-                                <span>{language === 'vi' ? 'Đề án 2025 gốc' : 'Official Scheme'}</span>
-                                <ExternalLink className="w-3 h-3" />
-                              </a>
-                            </div>
-
-                            <button
-                              onClick={() => {
-                                if (onAskAiAboutSchool) {
-                                  onAskAiAboutSchool(
-                                    language === 'vi'
-                                      ? `Cho em hỏi về đề án tuyển sinh 2025 ngành ${rec.majorName} trường ${rec.universityName}? Điểm sàn, tổ hợp môn mới và phương thức xét tuyển thế nào?`
-                                      : `Can you explain the 2025 admission scheme for ${rec.majorName} at ${rec.universityName}, including floor scores, combinations, and admission methods?`
-                                  );
-                                }
-                              }}
-                              className="px-2.5 py-1 rounded-lg bg-teal-50 hover:bg-teal-100 text-teal-800 text-[10px] font-bold flex items-center gap-1 transition-colors border border-teal-200"
-                            >
-                              <Sparkles className="w-3 h-3 text-teal-600" />
-                              <span>{language === 'vi' ? 'Hỏi CHẠM AI' : 'Ask CHẠM AI'}</span>
-                            </button>
-                          </td>
-                        </tr>
-                      );
-                    })
-                  )}
-                </tbody>
-              </table>
-            </div>
-          </div>
-        </div>
+      ) : viewMode === 'programs' ? (
+        <UniversityProgramDirectory />
       ) : (
         /* ========================================================= */
         /* STANDARD SEARCH & BROWSE ADMISSIONS VIEW                  */
         /* ========================================================= */
         <>
-          {/* 2025 ADMISSIONS SCHEMES HIGHLIGHT & STATISTICS CARD */}
-          <div className="bg-gradient-to-br from-indigo-900 via-slate-900 to-teal-950 text-white rounded-3xl p-6 sm:p-7 shadow-lg border border-indigo-700/50 space-y-4">
-            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
-              <div className="space-y-1">
-                <div className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-indigo-500/20 text-indigo-300 text-xs font-bold border border-indigo-400/30">
-                  <Sparkles className="w-3.5 h-3.5 text-amber-300" />
-                  <span>
-                    {language === 'vi'
-                      ? 'Cập nhật mới: Thống kê Phương án Tuyển sinh 2025 (Chương trình GDPT 2018)'
-                      : 'New Update: 2025 University Admission Schemes (2018 Curriculum)'}
-                  </span>
-                </div>
-                <h2 className="text-xl sm:text-2xl font-black text-white tracking-tight flex items-center gap-2">
-                  <span>{language === 'vi' ? 'Đề án & Ngành tuyển sinh Đại học 2025' : '2025 University Admission Schemes & Majors'}</span>
-                  <span className="text-xs font-bold px-2 py-0.5 rounded-full bg-emerald-500/30 text-emerald-300 border border-emerald-400/40">
-                    {records2025.length} {language === 'vi' ? 'Ngành tiên phong' : 'Flagship Majors'}
-                  </span>
-                </h2>
-                <p className="text-xs sm:text-sm text-slate-300 max-w-3xl leading-relaxed">
-                  {language === 'vi'
-                    ? 'Tổng hợp đề án và phương thức tuyển sinh mới nhất năm 2025 từ các trường đại học hàng đầu: bổ sung tổ hợp môn Tin học (K01, Toán-Tin-Anh), điểm sàn nhận hồ sơ và phương thức thi đánh giá năng lực/tư duy.'
-                    : 'Comprehensive 2025 admission schemes from top universities: featuring new Informatics subject combinations (K01, Math-IT-English), floor scores, and aptitude/thinking assessment pathways.'}
-                </p>
-              </div>
-
-              <div className="flex flex-wrap items-center gap-2 shrink-0">
-                <button
-                  onClick={() => setViewMode('stats2025')}
-                  className="px-4 py-2.5 rounded-2xl text-xs font-black transition-all shadow-md flex items-center gap-2 bg-gradient-to-r from-amber-400 to-amber-500 hover:from-amber-300 hover:to-amber-400 text-slate-950 ring-2 ring-amber-300"
-                >
-                  <BarChart3 className="w-4 h-4 text-slate-950" />
-                  <span>
-                    {language === 'vi'
-                      ? `Mở Bảng Thống kê 2025 (${records2025.length} ngành)`
-                      : `Open 2025 Statistics Table (${records2025.length} majors)`}
-                  </span>
-                </button>
-                <button
-                  onClick={() => {
-                    setSelectedYear(2025);
-                    setSearchQuery('');
-                  }}
-                  className={`px-3.5 py-2.5 rounded-2xl text-xs font-bold transition-all shadow-md flex items-center gap-2 ${
-                    selectedYear === 2025
-                      ? 'bg-amber-400 text-slate-950 ring-2 ring-amber-300'
-                      : 'bg-indigo-600 hover:bg-indigo-500 text-white'
-                  }`}
-                >
-                  <Calendar className="w-4 h-4" />
-                  <span>{language === 'vi' ? 'Lọc riêng bảng năm 2025' : 'Filter 2025 Records Only'}</span>
-                </button>
-              </div>
-            </div>
-
-            {/* 3 Key 2025 Statistics Cards */}
-            <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 pt-2">
-              <div className="p-3.5 rounded-2xl bg-white/10 border border-white/10 backdrop-blur-xs">
-                <div className="text-[11px] font-semibold text-indigo-200">
-                  {language === 'vi' ? 'Tổ hợp môn mới 2025' : 'New 2025 Subject Combinations'}
-                </div>
-                <div className="text-sm font-bold text-white mt-1">
-                  {language === 'vi' ? 'Xuất hiện môn Tin học (K01)' : 'Informatics Added (K01)'}
-                </div>
-                <div className="text-[11px] text-slate-300 mt-0.5">
-                  {language === 'vi'
-                    ? 'Toán-Lý-Tin, Toán-Tin-Anh áp dụng tại BKA, UET, FTU, NEU, UIT, CTU...'
-                    : 'Math-Physics-IT & Math-IT-English accepted at HUST, UET, FTU, NEU, UIT, CTU...'}
-                </div>
-              </div>
-
-              <div className="p-3.5 rounded-2xl bg-white/10 border border-white/10 backdrop-blur-xs">
-                <div className="text-[11px] font-semibold text-emerald-200">
-                  {language === 'vi' ? 'Phương thức xét tuyển 2025' : '2025 Admission Methods'}
-                </div>
-                <div className="text-sm font-bold text-white mt-1">
-                  {language === 'vi' ? 'Đa dạng ĐGNL / ĐGTD' : 'Aptitude & Thinking Exams'}
-                </div>
-                <div className="text-[11px] text-slate-300 mt-0.5">
-                  {language === 'vi'
-                    ? 'Kỳ thi HSA ĐHQGHN, TSA Bách khoa, ĐGNL ĐHQG-HCM, Kỳ thi SPT ĐH Sư phạm.'
-                    : 'VNU-HN HSA, HUST TSA, VNU-HCM Aptitude Test, and HNUE SPT.'}
-                </div>
-              </div>
-
-              <div className="p-3.5 rounded-2xl bg-white/10 border border-white/10 backdrop-blur-xs">
-                <div className="text-[11px] font-semibold text-amber-200">
-                  {language === 'vi' ? 'Ngưỡng sàn nhận hồ sơ' : 'Qualifying Floor Threshold'}
-                </div>
-                <div className="text-sm font-bold text-white mt-1">
-                  {language === 'vi' ? '18.00 – 24.50 điểm (Thang 30)' : '18.00 – 24.50 pts (30-Point Scale)'}
-                </div>
-                <div className="text-[11px] text-slate-300 mt-0.5">
-                  {language === 'vi'
-                    ? 'Điểm chuẩn thực tế sẽ công bố sau khi có kết quả kỳ thi tốt nghiệp 2025.'
-                    : 'Official cutoffs are published following the national high school graduation results.'}
-                </div>
-              </div>
-            </div>
+          <div className="rounded-2xl border border-teal-200 bg-teal-50 p-4 text-sm text-teal-950">
+            {language === 'vi'
+              ? 'Tra cứu điểm trúng tuyển 2024–2026. Mỗi bản ghi ghi rõ phương thức, thang điểm và nguồn công bố; dữ liệu còn thiếu không được thay bằng điểm sàn hoặc điểm ước tính.'
+              : 'Browse 2024–2026 admission cutoffs with method, score scale and original source. Missing cutoffs are never replaced by application floors or estimates.'}
           </div>
 
       {/* Comparison Floating Bar */}
@@ -1179,11 +604,10 @@ export const UniversityAdmissionsView: React.FC<UniversityAdmissionsViewProps> =
               onChange={(e) => setSelectedYear(Number(e.target.value))}
               className="w-full px-3 py-2.5 rounded-xl border border-slate-300 text-xs focus:ring-2 focus:ring-teal-500 focus:outline-none bg-white font-semibold text-slate-800"
             >
-              <option value={2025}>{language === 'vi' ? 'Năm dữ liệu: 2025 (Đề án GDPT 2018 mới)' : 'Data Year: 2025 (New 2018 Curriculum)'}</option>
-              <option value={2024}>{language === 'vi' ? 'Năm dữ liệu: 2024 (Chính thức)' : 'Data Year: 2024 (Official)'}</option>
-              <option value={2023}>{language === 'vi' ? 'Năm dữ liệu: 2023' : 'Data Year: 2023'}</option>
-              <option value={2022}>{language === 'vi' ? 'Năm dữ liệu: 2022' : 'Data Year: 2022'}</option>
-              <option value={0}>{language === 'vi' ? 'Tất cả các năm (2022 – 2025)' : 'All Years (2022 – 2025)'}</option>
+              {ADMISSION_YEARS.map(year => <option key={year} value={year}>
+                {language === 'vi' ? `Năm dữ liệu: ${year}` : `Data year: ${year}`}
+              </option>)}
+              <option value={0}>{language === 'vi' ? 'Tất cả các năm (2024–2026)' : 'All years (2024–2026)'}</option>
             </select>
           </div>
         </div>
@@ -1264,7 +688,7 @@ export const UniversityAdmissionsView: React.FC<UniversityAdmissionsViewProps> =
               <p className="text-[11px] text-emerald-700 mt-1 leading-normal">
                 {language === 'vi'
                   ? `Điểm chuẩn các năm trước tương đối gần hoặc thấp hơn điểm dự kiến ${estimatedScore} của bạn.`
-                  : `Historical cutoffs are below or within 1.0 point of your estimated score (${estimatedScore}).`}
+                  : `Historical cutoffs do not exceed your estimated score (${estimatedScore}).`}
               </p>
             </div>
 
@@ -1294,7 +718,7 @@ export const UniversityAdmissionsView: React.FC<UniversityAdmissionsViewProps> =
                 <tr className="bg-slate-100 text-slate-700 border-b border-slate-200 font-bold uppercase tracking-wider text-[11px]">
                   <th className="p-3.5 whitespace-nowrap">{language === 'vi' ? 'Chọn / Lưu' : 'Compare / Save'}</th>
                   <th className="p-3.5 min-w-[210px]">{language === 'vi' ? 'Trường / Địa điểm' : 'University / Location'}</th>
-                  <th className="p-3.5 min-w-[190px]">{language === 'vi' ? 'Ngành & Mã ngành' : 'Major & Code'}</th>
+                  <th className="p-3.5 min-w-[190px]">{language === 'vi' ? 'Ngành & Mã xét tuyển' : 'Major & Admission Code'}</th>
                   <th className="p-3.5 whitespace-nowrap">{language === 'vi' ? 'Chương trình' : 'Program'}</th>
                   <th className="p-3.5 whitespace-nowrap">{language === 'vi' ? 'Năm' : 'Year'}</th>
                   <th className="p-3.5 min-w-[150px]">{language === 'vi' ? 'Phương thức' : 'Method'}</th>
@@ -1315,7 +739,7 @@ export const UniversityAdmissionsView: React.FC<UniversityAdmissionsViewProps> =
                     </td>
                   </tr>
                 ) : (
-                  filteredRecords.map((rawRec) => {
+                  visibleRecords.map((rawRec) => {
                     const rec = localizeAdmissionRecord(rawRec, language);
                     const rawUni = UNIVERSITIES_DATA.find((u) => u.id === rawRec.universityId);
                     const uni = rawUni ? localizeUniversity(rawUni, language) : undefined;
@@ -1330,7 +754,7 @@ export const UniversityAdmissionsView: React.FC<UniversityAdmissionsViewProps> =
                         }`}
                       >
                         {/* Comparison & Bookmark */}
-                        <td className="p-3.5 whitespace-nowrap">
+                        <td className="p-3.5 min-w-[160px] max-w-[260px] whitespace-normal">
                           <div className="flex items-center gap-1.5">
                             <button
                               onClick={() => handleToggleComparison(rec.id)}
@@ -1372,7 +796,7 @@ export const UniversityAdmissionsView: React.FC<UniversityAdmissionsViewProps> =
                           </div>
                           <div className="text-[11px] text-slate-500 flex items-center gap-1 mt-0.5">
                             <MapPin className="w-3 h-3 text-slate-400" />
-                            <span>{uni?.province} ({uni?.region})</span>
+                            <span>{rec.campus || uni?.province}</span>
                             <span>•</span>
                             <span className="font-semibold text-slate-600">{uni?.ownershipType}</span>
                           </div>
@@ -1384,7 +808,7 @@ export const UniversityAdmissionsView: React.FC<UniversityAdmissionsViewProps> =
                             {rec.majorName}
                           </div>
                           <div className="text-[11px] text-slate-400 font-mono mt-0.5">
-                            {language === 'vi' ? 'Mã:' : 'Code:'} {rec.majorCode}
+                            {language === 'vi' ? 'Mã:' : 'Code:'} {rec.admissionCode || rec.majorCode}
                           </div>
                         </td>
 
@@ -1397,16 +821,7 @@ export const UniversityAdmissionsView: React.FC<UniversityAdmissionsViewProps> =
 
                         {/* Year */}
                         <td className="p-3.5 whitespace-nowrap">
-                          {rec.year === 2025 ? (
-                            <span className="font-extrabold px-2 py-0.5 rounded-md bg-indigo-50 text-indigo-900 border border-indigo-200 text-[11px] inline-flex items-center gap-1">
-                              <Sparkles className="w-2.5 h-2.5 text-indigo-600" />
-                              <span>{language === 'vi' ? '2025 (Đề án)' : '2025 (Scheme)'}</span>
-                            </span>
-                          ) : (
-                            <span className="font-bold text-slate-900 px-2 py-0.5 rounded-md bg-teal-50 text-teal-900 border border-teal-200 text-xs">
-                              {rec.year}
-                            </span>
-                          )}
+                          <span className="font-bold text-slate-900 px-2 py-0.5 rounded-md bg-teal-50 text-teal-900 border border-teal-200 text-xs">{rec.year}</span>
                         </td>
 
                         {/* Method */}
@@ -1421,12 +836,12 @@ export const UniversityAdmissionsView: React.FC<UniversityAdmissionsViewProps> =
 
                         {/* Cutoff Score */}
                         <td className="p-3.5 whitespace-nowrap">
-                          <span className={`font-black text-sm ${rec.year === 2025 ? 'text-indigo-700' : 'text-teal-700'}`}>
+                          <span className={`font-black text-sm ${rec.scoreType === 'floor' ? 'text-indigo-700' : 'text-teal-700'}`}>
                             {rec.cutoffScore}
                           </span>
-                          {rec.year === 2025 && (
+                          {rec.scoreType === 'floor' && (
                             <span className="block text-[10px] text-indigo-600 font-medium">
-                              {language === 'vi' ? 'Điểm sàn đề án' : 'Floor Score'}
+                              {language === 'vi' ? 'Điểm sàn nhận hồ sơ' : 'Application floor'}
                             </span>
                           )}
                         </td>
@@ -1461,11 +876,14 @@ export const UniversityAdmissionsView: React.FC<UniversityAdmissionsViewProps> =
                               className="inline-flex items-center gap-1 text-[11px] font-semibold text-teal-700 hover:text-teal-900 underline"
                               title={rec.sourceDocument}
                             >
-                              <span>{language === 'vi' ? 'Nguồn đề án ↗' : 'Official Source ↗'}</span>
+                              <span>{rec.isVerifiedOfficial
+                                ? (language === 'vi' ? 'Nguồn của trường ↗' : 'University source ↗')
+                                : (language === 'vi' ? 'Nguồn tổng hợp ↗' : 'Reference source ↗')}</span>
                             </a>
                             <div className="text-[10px] text-slate-400">
-                              {language === 'vi' ? 'Duyệt:' : 'Verified:'} {rec.verifiedDate}
+                              {language === 'vi' ? 'Đối chiếu:' : 'Reviewed:'} {rec.verifiedDate}
                             </div>
+                            {!rec.isVerifiedOfficial && <p className="text-[10px] text-amber-700">{language === 'vi' ? 'Chưa đối chiếu văn bản trường' : 'University verification pending'}</p>}
                           </div>
 
                           {onAskAiAboutSchool && (
@@ -1491,6 +909,13 @@ export const UniversityAdmissionsView: React.FC<UniversityAdmissionsViewProps> =
               </tbody>
             </table>
           </div>
+          {filteredRecords.length > 50 && <div className="flex flex-wrap items-center justify-between gap-3 border-t border-slate-200 p-4 text-sm">
+            <span>{language === 'vi' ? 'Trang' : 'Page'} {resultPage + 1} / {resultPages} · {filteredRecords.length} {language === 'vi' ? 'kết quả' : 'results'}</span>
+            <div className="flex gap-2">
+              <button disabled={resultPage === 0} onClick={() => setResultsPage(resultPage - 1)} className="rounded-lg border px-4 py-2 disabled:opacity-40">{language === 'vi' ? 'Trước' : 'Previous'}</button>
+              <button disabled={resultPage + 1 === resultPages} onClick={() => setResultsPage(resultPage + 1)} className="rounded-lg border px-4 py-2 disabled:opacity-40">{language === 'vi' ? 'Sau' : 'Next'}</button>
+            </div>
+          </div>}
         </div>
       </div>
       </>

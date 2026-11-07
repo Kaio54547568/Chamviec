@@ -1,4 +1,5 @@
 import {database,authenticatedUser,checked,endpoint} from '../src/server/database.ts';
+import {readCatalog,readCatalogPage,CATALOG_PAGE_SIZE} from '../src/server/catalog.ts';
 export default endpoint(async(req,res)=>{
  const action=req.query?.action || 'me';
  const body=typeof req.body==='string'?JSON.parse(req.body):req.body||{};
@@ -16,7 +17,15 @@ export default endpoint(async(req,res)=>{
   return res.json({success:true,session:result.data.session,message:!result.data.session?'Hãy mở email xác nhận tài khoản, sau đó quay lại đăng nhập.':undefined});
  }
  if(action==='catalog' && req.method==='GET') {
-  const rows=checked(await db.from('catalog').select('*'));
+  if(req.query?.page !== undefined){
+   const page=Number(req.query.page);
+   if(!Number.isSafeInteger(page)||page<0) return res.status(400).json({success:false,message:'Trang dữ liệu không hợp lệ.'});
+   const {rows,totalRecords}=await readCatalogPage(page,db);
+   const batches=page===0 ? checked(await db.from('enterprise_batches').select('*')) : [];
+   res.setHeader('Cache-Control','public, s-maxage=60, stale-while-revalidate=300');
+   return res.json({success:true,page,pageSize:CATALOG_PAGE_SIZE,totalRecords,data:[...rows,...batches.map((b:any)=>({kind:'enterprise_batches',id:b.id,data:{...b.data,registeredSlots:b.registered_slots}}))]});
+  }
+  const rows=await readCatalog(undefined,db);
   const batches=checked(await db.from('enterprise_batches').select('*'));
   return res.json({success:true,data:[...rows,...batches.map((b:any)=>({kind:'enterprise_batches',id:b.id,data:{...b.data,registeredSlots:b.registered_slots}}))]});
  }
