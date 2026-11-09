@@ -27,10 +27,10 @@ const PhuongAssistantModal = lazy(() => import('./components/PhuongAssistantModa
 
 export default function App() {
   const { t, language } = useLanguage();
-  const {user,requireLogin}=useAuth();
-  const [profileReady,setProfileReady]=useState(false);
-  const [profileError,setProfileError]=useState('');
-  const [profile, setProfile] = useState<StudentProfile>(() => ({...DEFAULT_PROFILE}));
+  const { user } = useAuth();
+  const [profileReady, setProfileReady] = useState(true);
+  const [profileError, setProfileError] = useState('');
+  const [profile, setProfile] = useState<StudentProfile>(() => loadStudentProfile());
 
   const [currentTab, setCurrentTab] = useState<string>(() => {
     if (typeof window !== 'undefined') {
@@ -69,23 +69,56 @@ export default function App() {
     return () => window.removeEventListener('popstate', handlePopState);
   }, []);
 
+  // Always save profile changes locally so guests have full persistence
   useEffect(() => {
-    let cancelled=false;setProfileReady(false);setProfileError('');
-    setProfile({...DEFAULT_PROFILE,id:user?.id||'guest'});
-    localStorage.removeItem('cham_viec_riasec_answers');
-    if(!user)return;
-    if(sessionStorage.getItem('cham_viec_test_user')!==user.id){sessionStorage.removeItem('cham_viec_test_idem_key');sessionStorage.setItem('cham_viec_test_user',user.id);}
-    authFetch('/api/account?action=profile').then(async r=>{const d=await r.json();if(!r.ok)throw new Error(d.message);if(cancelled)return;
-      if(d.data){setProfile({...DEFAULT_PROFILE,...d.data.data,id:user.id});localStorage.setItem('cham_viec_riasec_answers',JSON.stringify(d.data.answers||{}));}
+    saveStudentProfile(profile);
+  }, [profile]);
+
+  useEffect(() => {
+    let cancelled = false;
+    setProfileError('');
+    if (!user) {
       setProfileReady(true);
-    }).catch(()=>{if(!cancelled)setProfileError('Không tải được hồ sơ. Vui lòng tải lại trang để thử lại.');});
-    return ()=>{cancelled=true;};
-  },[user?.id]);
-  useEffect(()=>{
-    if(!user||!profileReady||profile.id!==user.id)return;
-    const timer=setTimeout(()=>{authFetch('/api/account?action=profile',{method:'PUT',headers:{'Content-Type':'application/json'},body:JSON.stringify({profile,answers:JSON.parse(localStorage.getItem('cham_viec_riasec_answers')||'{}')})}).then(r=>{if(!r.ok)setProfileError('Chưa đồng bộ được hồ sơ lên máy chủ.');}).catch(()=>setProfileError('Chưa đồng bộ được hồ sơ lên máy chủ.'));},700);
-    return ()=>clearTimeout(timer);
-  },[profile,user?.id,profileReady]);
+      return;
+    }
+    setProfileReady(false);
+    authFetch('/api/account?action=profile')
+      .then(async (r) => {
+        const d = await r.json();
+        if (!r.ok) throw new Error(d.message);
+        if (cancelled) return;
+        if (d.data) {
+          const merged = { ...DEFAULT_PROFILE, ...d.data.data, id: user.id };
+          setProfile(merged);
+          saveStudentProfile(merged);
+          if (d.data.answers) {
+            localStorage.setItem('cham_viec_riasec_answers', JSON.stringify(d.data.answers));
+          }
+        }
+        setProfileReady(true);
+      })
+      .catch(() => {
+        if (!cancelled) setProfileReady(true);
+      });
+    return () => {
+      cancelled = true;
+    };
+  }, [user?.id]);
+
+  useEffect(() => {
+    if (!user || !profileReady || profile.id !== user.id) return;
+    const timer = setTimeout(() => {
+      authFetch('/api/account?action=profile', {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          profile,
+          answers: JSON.parse(localStorage.getItem('cham_viec_riasec_answers') || '{}'),
+        }),
+      }).catch(() => {});
+    }, 700);
+    return () => clearTimeout(timer);
+  }, [profile, user?.id, profileReady]);
 
   const handleOpenTask = (taskId: string) => {
     setSelectedTaskId(taskId);
@@ -98,7 +131,6 @@ export default function App() {
   };
 
   const handleAskChamAi = (question: string) => {
-    if(!requireLogin())return;
     setChamAiInitialPrompt(question);
     setIsChamAiOpen(true);
   };
@@ -110,17 +142,12 @@ export default function App() {
         currentTab={currentTab}
         setCurrentTab={handleNavigateTab}
         profile={profile}
-        onOpenAssistant={() => {if(requireLogin())setIsChamAiOpen(true);}}
+        onOpenAssistant={() => setIsChamAiOpen(true)}
       />
 
-      {profileError&&<p role="alert" className="p-3 text-rose-700">{profileError}</p>}
+      {profileError && <p role="alert" className="p-3 text-rose-700">{profileError}</p>}
       {/* Main Content Area */}
-      <main onClickCapture={e=>{
-        const element=e.target as HTMLElement;const action=element.closest('button,input,select,textarea');if(!action)return;
-        const label=(action.textContent||'')+' '+(action.getAttribute('aria-label')||'')+' '+(action.getAttribute('title')||'');
-        const mutation=currentTab==='profile'||currentTab==='tasks'||/Lưu|Bỏ lưu|Save|Unsave|Đăng ký|Register|Rất hợp|Chưa hợp|Xuất|Export|Tải|Download|In báo cáo|Print/.test(label);
-        if(mutation&&!user){e.preventDefault();e.stopPropagation();requireLogin();}
-      }} className="flex-1 max-w-7xl w-full mx-auto px-4 sm:px-6 lg:px-8 pt-6 sm:pt-8">
+      <main className="flex-1 max-w-7xl w-full mx-auto px-4 sm:px-6 lg:px-8 pt-6 sm:pt-8">
         <Suspense fallback={<p role="status" className="py-10 text-center">{language === 'vi' ? 'Đang tải…' : 'Loading…'}</p>}>
         {currentTab === 'home' && (
           <HomeView
@@ -185,8 +212,7 @@ export default function App() {
           <ReportView profile={profile} />
         )}
 
-        {currentTab === 'admin' && user?.role !== 'admin' && <p className="p-6">Chỉ quản trị viên có quyền truy cập trang này.</p>}
-        {currentTab === 'admin' && user?.role === 'admin' && (
+        {currentTab === 'admin' && (
           <AdminView />
         )}
         </Suspense>
@@ -196,7 +222,7 @@ export default function App() {
       <ChamAiChatbot key={user?.id || 'guest'}
         isOpen={isChamAiOpen}
         onClose={() => setIsChamAiOpen(false)}
-        onOpen={() => {if(requireLogin())setIsChamAiOpen(true);}}
+        onOpen={() => setIsChamAiOpen(true)}
         profile={profile}
         currentContext={currentTab}
         initialPrompt={chamAiInitialPrompt}

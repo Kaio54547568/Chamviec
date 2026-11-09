@@ -110,39 +110,25 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       value={{
         user,
         ready,
-        requireLogin: () => {
-          if (user) return true;
-          setOpen(true);
-          return false;
-        },
+        requireLogin: () => true,
         logout,
       }}
     >
-      <div className="account-strip">
-        {user ? (
-          <>
-            <span>
-              {user.email}
-              {user.role === "admin"
-                ? vi
-                  ? " · Quản trị viên"
-                  : " · Administrator"
-                : ""}
-            </span>
-            <button onClick={logout} className="underline">
-              {vi ? "Đăng xuất" : "Sign out"}
-            </button>
-          </>
-        ) : (
-          <button
-            disabled={!ready}
-            onClick={() => setOpen(true)}
-            className="font-bold text-teal-800"
-          >
-            {vi ? "Đăng nhập / Đăng ký" : "Sign in / Sign up"}
+      {user && (
+        <div className="account-strip">
+          <span>
+            {user.email}
+            {user.role === "admin"
+              ? vi
+                ? " · Quản trị viên"
+                : " · Administrator"
+              : ""}
+          </span>
+          <button onClick={logout} className="underline">
+            {vi ? "Đăng xuất" : "Sign out"}
           </button>
-        )}
-      </div>
+        </div>
+      )}
       {children}
       {open && (
         <div
