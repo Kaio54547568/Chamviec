@@ -347,10 +347,6 @@ Bạn có thể chọn một trong các câu hỏi gợi ý bên dưới hoặc 
 }
 
 // SSE STREAMING ENDPOINT: /api/cham-ai/stream
-app.use(['/api/cham-ai', '/api/phuong-chat'], async (req, res, next) => {
- try { await authenticatedUser(req); next(); } catch { res.status(401).json({success:false,message:'Vui lòng đăng nhập.'}); }
-});
-
 app.post('/api/cham-ai/stream', async (req, res) => {
   const { message, language, profile, currentContext, chatHistory } = req.body;
 

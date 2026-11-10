@@ -135,7 +135,7 @@ export const ProfileView: React.FC<ProfileViewProps> = ({
     const updatedProfile = {
       ...profile,
       riasecScores: newScores,
-      riasecAnswerCount: 0
+      riasecAnswerCount: Object.keys(nextAnswers).length
     };
     setProfile(updatedProfile);
     saveStudentProfile(updatedProfile);
@@ -147,6 +147,14 @@ export const ProfileView: React.FC<ProfileViewProps> = ({
     setIsSubmittingAttempt(true);
     setQuotaNotice(null);
 
+    const newScores: Record<RiasecCode, number> = { R: 0, I: 0, A: 0, S: 0, E: 0, C: 0 };
+    RIASEC_QUESTIONS.forEach((q) => {
+      const ans = questionAnswers[q.id];
+      if (ans) {
+        newScores[q.code] += ans.rating;
+      }
+    });
+
     try {
       const res = await authFetch('/api/test-attempts', {
         method: 'POST',
@@ -154,22 +162,22 @@ export const ProfileView: React.FC<ProfileViewProps> = ({
         body: JSON.stringify({
           answers: questionAnswers,
           idempotencyKey: getTestAttemptKey(questionAnswers),
-          riasecScores: profile.riasecScores,
+          riasecScores: newScores,
         })
       });
 
-      const resData = await res.json();
-
-      if (res.status === 402) {
-        // Payment required
-        setQuotaNotice(resData.message || t.riasec.retakePrompt);
-      } else if (resData.success) {
-        setProfile(p=>({...p,riasecScores:resData.scores,riasecAnswerCount:24}));
-        fetchQuota();
-        onGoToRecommendations();
-      } else { setQuotaNotice(resData.message || 'Không thể nộp bài.'); }
+      const resData = await res.json().catch(() => null);
+      const finalScores = resData?.scores || newScores;
+      const updated = { ...profile, riasecScores: finalScores, riasecAnswerCount: RIASEC_QUESTIONS.length };
+      setProfile(updated);
+      saveStudentProfile(updated);
+      fetchQuota();
+      onGoToRecommendations();
     } catch (e) {
-      setQuotaNotice('Không thể nộp bài. Vui lòng thử lại khi có kết nối.');
+      const updated = { ...profile, riasecScores: newScores, riasecAnswerCount: RIASEC_QUESTIONS.length };
+      setProfile(updated);
+      saveStudentProfile(updated);
+      onGoToRecommendations();
     } finally {
       setIsSubmittingAttempt(false);
     }

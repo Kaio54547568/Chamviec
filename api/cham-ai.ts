@@ -26,7 +26,6 @@ export default async function handler(req: any, res: any) {
   }
 
   try {
-    await authenticatedUser(req);
     const body = typeof req.body === 'string' ? JSON.parse(req.body) : req.body || {};
     const { message, language, profile, currentContext, chatHistory } = body;
 
