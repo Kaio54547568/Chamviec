@@ -4,6 +4,7 @@ import { EffectComposer } from 'three/addons/postprocessing/EffectComposer.js';
 import { RenderPass } from 'three/addons/postprocessing/RenderPass.js';
 import { UnrealBloomPass } from 'three/addons/postprocessing/UnrealBloomPass.js';
 import { OutputPass } from 'three/addons/postprocessing/OutputPass.js';
+import { GTAOPass } from 'three/addons/postprocessing/GTAOPass.js';
 
 export type LabKind = 'semiconductor' | 'architecture' | 'agriculture' | 'circuit' | 'automotive';
 export type LabQuality = 'balanced' | 'cinematic' | 'battery';
@@ -28,7 +29,22 @@ function finishTexture(brushed: boolean) {
   const texture = new THREE.DataTexture(pixels, size, size, THREE.RGBAFormat);
   texture.wrapS = texture.wrapT = THREE.RepeatWrapping;
   texture.magFilter = THREE.LinearFilter; texture.minFilter = THREE.LinearMipmapLinearFilter;
-  texture.generateMipmaps = true; texture.needsUpdate = true;
+  texture.generateMipmaps = true; texture.anisotropy = 8; texture.needsUpdate = true;
+  return texture;
+}
+
+// Vertical gradient backdrop (horizon haze -> deeper zenith) replaces the flat clear colour.
+function skyTexture(base: number, outdoors: boolean) {
+  const canvas = document.createElement('canvas'); canvas.width = 4; canvas.height = 256;
+  const ctx = canvas.getContext('2d')!;
+  const bottom = new THREE.Color(base), top = bottom.clone().lerp(new THREE.Color(outdoors ? 0x6ea8d8 : 0x05080d), outdoors ? 0.55 : 0.6);
+  const gradient = ctx.createLinearGradient(0, 0, 0, 256);
+  gradient.addColorStop(0, `#${top.getHexString()}`);
+  gradient.addColorStop(0.62, `#${bottom.getHexString()}`);
+  gradient.addColorStop(1, `#${bottom.clone().lerp(new THREE.Color(0xffffff), outdoors ? 0.18 : 0.04).getHexString()}`);
+  ctx.fillStyle = gradient; ctx.fillRect(0, 0, 4, 256);
+  const texture = new THREE.CanvasTexture(canvas);
+  texture.colorSpace = THREE.SRGBColorSpace;
   return texture;
 }
 
@@ -62,13 +78,14 @@ export function createLabStudio(scene: THREE.Scene, renderer: THREE.WebGLRendere
   let quality: LabQuality = 'balanced';
   try { quality = (localStorage.getItem('cham_lab_quality') as LabQuality) || 'balanced'; } catch {}
   if (!['balanced', 'cinematic', 'battery'].includes(quality)) quality = 'balanced';
-  scene.background = new THREE.Color(palette.background);
+  const sky = skyTexture(palette.background, outdoors);
+  scene.background = sky;
   scene.fog = new THREE.Fog(palette.background, outdoors ? 26 : 22, 65);
   renderer.outputColorSpace = THREE.SRGBColorSpace;
   renderer.toneMapping = THREE.ACESFilmicToneMapping;
   renderer.toneMappingExposure = outdoors ? 0.98 : 1.02;
   renderer.shadowMap.enabled = true;
-  renderer.shadowMap.type = THREE.PCFShadowMap;
+  renderer.shadowMap.type = THREE.PCFSoftShadowMap;
   renderer.domElement.style.touchAction = 'none';
   renderer.domElement.setAttribute('aria-label', 'Interactive 3D career workspace');
 
@@ -231,15 +248,18 @@ export function createLabStudio(scene: THREE.Scene, renderer: THREE.WebGLRendere
       material.needsUpdate = true;
     });
   });
+  brushed.anisotropy = matte.anisotropy = Math.min(8, renderer.capabilities.getMaxAnisotropy());
 
   let composer: EffectComposer | undefined;
   let bloom: UnrealBloomPass | undefined;
+  let ao: GTAOPass | undefined;
   const observer = new ResizeObserver(() => resize());
   function resize() {
     const width = Math.max(1, container.clientWidth), height = Math.max(1, container.clientHeight);
     camera.aspect = width / height; camera.updateProjectionMatrix();
     renderer.setSize(width, height);
     composer?.setSize(width, height);
+    ao?.setSize(width, height);
   }
   function applyQuality() {
     const ratio = quality === 'battery' ? 1 : quality === 'cinematic' ? 1.75 : 1.35;
@@ -252,8 +272,19 @@ export function createLabStudio(scene: THREE.Scene, renderer: THREE.WebGLRendere
       }
     });
     if (quality === 'cinematic' && !composer) {
-      composer = new EffectComposer(renderer);
+      const size = renderer.getDrawingBufferSize(new THREE.Vector2());
+      // 4x MSAA half-float target: keeps edges smooth when post-processing bypasses the canvas MSAA.
+      const target = new THREE.WebGLRenderTarget(size.x, size.y, { type: THREE.HalfFloatType, samples: 4 });
+      composer = new EffectComposer(renderer, target);
       composer.addPass(new RenderPass(scene, camera));
+      try {
+        ao = new GTAOPass(scene, camera, container.clientWidth, container.clientHeight);
+        ao.output = GTAOPass.OUTPUT.Default;
+        ao.blendIntensity = 0.85;
+        ao.updateGtaoMaterial({ radius: 0.45, distanceExponent: 1.4, thickness: 1.2, scale: 1.0, samples: 12, distanceFallOff: 1.0, screenSpaceRadius: false });
+        ao.updatePdMaterial({ lumaPhi: 10, depthPhi: 2, normalPhi: 3, radius: 5, rings: 2, samples: 12 });
+        composer.addPass(ao);
+      } catch { ao = undefined; }
       bloom = new UnrealBloomPass(new THREE.Vector2(container.clientWidth, container.clientHeight), 0.18, 0.35, 2.5);
       composer.addPass(bloom); composer.addPass(new OutputPass());
     }
@@ -293,7 +324,7 @@ export function createLabStudio(scene: THREE.Scene, renderer: THREE.WebGLRendere
       geometries.forEach(value => value.dispose()); materials.forEach(value => value.dispose()); textures.forEach(value => value.dispose());
       // Some shared dressing materials are unused for a particular lab.
       alloy.dispose(); graphite.dispose(); warmWood.dispose(); lamp.dispose();
-      brushed.dispose(); matte.dispose();
+      brushed.dispose(); matte.dispose(); sky.dispose();
     },
   };
 }
